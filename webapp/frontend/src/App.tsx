@@ -1,121 +1,94 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import PlayerList from './components/PlayerList';
+import TeamList from './components/TeamList';
+import SearchBar from './components/SearchBar';
+import Filters, { type FilterState } from './components/Filters';
+import Comparator from './pages/Comparator';
 
-function App() {
-  const [count, setCount] = useState(0)
+// Wrapper to keep Navbar and Footer consistent across pages
+function Layout({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <div className="flex flex-col min-h-screen bg-slate-50 text-slate-800 font-sans">
+      <nav className="sticky top-0 z-50 bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shadow-sm">
+        <div className="flex items-center gap-3">
+          <span className="text-xl font-extrabold tracking-tight text-slate-900 hidden sm:block">
+            ArMat Analytics
+          </span>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
+        <div className="flex gap-8 font-semibold text-sm">
+          <Link 
+            to="/" 
+            className={`transition-colors py-2 ${location.pathname === '/' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:text-blue-600'}`}
+          >
+            Dashboard
+          </Link>
+          <Link 
+            to="/compare" 
+            className={`transition-colors py-2 ${location.pathname === '/compare' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:text-blue-600'}`}
+          >
+            Comparator
+          </Link>
         </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+      </nav>
 
-      <div className="ticks"></div>
+      <div className="flex-1 flex flex-col">
+        {children}
+      </div>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+      <footer className="bg-white py-8 px-6 border-t border-slate-200 mt-auto">
+        <div className="max-w-7xl mx-auto flex justify-center items-center text-sm text-slate-400 font-medium">
+          <p>© 2026 ArMat Analytics - Contextual Football Scouting</p>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      </footer>
+    </div>
+  );
 }
 
-export default App
+// Main Dashboard Page
+function Dashboard() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
+  
+  // Initial state for advanced filters
+  const [filters, setFilters] = useState<FilterState>({
+    ageMin: "", ageMax: "", role: "", foot: "",
+    vPreMin: "", vPreMax: "", vPostMin: "", vPostMax: "", vDiffMin: "", vDiffMax: ""
+  });
+
+  return (
+    <div className="pb-12">
+      <div className="max-w-7xl mx-auto w-full px-6 pt-8 pb-6 flex flex-col md:flex-row gap-4">
+        <div className="flex-1">
+          <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+        </div>
+        {/* Pass advanced filters */}
+        <Filters filters={filters} setFilters={setFilters} />
+      </div>
+      
+      <main className="max-w-7xl mx-auto w-full px-6">
+        {/* Pass everything to PlayerList */}
+        <PlayerList searchTerm={searchTerm} selectedTeams={selectedTeams} filters={filters} />
+      </main>
+      
+      {/* TeamList manages selected teams */}
+      <TeamList selectedTeams={selectedTeams} setSelectedTeams={setSelectedTeams} />
+    </div>
+  );
+}
+
+// Main App Component
+export default function App() {
+  return (
+    <Router>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/compare" element={<Comparator />} />
+        </Routes>
+      </Layout>
+    </Router>
+  );
+}
