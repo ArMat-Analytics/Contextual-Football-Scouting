@@ -45,7 +45,7 @@ function PlayerSelectDropdown({ onSelect, index }: { onSelect: (id: number) => v
 }
 
 // Single player stats column component
-function PlayerStatColumn({ playerId, index }: { playerId: number | null, index: number }) {
+function PlayerStatColumn({ playerId }: { playerId: number | null }) {
   const [stats, setStats] = useState<any>(null);
 
   useEffect(() => {
@@ -127,7 +127,7 @@ export default function Comparator() {
         {[0, 1, 2].map(i => (
           <div key={i} className="flex flex-col gap-5">
             <PlayerSelectDropdown onSelect={(id) => handleSelect(i, id)} index={i} />
-            <PlayerStatColumn playerId={selectedPlayers[i]} index={i} />
+            <PlayerStatColumn playerId={selectedPlayers[i]} />
           </div>
         ))}
       </div>
