@@ -52,7 +52,7 @@ Space_Control_and_Value/
 ├── .gitignore
 │
 ├── notebooks/
-│   └── projArMat.ipynb                # thin notebook: imports from src/ and shows results
+│   └── H1-Space_Control_and_Value.ipynb               # thin notebook: imports from src/ and shows results
 │
 ├── data/                              # inputs and pipeline outputs
 │   ├── EPV_grid.csv                   # input: pitch-wise expected possession value
@@ -87,14 +87,14 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
 # Open the notebook (recommended)
-jupyter notebook notebooks/projArMat.ipynb
+jupyter notebook notebooks/H1-Space_Control_and_Value.ipynb
 ```
 
 The notebook runs each stage of the pipeline in order. Each cell calls into `src/`. To run a single stage from the command line (from this folder):
 
 ```bash
-python -m src.player_totals          # ~10 minutes, downloads StatsBomb events
-python -m src.hull_metrics           # ~30 minutes, includes 360 frame fetch
+python -m src.player_totals          
+python -m src.hull_metrics           
 python -m src.directional_gravity
 python -m src.epv_pipeline
 python -m src.line_breaker
@@ -109,7 +109,3 @@ The intermediate CSVs are committed for the analysis-only path, so you can skip 
 - **Open play**: the EPV step filters out corners, free kicks, throw-ins and kick-offs. Percentage rates downstream use the open-play subset (`passes_op`).
 - **Leave-one-out gravity**: each player's gravity is measured against a baseline that **excludes** their own passes, so high-volume players aren't compared against themselves.
 - **Within-role percentiles**: every radar axis is the player's percentile rank inside their macro-role.
-
-## Authors
-
-Matteo Vezzoli & Armando Mio — see the project proposal in the repository root `docs/` for the full context.
