@@ -81,7 +81,7 @@ Space_Control_and_Value/
 ## Quick start
 
 ```bash
-git clone <this-repo>
+git clone https://github.com/ArMat-Analytics/Contextual-Football-Scouting
 cd Contextual-Football-Scouting/Space_Control_and_Value
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
