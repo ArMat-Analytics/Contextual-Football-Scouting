@@ -34,6 +34,20 @@ from . import config
 from .indices import RADAR_SPECS
 
 
+def _render_static(fig):
+    """Emit a static PNG copy of the figure into the notebook output.
+
+    Why: GitHub renders only embedded images in .ipynb cells, not Plotly's
+    interactive HTML. Emitting a PNG alongside the interactive view keeps the
+    notebook viewable on github.com.
+    """
+    try:
+        from IPython.display import Image, display
+        display(Image(fig.to_image(format="png", scale=2)))
+    except Exception:
+        pass
+
+
 # =============================================================================
 # Cronbach's α + cross-correlation between indices
 # =============================================================================
@@ -262,6 +276,7 @@ def naive_vs_contextual(df: pd.DataFrame, pct: pd.DataFrame,
         legend=dict(title="Role", yanchor="top", y=1, xanchor="left", x=1.02),
     )
     fig.show()
+    _render_static(fig)
 
     # --- Top-15 MID head-to-head ----------------------------------------
     role = "MID"
@@ -385,6 +400,7 @@ def scouting_discoveries(df: pd.DataFrame, pct: pd.DataFrame,
         margin=dict(t=110, b=60, l=80, r=60),
     )
     fig.show()
+    _render_static(fig)
 
     # Chart 2: overrated (negative Δ)
     fig2 = make_subplots(
@@ -405,6 +421,7 @@ def scouting_discoveries(df: pd.DataFrame, pct: pd.DataFrame,
         margin=dict(t=110, b=60, l=80, r=60),
     )
     fig2.show()
+    _render_static(fig2)
 
     # Per-role top 3 discoveries
     print("=" * 92)

@@ -14,6 +14,20 @@ from . import config
 from .indices import RADAR_SPECS, percentile_matrix
 
 
+def _render_static(fig):
+    """Emit a static PNG copy of the figure into the notebook output.
+
+    Why: GitHub renders only embedded images in .ipynb cells, not Plotly's
+    interactive HTML. Emitting a PNG alongside the interactive view keeps the
+    notebook viewable on github.com.
+    """
+    try:
+        from IPython.display import Image, display
+        display(Image(fig.to_image(format="png", scale=2)))
+    except Exception:
+        pass
+
+
 _ROLE_COLOR = {
     "CB":   "#1f77b4",
     "FB":   "#17becf",
@@ -181,6 +195,7 @@ def player_profile(query: str, df: pd.DataFrame, pct: pd.DataFrame):
             angularaxis=dict(gridcolor="#ddd", tickfont=dict(size=10)),
         )})
     fig.show()
+    _render_static(fig)
 
 
 # =============================================================================
@@ -255,6 +270,7 @@ def head_to_head(q1: str, q2: str, df: pd.DataFrame, pct: pd.DataFrame):
             angularaxis=dict(gridcolor="#ddd", tickfont=dict(size=10)),
         )})
     fig.show()
+    _render_static(fig)
 
 
 # =============================================================================
@@ -305,6 +321,7 @@ def role_leaderboard(role: str, theme: str, df: pd.DataFrame, pct: pd.DataFrame,
         margin=dict(t=80, b=60, l=40, r=60),
     )
     fig.show()
+    _render_static(fig)
 
 
 # =============================================================================
@@ -421,3 +438,4 @@ def role_archetypes(role: str, x_theme: str = "PROGRESSION", y_theme: str = "DAN
         margin=dict(t=80, b=60, l=70, r=40),
     )
     fig.show()
+    _render_static(fig)
