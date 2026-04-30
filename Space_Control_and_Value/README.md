@@ -1,25 +1,25 @@
 # H1 — Space Control and Value
 
-Parte di **[Contextual Football Scouting](../README.md)** (Vezzoli & Mio, 2026). Per la cornice completa delle 4 ipotesi vedi [`docs/Project_Proposal.pdf`](../docs/Project_Proposal.pdf).
+Part of **[Contextual Football Scouting](../README.md)** (Vezzoli & Mio, 2026). For the full framing of the four hypotheses see [`docs/Project_Proposal.pdf`](../docs/Project_Proposal.pdf).
 
-Implementazione di **Hypothesis 1** del progetto: un giocatore si misura dalla sua influenza spaziale sul campo, quantificata via convex hull del blocco avversario, line-breaker pesati per Expected Possession Value (EPV) e gravità sui difensori.
+Implementation of **Hypothesis 1**: a player's quality is measurable through their spatial influence on the pitch, quantified via convex hulls of the opposing block, line-breakers weighted by Expected Possession Value (EPV), and the gravity exerted on defenders.
 
-Costruito su **StatsBomb 360 open data** per UEFA Euro 2024 (`competition_id=55`, `season_id=282`, 51 partite, 272 giocatori dopo filtro minuti).
+Built on **StatsBomb 360 open data** for UEFA Euro 2024 (`competition_id=55`, `season_id=282`, 51 matches, 272 players after the minutes filter).
 
-## I quattro indici
+## The four indices
 
-Ogni indice è la **media dei rank percentile within-role** delle sue mother variables (un CB è confrontato con altri CB).
+Each index is the **mean of within-role percentile ranks** of its mother variables (a CB is benchmarked against other CBs).
 
-- **PROGRESSION** — volume di gioco in avanti (5 variabili)
+- **PROGRESSION** — forward play volume (5 variables)
   `LB Geom /90` + `LB Quality /90` + `LB EPV /90` + `Hull Penetr. /90` + `Def. Bypassed Avg`
-- **DANGEROUSNESS** — pericolosità creata (3 variabili)
-  `EPV Added /90` + `EPV Penetr. /90` + `Circ. EPV /90` (EPV nei 18 m attorno alla porta)
-- **RECEPTION** — gioco tra le linee e tecnica in spazi stretti (3 variabili)
-  `Between Lines %` + `Hull Exits /90` + `Press. Resist %` (passaggi ricevuti con ≥ 2 avversari entro 2.5 m)
-- **GRAVITY** — attrazione spaziale sui difensori (3 variabili)
-  `Space Attraction %` + `Gravity Hull %` + `Def. Pull |m|` (spostamento del baricentro avversario, leave-one-out)
+- **DANGEROUSNESS** — threat creation (3 variables)
+  `EPV Added /90` + `EPV Penetr. /90` + `Circ. EPV /90` (EPV inside the 18 m around goal)
+- **RECEPTION** — between-the-lines play and tight-space technique (3 variables)
+  `Between Lines %` + `Hull Exits /90` + `Press. Resist %` (passes received with ≥ 2 opponents within 2.5 m)
+- **GRAVITY** — spatial pull on the opposing defense (3 variables)
+  `Space Attraction %` + `Gravity Hull %` + `Def. Pull |m|` (defensive centroid displacement, leave-one-out)
 
-Glossario rapido: **convex hull** = poligono che racchiude i difensori avversari nel 360 frame; **line-breaker** = passaggio riuscito che bypassa ≥ 3 avversari in un corridoio di 5 m lungo la linea del passaggio; **EPV** = probabilità di segnare nelle prossime azioni dato dove sta la palla.
+Quick glossary: **convex hull** = polygon enclosing the visible opponents in the 360 frame; **line-breaker** = successful pass that bypasses ≥ 3 opponents inside a 5 m corridor along the pass line; **EPV** = probability of scoring in the next actions given the ball location.
 
 ## Pipeline
 
@@ -35,7 +35,7 @@ StatsBomb events + 360 frames
                               hull_metrics_aggregated.csv
         │
         ▼
-  Directional Gravity         (estende hull_metrics_aggregated.csv)
+  Directional Gravity         (extends hull_metrics_aggregated.csv)
         │
         ▼
   EPV Pipeline           ──►  hull_events_with_epv.csv  (open play only)
@@ -48,38 +48,38 @@ StatsBomb events + 360 frames
         │
         ▼
   Indices + Dashboard    ──►  player_space_control_indices.csv
-        │                     (radar + leaderboard + scatter archetipi + top line-breakers)
+        │                     (radar + leaderboard + archetype scatter + top line-breakers)
         ▼
   Validation                  Cronbach's α + H1 evidence + scouting discoveries
 ```
 
-## Risultati principali
+## Key findings
 
-**Validità interna (Cronbach's α, media sui 6 ruoli)**
-| Indice | α medio | Lettura |
+**Internal validity (Cronbach's α, averaged over the 6 roles)**
+| Index | Mean α | Reading |
 |---|---:|---|
-| PROGRESSION | **0.77** | costrutto solido, le 5 variabili misurano la stessa dimensione |
-| DANGEROUSNESS | **0.54** | accettabile per un indice multi-faccia |
-| RECEPTION | **0.41** | composito, alto su CB e CAM, basso sui FW (sample piccolo) |
-| GRAVITY | **−0.03** | costrutto **multi-direzionale**, le tre variabili catturano fenomeni diversi (atteso, non un difetto) |
+| PROGRESSION | **0.77** | tight construct, the 5 variables measure the same dimension |
+| DANGEROUSNESS | **0.54** | acceptable for a multi-faceted index |
+| RECEPTION | **0.41** | composite, high on CB and CAM, low on FW (small sample) |
+| GRAVITY | **−0.03** | **multi-directional** construct, the three variables capture different phenomena (expected, not a flaw) |
 
-Le quattro composite sono **poco correlate fra loro** (|r| ≤ 0.56 su tutto il pool, target < 0.6) → niente ridondanza.
+The four composites are **weakly correlated with each other** (|r| ≤ 0.56 across the full pool, target < 0.6) → no redundancy.
 
-**Test centrale di H1: contextual vs naive (within-role, n = 272)**
+**Core H1 test: contextual vs naive (within-role, n = 272)**
 
-| Indice | Naive proxy | Spearman ρ | mean \|Δ\| | % \|Δ\| > 20 |
+| Index | Naive proxy | Spearman ρ | mean \|Δ\| | % \|Δ\| > 20 |
 |---|---|---:|---:|---:|
 | PROGRESSION | passes /90 | **0.47** | 21.7 | **47%** |
 | DANGEROUSNESS | total EPV /90 | 0.84 | 12.7 | 21% |
 | RECEPTION | between-lines % | 0.75 | 14.9 | 29% |
 | GRAVITY | gravity proximity % | 0.60 | 18.5 | 39% |
 
-Lettura: PROGRESSION è dove la differenza picchia di più — quasi un giocatore su due si sposta di oltre 20 punti percentile passando dal ranking naive a quello contestuale. Sui MID, top-15 naive (passes/90) e top-15 contextual (PROGRESSION) si sovrappongono solo per 10/15: **5 nomi nuovi** entrano (es. Trent Alexander-Arnold, Mateo Kovačić, Robert Andrich) e altrettanti escono.
+Reading: PROGRESSION is where the gap hits hardest — almost one player in two shifts by more than 20 percentile points moving from the naive ranking to the contextual one. For MIDs, the naive top-15 (passes/90) and the contextual top-15 (PROGRESSION) overlap on only 10/15: **5 new names** enter (e.g. Trent Alexander-Arnold, Mateo Kovačić, Robert Andrich) and as many drop out.
 
-### Scouting discoveries — chi emerge solo con il contesto
+### Scouting discoveries — players surfaced only by context
 ![Scouting discoveries](docs/figures/scouting_discoveries.png)
 
-### Naive overrating — chi è gonfiato dal contesto squadra
+### Naive overrating — players inflated by team context
 ![Naive overrating](docs/figures/naive_overrating.png)
 
 ## Folder structure
@@ -91,32 +91,32 @@ Space_Control_and_Value/
 ├── .gitignore
 │
 ├── notebooks/
-│   └── H1-Space_Control_and_Value.ipynb       # notebook sottile: importa da src/ e mostra i risultati
+│   └── H1-Space_Control_and_Value.ipynb       # thin notebook: imports from src/ and shows results
 │
-├── docs/figures/                               # immagini usate da questo README
+├── docs/figures/                               # images used by this README
 │
-├── data/                                       # input + output della pipeline
-│   ├── EPV_grid.csv                            # input: griglia EPV (Friends-of-Tracking-Data)
+├── data/                                       # pipeline inputs and outputs
+│   ├── EPV_grid.csv                            # input: EPV grid (Friends-of-Tracking-Data)
 │   ├── Euro2024_Player_Totals_Distances_Roles.{csv,xlsx}
-│   ├── hull_events_*.csv                       # intermediate (gitignored)
+│   ├── hull_events_*.csv                       # intermediates (gitignored)
 │   ├── hull_metrics_aggregated.csv
 │   ├── hull_zone_baselines.csv
 │   ├── player_space_control_aggregated.csv
-│   ├── player_space_control_indices.csv        # output finale (4 idx + 14 percentili)
+│   ├── player_space_control_indices.csv        # final output (4 indices + 14 percentiles)
 │   └── cache/                                  # StatsBomb 360-frame cache (gitignored)
 │
 └── src/
     ├── config.py                # paths, thresholds, role maps
-    ├── geometry.py              # helper geometrici (hull, distance, corridor)
+    ├── geometry.py              # geometric helpers (hull, distance, corridor)
     ├── player_totals.py         # → totals .xlsx
     ├── hull_metrics.py          # → hull_metrics_aggregated.csv
-    ├── directional_gravity.py   # estende hull_metrics_aggregated.csv
+    ├── directional_gravity.py   # extends hull_metrics_aggregated.csv
     ├── epv_pipeline.py          # → hull_events_with_epv.csv
     ├── line_breaker.py          # → hull_events_lb.csv
     ├── aggregation.py           # → player_space_control_aggregated.csv
-    ├── indices.py               # 4 composite + within-role percentiles
-    ├── dashboard.py             # 4 viste prototipo (radar / leaderboard / archetipi / top LB)
-    └── validation.py            # Cronbach's α + H1 evidence + export finale
+    ├── indices.py               # 4 composites + within-role percentiles
+    ├── dashboard.py             # 4 prototype views (radar / leaderboard / archetypes / top LB)
+    └── validation.py            # Cronbach's α + H1 evidence + final export
 ```
 
 ## Quick start
@@ -130,7 +130,7 @@ pip install -r requirements.txt
 jupyter notebook notebooks/H1-Space_Control_and_Value.ipynb
 ```
 
-Il notebook esegue la pipeline in ordine, una sezione per stage. Per girare un singolo stage da CLI:
+The notebook runs the pipeline in order, one section per stage. To run a single stage from the CLI:
 
 ```bash
 python -m src.player_totals
@@ -141,15 +141,15 @@ python -m src.line_breaker
 python -m src.aggregation
 ```
 
-I CSV intermedi sono committati per il path *analysis-only*: si può saltare direttamente alle celle di index design / validation / dashboard senza rieseguire le pipeline pesanti.
+The intermediate CSVs are committed for the *analysis-only* path: you can jump straight to the index design / validation / dashboard cells without re-running the heavy pipelines.
 
-## Convenzioni
+## Conventions
 
-- **Coordinate**: campo in metri (105 × 68, standard UEFA). Le coordinate StatsBomb in yard sono convertite via `X_SCALE = 105/120`, `Y_SCALE = 68/80`.
-- **Open play**: lo step EPV filtra corner, punizioni, rimesse e calci d'inizio. I rate downstream usano il subset open-play (`passes_op`).
-- **Leave-one-out gravity**: la gravità di ogni giocatore è misurata contro una baseline che **esclude** i suoi stessi passaggi.
-- **Within-role percentile**: ogni asse di ogni indice è il rank percentile del giocatore dentro il suo macro-ruolo (CB / FB / MID / CAM / WIDE / FW).
-- **Min minutes**: 90 per entrare nel pool, 135 (= 1.5 partite) per le validation tables.
+- **Coordinates**: pitch in meters (105 × 68, UEFA standard). StatsBomb yard coordinates are converted via `X_SCALE = 105/120`, `Y_SCALE = 68/80`.
+- **Open play**: the EPV step filters out corners, free kicks, throw-ins and kick-offs. Downstream rates use the open-play subset (`passes_op`).
+- **Leave-one-out gravity**: each player's gravity is measured against a baseline that **excludes** their own passes.
+- **Within-role percentiles**: every axis of every index is the player's percentile rank inside their macro-role (CB / FB / MID / CAM / WIDE / FW).
+- **Min minutes**: 90 to enter the pool, 135 (= 1.5 matches) for the validation tables.
 
 ---
 
