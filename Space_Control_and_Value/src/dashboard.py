@@ -21,11 +21,8 @@ def _render_static(fig):
     interactive HTML. Emitting a PNG alongside the interactive view keeps the
     notebook viewable on github.com.
     """
-    try:
-        from IPython.display import Image, display
-        display(Image(fig.to_image(format="png", scale=2)))
-    except Exception:
-        pass
+    from IPython.display import Image, display
+    display(Image(fig.to_image(format="png", scale=2)))
 
 
 _ROLE_COLOR = {
