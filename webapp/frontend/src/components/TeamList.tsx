@@ -1,12 +1,9 @@
 import { useEffect, useState } from 'react';
+import { getFlagUrl } from '../utils';
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
-interface Team {
-  team_id: number;
-  team_name: string;
-  logo_url?: string; 
-}
-
+interface Team { team_id: number; team_name: string; logo_url?: string; }
 interface TeamListProps {
   selectedTeams: string[];
   setSelectedTeams: (teams: string[]) => void;
@@ -17,60 +14,91 @@ export default function TeamList({ selectedTeams, setSelectedTeams }: TeamListPr
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/teams/`)
-      .then(res => res.json())
-      .then(data => setTeams(data))
-      .catch(err => console.error("Teams fetch error:", err));
+      .then(r => r.json())
+      .then(d => setTeams(d))
+      .catch(() => {});
   }, []);
 
-  const toggleTeam = (teamName: string) => {
-    if (!teamName) return;
-    if (selectedTeams.includes(teamName)) {
-      setSelectedTeams(selectedTeams.filter(t => t !== teamName));
-    } else {
-      setSelectedTeams([...selectedTeams, teamName]);
-    }
+  const toggleTeam = (name: string) => {
+    if (!name) return;
+    setSelectedTeams(
+      selectedTeams.includes(name)
+        ? selectedTeams.filter(t => t !== name)
+        : [...selectedTeams, name]
+    );
   };
 
   return (
-    <section className="w-full bg-white border-t border-slate-200 py-8 mt-12 shadow-sm">
+    <section
+      className="w-full border-t mt-10 py-8"
+      style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+      aria-label="Filter by national team"
+    >
       <div className="max-w-7xl mx-auto px-6">
-        <div className="flex justify-between items-center mb-8 border-b border-slate-100 pb-4">
-          <p className="text-sm font-extrabold uppercase text-slate-400 tracking-widest">Filter by National Team</p>
+        <div className="flex justify-between items-center mb-6 pb-4 border-b" style={{ borderColor: 'var(--border)' }}>
+          <p className="font-mono text-[10px] tracking-widest uppercase" style={{ color: 'var(--text-dim)' }}>
+            Filter by National Team
+          </p>
           {selectedTeams.length > 0 && (
-            <button 
-              onClick={() => setSelectedTeams([])} 
-              className="text-xs font-bold text-red-500 hover:text-red-700 bg-red-50 px-3 py-1 rounded-full transition-colors"
+            <button
+              onClick={() => setSelectedTeams([])}
+              className="btn btn-ghost text-xs py-1.5 px-3"
+              style={{ color: 'var(--red)' }}
+              aria-label="Clear all team filters"
             >
-              Clear Team Filters
+              Clear ({selectedTeams.length})
             </button>
           )}
         </div>
-        
-        <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-y-8 gap-x-2 place-items-center">
-          {teams.map((team, index) => {
-            const safeName = team?.team_name || "N/A";
-            const isSelected = selectedTeams.includes(safeName);
-            
+
+        <ul
+          className="flex sm:grid sm:grid-cols-[repeat(auto-fill,minmax(72px,1fr))] overflow-x-auto sm:overflow-visible gap-4 sm:gap-y-6 sm:gap-x-2 pb-4 sm:pb-0 snap-x"
+          role="list"
+          aria-label="National teams"
+        >
+          {teams.map((team, idx) => {
+            const name     = team?.team_name || 'N/A';
+            const selected = selectedTeams.includes(name);
+            const flagUrl  = getFlagUrl(name);
+
             return (
-              <div 
-                key={`team-${team.team_id || index}`} 
-                onClick={() => toggleTeam(safeName)}
-                className={`flex flex-col items-center gap-3 transition-all cursor-pointer ${isSelected ? 'opacity-100 scale-110' : 'opacity-40 hover:opacity-100 grayscale hover:grayscale-0'}`}
-              >
-                <div className={`w-14 h-14 bg-slate-50 rounded-full flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden border-4 transition-all shadow-sm ${isSelected ? 'border-blue-500 shadow-blue-200 grayscale-0' : 'border-transparent'}`}>
-                  {team.logo_url ? (
-                    <img src={team.logo_url} alt={safeName} className="w-full h-full object-cover p-1" />
-                  ) : (
-                    String(safeName).length >= 3 ? String(safeName).substring(0, 3).toUpperCase() : String(safeName).toUpperCase()
-                  )}
-                </div>
-                <span className={`text-[10px] uppercase tracking-wider text-center max-w-[80px] truncate ${isSelected ? 'font-black text-blue-700' : 'font-semibold text-slate-500'}`} title={safeName}>
-                  {safeName}
-                </span>
-              </div>
+              <li key={`team-${team.team_id ?? idx}`} role="listitem" className="snap-start shrink-0">
+                <button
+                  onClick={() => toggleTeam(name)}
+                  aria-pressed={selected}
+                  aria-label={`${selected ? 'Deselect' : 'Select'} ${name}`}
+                  className="flex flex-col items-center gap-2 w-20 sm:w-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--blue] rounded-lg p-1 cursor-pointer"
+                  style={{ opacity: selected ? 1 : 0.6 }}
+                >
+                  <div
+                    className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-mono font-700 overflow-hidden shrink-0 transition-all bg-[--surface2]"
+                    style={{
+                      border: selected ? '2px solid var(--blue)' : '2px solid transparent',
+                      boxShadow: selected ? '0 4px 12px rgba(77,166,255,0.4)' : 'none',
+                    }}
+                  >
+                    {flagUrl ? (
+                      <img src={flagUrl} alt={name} className="w-full h-full object-cover" />
+                    ) : team.logo_url ? (
+                      <img src={team.logo_url} alt={name} className="w-8 h-8 object-contain" />
+                    ) : (
+                      <span style={{ color: selected ? '#fff' : 'var(--text-muted)' }}>
+                        {name.substring(0,3).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <span
+                    className="text-[10px] font-display font-700 tracking-wide uppercase text-center w-full truncate leading-tight"
+                    style={{ color: selected ? 'var(--blue)' : 'var(--text-muted)' }}
+                    title={name}
+                  >
+                    {name}
+                  </span>
+                </button>
+              </li>
             );
           })}
-        </div>
+        </ul>
       </div>
     </section>
   );

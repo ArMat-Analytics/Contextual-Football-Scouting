@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from 'react';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
@@ -16,100 +16,154 @@ interface FiltersProps {
 }
 
 export default function Filters({ filters, setFilters }: FiltersProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [availableRoles, setAvailableRoles] = useState<string[]>([]);
+  const [isOpen, setIsOpen]           = useState(false);
+  const [availableRoles, setRoles]    = useState<string[]>([]);
+  const panelRef                      = useRef<HTMLDivElement>(null);
+  const btnRef                        = useRef<HTMLButtonElement>(null);
 
-  // Fetch true roles from the database
   useEffect(() => {
     fetch(`${API_BASE_URL}/roles/`)
-      .then(res => res.json())
-      .then(data => setAvailableRoles(data))
-      .catch(err => console.error("Error fetching roles:", err));
+      .then(r => r.json())
+      .then(d => setRoles(d))
+      .catch(() => {});
+  }, []);
+
+  // Close on outside click
+  useEffect(() => {
+    if (!isOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (
+        panelRef.current && !panelRef.current.contains(e.target as Node) &&
+        btnRef.current   && !btnRef.current.contains(e.target as Node)
+      ) setIsOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [isOpen]);
+
+  // Close on Escape
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setIsOpen(false); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
   };
 
-  const resetFilters = () => {
-    setFilters({
-      ageMin: "", ageMax: "", role: "", foot: "",
-      vPreMin: "", vPreMax: "", vPostMin: "", vPostMax: "", vDiffMin: "", vDiffMax: ""
-    });
+  const reset = () => {
+    setFilters({ ageMin:'',ageMax:'',role:'',foot:'',vPreMin:'',vPreMax:'',vPostMin:'',vPostMax:'',vDiffMin:'',vDiffMax:'' });
   };
 
-  const hasActiveFilters = Object.values(filters).some(val => val !== "");
+  const active = Object.values(filters).some(v => v !== '');
+  const activeCount = Object.values(filters).filter(v => v !== '').length;
 
   return (
-    <div className="relative h-full">
-      <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className={`h-full border rounded-xl px-6 py-3 flex items-center justify-center gap-2 font-bold transition-all w-full md:w-auto shadow-sm ${hasActiveFilters ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'}`}
+    <div className="relative">
+      <button
+        ref={btnRef}
+        onClick={() => setIsOpen(o => !o)}
+        aria-expanded={isOpen}
+        aria-controls="filters-panel"
+        aria-label={`Advanced filters${active ? ` (${activeCount} active)` : ''}`}
+        className="btn btn-ghost h-full whitespace-nowrap"
+        style={active ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}}
       >
-        <span className="text-lg">⚙️</span> 
-        {hasActiveFilters ? 'Filters Active' : 'Advanced Filters'}
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 8h10M11 12h2M13 16h-2" />
+        </svg>
+        {active ? `Filters (${activeCount})` : 'Filters'}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-3 w-full md:w-[420px] bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-6 max-h-[80vh] overflow-y-auto">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="font-extrabold text-xl text-slate-800">Set Filters</h3>
-            <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-slate-700 bg-slate-100 rounded-full w-8 h-8 flex items-center justify-center transition-colors">✕</button>
+        <div
+          id="filters-panel"
+          ref={panelRef}
+          role="dialog"
+          aria-label="Advanced filters"
+          className="absolute right-0 top-full mt-2 w-[480px] max-sm:w-screen max-sm:right-0 z-50 p-6 max-h-[80vh] overflow-y-auto shadow-2xl"
+          style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 'var(--radius-lg)' }}
+        >
+          <div className="flex justify-between items-center mb-8 border-b pb-4" style={{ borderColor: 'var(--border)' }}>
+            <h2 className="font-display font-800 text-2xl tracking-tight" style={{ color: 'var(--text)' }}>
+              Advanced Filters
+            </h2>
+            <button
+              onClick={() => setIsOpen(false)}
+              aria-label="Close filters panel"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-sm transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--accent]"
+              style={{ background: 'var(--surface2)', color: 'var(--text-muted)' }}
+            >
+              ✕
+            </button>
           </div>
 
-          {/* Age & Physical */}
-          <div className="space-y-4 mb-8">
-            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">General Attributes</h4>
-            <div className="flex gap-3">
-              <input type="number" name="ageMin" value={filters.ageMin} onChange={handleChange} placeholder="Min Age" className="w-1/2 border border-slate-200 bg-slate-50 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm" />
-              <input type="number" name="ageMax" value={filters.ageMax} onChange={handleChange} placeholder="Max Age" className="w-1/2 border border-slate-200 bg-slate-50 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm" />
-            </div>
-            <div className="flex gap-3">
-              <select name="role" value={filters.role} onChange={handleChange} className="w-1/2 border border-slate-200 bg-slate-50 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm font-medium text-slate-700 capitalize">
-                <option value="">All Roles</option>
-                {/* Dynamically generating real roles from the DB */}
-                {availableRoles.map(r => (
-                  <option key={r} value={r}>{r.replace(/_/g, ' ')}</option>
+          <div className="space-y-6">
+            <fieldset className="border p-4 rounded-xl" style={{ borderColor: 'var(--border2)' }}>
+              <legend className="text-xs font-mono font-700 tracking-widest uppercase px-2" style={{ color: 'var(--accent)' }}>
+                General Attributes
+              </legend>
+              <div className="grid grid-cols-2 gap-4 mt-2">
+                <div>
+                  <label htmlFor="ageMin" className="block text-xs font-600 mb-1" style={{ color: 'var(--text-muted)' }}>Min Age</label>
+                  <input id="ageMin" type="number" name="ageMin" value={filters.ageMin} onChange={handleChange} placeholder="e.g. 18" className="input" min={15} max={50} />
+                </div>
+                <div>
+                  <label htmlFor="ageMax" className="block text-xs font-600 mb-1" style={{ color: 'var(--text-muted)' }}>Max Age</label>
+                  <input id="ageMax" type="number" name="ageMax" value={filters.ageMax} onChange={handleChange} placeholder="e.g. 35" className="input" min={15} max={50} />
+                </div>
+                <div>
+                  <label htmlFor="role" className="block text-xs font-600 mb-1" style={{ color: 'var(--text-muted)' }}>Role</label>
+                  <select id="role" name="role" value={filters.role} onChange={handleChange} className="input">
+                    <option value="">All Roles</option>
+                    {availableRoles.map(r => (
+                      <option key={r} value={r}>{r.replace(/_/g, ' ')}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="foot" className="block text-xs font-600 mb-1" style={{ color: 'var(--text-muted)' }}>Preferred Foot</label>
+                  <select id="foot" name="foot" value={filters.foot} onChange={handleChange} className="input">
+                    <option value="">Any Foot</option>
+                    <option value="right">Right</option>
+                    <option value="left">Left</option>
+                    <option value="both">Both</option>
+                  </select>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset className="border p-4 rounded-xl" style={{ borderColor: 'var(--border2)' }}>
+              <legend className="text-xs font-mono font-700 tracking-widest uppercase px-2" style={{ color: 'var(--blue)' }}>
+                Market Value (€)
+              </legend>
+              <div className="space-y-4 mt-2">
+                {[
+                  { label: 'Value BEFORE Euro 2024', minKey: 'vPreMin', maxKey: 'vPreMax' },
+                  { label: 'Value AFTER Euro 2024',  minKey: 'vPostMin', maxKey: 'vPostMax' },
+                  { label: 'Value Difference',       minKey: 'vDiffMin', maxKey: 'vDiffMax' },
+                ].map(({ label, minKey, maxKey }) => (
+                  <div key={minKey} className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor={minKey} className="block text-[10px] font-600 mb-1" style={{ color: 'var(--text-muted)' }}>Min {label}</label>
+                      <input id={minKey} type="number" name={minKey} value={(filters as any)[minKey]} onChange={handleChange} placeholder="Min €" className="input" />
+                    </div>
+                    <div>
+                      <label htmlFor={maxKey} className="block text-[10px] font-600 mb-1" style={{ color: 'var(--text-muted)' }}>Max {label}</label>
+                      <input id={maxKey} type="number" name={maxKey} value={(filters as any)[maxKey]} onChange={handleChange} placeholder="Max €" className="input" />
+                    </div>
+                  </div>
                 ))}
-              </select>
-              <select name="foot" value={filters.foot} onChange={handleChange} className="w-1/2 border border-slate-200 bg-slate-50 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm font-medium text-slate-700">
-                <option value="">Preferred Foot</option>
-                <option value="right">Right</option>
-                <option value="left">Left</option>
-                <option value="both">Both</option>
-              </select>
-            </div>
+              </div>
+            </fieldset>
           </div>
 
-          {/* Market Values (in Millions) */}
-          <div className="space-y-4 mb-8">
-            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Market Values (in €)</h4>
-            <div>
-              <label className="text-xs font-semibold text-slate-600 mb-2 block">Value BEFORE Euro 2024</label>
-              <div className="flex gap-3">
-                <input type="number" name="vPreMin" value={filters.vPreMin} onChange={handleChange} placeholder="Min" className="w-1/2 border border-slate-200 bg-slate-50 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm" />
-                <input type="number" name="vPreMax" value={filters.vPreMax} onChange={handleChange} placeholder="Max" className="w-1/2 border border-slate-200 bg-slate-50 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm" />
-              </div>
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-600 mb-2 mt-4 block">Value AFTER Euro 2024</label>
-              <div className="flex gap-3">
-                <input type="number" name="vPostMin" value={filters.vPostMin} onChange={handleChange} placeholder="Min" className="w-1/2 border border-slate-200 bg-slate-50 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm" />
-                <input type="number" name="vPostMax" value={filters.vPostMax} onChange={handleChange} placeholder="Max" className="w-1/2 border border-slate-200 bg-slate-50 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm" />
-              </div>
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-600 mb-2 mt-4 block">Value Difference</label>
-              <div className="flex gap-3">
-                <input type="number" name="vDiffMin" value={filters.vDiffMin} onChange={handleChange} placeholder="Min Diff" className="w-1/2 border border-slate-200 bg-slate-50 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm" />
-                <input type="number" name="vDiffMax" value={filters.vDiffMax} onChange={handleChange} placeholder="Max Diff" className="w-1/2 border border-slate-200 bg-slate-50 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm" />
-              </div>
-            </div>
+          <div className="mt-8">
+            <button onClick={reset} className="btn btn-ghost w-full justify-center" aria-label="Clear all filters">
+              Clear All Filters
+            </button>
           </div>
-
-          <button onClick={resetFilters} className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors">
-            Clear All Filters
-          </button>
         </div>
       )}
     </div>

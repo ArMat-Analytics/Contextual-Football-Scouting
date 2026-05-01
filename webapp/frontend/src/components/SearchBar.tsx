@@ -6,19 +6,32 @@ interface SearchBarProps {
 export default function SearchBar({ searchTerm, setSearchTerm }: SearchBarProps) {
   return (
     <div className="relative h-full">
-      <input 
-        type="text" 
+      <label htmlFor="player-search" className="sr-only">Search player by name</label>
+      <input
+        id="player-search"
+        type="search"
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
-        placeholder="Search player by name..." 
-        className="w-full h-full bg-white border border-slate-200 rounded-xl pl-12 pr-12 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm text-slate-700 font-medium placeholder-slate-400"
+        placeholder="Search player by name…"
+        autoComplete="off"
+        className="input w-full h-full pl-11 pr-10"
+        aria-label="Search player by name"
       />
-      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg">🔍</span>
-      
+      <svg
+        aria-hidden
+        className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+        style={{ color: 'var(--text-dim)' }}
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+      >
+        <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
+      </svg>
       {searchTerm && (
-        <button 
-          onClick={() => setSearchTerm("")}
-          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-full w-6 h-6 flex items-center justify-center transition-colors text-xs font-bold"
+        <button
+          onClick={() => setSearchTerm('')}
+          aria-label="Clear search"
+          className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--accent]"
+          style={{ background: 'var(--surface2)', color: 'var(--text-muted)' }}
         >
           ✕
         </button>
