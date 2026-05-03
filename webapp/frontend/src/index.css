@@ -188,6 +188,10 @@ body::before {
   transition: border-color 0.15s, box-shadow 0.15s;
   width: 100%;
 }
+
+.input#player-search {
+  padding-left: 40px;
+}
 .input::placeholder { color: var(--text-dim); }
 .input:focus {
   outline: none;

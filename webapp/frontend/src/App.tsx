@@ -6,6 +6,7 @@ import SearchBar from './components/SearchBar';
 import Filters, { type FilterState } from './components/Filters';
 import PlayerProfile from './pages/PlayerProfile';
 import SimilarPlayers from './pages/SimilarPlayers';
+import SearchByAttribute from './pages/SearchByAttribute';
 
 function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -36,6 +37,7 @@ function Layout({ children }: { children: React.ReactNode }) {
           </Link>
 
           <div className="flex items-center gap-4 sm:gap-6" role="list">
+            <Link to="/search" className="text-[--text-muted] hover:text-[--accent] transition-colors font-600 text-xs sm:text-sm uppercase tracking-wider">Search</Link>
             <a className="text-[--text-muted] hover:text-[--text] transition-colors font-600 text-xs sm:text-sm uppercase tracking-wider" href="https://github.com/armat-analytics/Contextual-Football-Scouting" target="_blank" rel="noreferrer">GitHub</a>
           </div>
         </nav>
@@ -113,6 +115,7 @@ export default function App() {
           <Route path="/"                element={<Dashboard />} />
           <Route path="/player/:playerId" element={<PlayerProfile />} />
           <Route path="/similar"         element={<SimilarPlayers />} />
+          <Route path="/search"          element={<SearchByAttribute />} />
         </Routes>
       </Layout>
     </Router>

@@ -34,7 +34,7 @@ export default function TeamList({ selectedTeams, setSelectedTeams }: TeamListPr
       style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
       aria-label="Filter by national team"
     >
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="justify-self-center mx-auto px-6">
         <div className="flex justify-between items-center mb-6 pb-4 border-b" style={{ borderColor: 'var(--border)' }}>
           <p className="font-mono text-[10px] tracking-widest uppercase" style={{ color: 'var(--text-dim)' }}>
             Filter by National Team
@@ -52,7 +52,7 @@ export default function TeamList({ selectedTeams, setSelectedTeams }: TeamListPr
         </div>
 
         <ul
-          className="flex sm:grid sm:grid-cols-[repeat(auto-fill,minmax(72px,1fr))] overflow-x-auto sm:overflow-visible gap-4 sm:gap-y-6 sm:gap-x-2 pb-4 sm:pb-0 snap-x"
+          className="flex inline-flex! sm:grid sm:grid-cols-[repeat(auto-fill,minmax(72px,1fr))] overflow-x-auto sm:overflow-visible gap-4 sm:gap-y-6 sm:gap-x-2 pb-4 sm:pb-0 snap-x"
           role="list"
           aria-label="National teams"
         >

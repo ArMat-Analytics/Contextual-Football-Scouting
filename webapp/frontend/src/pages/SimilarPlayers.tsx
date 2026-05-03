@@ -2,549 +2,528 @@ import { useState, useId } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
-  BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer,
-  LineChart, Line, CartesianGrid,
+  Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
-import { getFlagUrl, ALL_STATS, CAT_ACCENT } from '../utils';
+import { getFlagUrl } from '../utils';
+import {
+  useSimilarPlayers, usePlayerSpaceControl,
+  type SpaceControlIndex, type SpaceControlAggregated,
+} from '../hooks/useSpaceControl';
+import { StatViewToggle, type StatViewMode } from '../components/SpaceControlSection';
 
-// ── Mock data ────────────────────────────────────────────────────────────────
-const MOCK_SIMILAR: Record<string, any> = {
-  '101': {
-    player_id: 101, player_name: 'Lamine Yamal', source_team_name: 'Spain',
-    primary_role: 'right_winger', age: 17, preferred_foot: 'right',
-    similarity_score: 0.94, minutes_played: 540,
-    goals: 3, xg_total: 2.1, assists: 4, key_passes: 18, dribbles_successful: 28,
-    pass_completion_pct: 82, total_touches: 412,
-    ball_recoveries: 14, interceptions: 5, aerials_won: 3,
+// ── Palette ───────────────────────────────────────────────────────────────────
+
+const C_SOURCE  = '#39ff14'; // neon green — source player
+const C_SIMILAR = '#4da6ff'; // blue       — comparison player
+
+// ── Radar dimension definitions ───────────────────────────────────────────────
+
+const RADAR_DEFS = [
+  {
+    key: 'PROGRESSION',   label: 'Progression',   color: '#39ff14',
+    axes: [
+      { k: 'pct__lb_geom_per90'                      as keyof SpaceControlIndex, label: 'LB Geom /90' },
+      { k: 'pct__lb_quality_per90'                   as keyof SpaceControlIndex, label: 'LB Quality /90' },
+      { k: 'pct__lb_epv_per90'                       as keyof SpaceControlIndex, label: 'LB EPV /90' },
+      { k: 'pct__successful_hull_penetrations_per90' as keyof SpaceControlIndex, label: 'Hull Penetr. /90' },
+      { k: 'pct__defenders_bypassed_mean'            as keyof SpaceControlIndex, label: 'Def. Bypassed' },
+    ],
   },
-  '102': {
-    player_id: 102, player_name: 'Nico Williams', source_team_name: 'Spain',
-    primary_role: 'left_winger', age: 22, preferred_foot: 'left',
-    similarity_score: 0.91, minutes_played: 512,
-    goals: 4, xg_total: 3.4, assists: 2, key_passes: 14, dribbles_successful: 31,
-    pass_completion_pct: 78, total_touches: 387,
-    ball_recoveries: 11, interceptions: 3, aerials_won: 1,
+  {
+    key: 'DANGEROUSNESS', label: 'Dangerousness', color: '#ff4d6a',
+    axes: [
+      { k: 'pct__epv_added_per90'       as keyof SpaceControlIndex, label: 'EPV Added /90' },
+      { k: 'pct__epv_penetration_per90' as keyof SpaceControlIndex, label: 'EPV Penetr. /90' },
+      { k: 'pct__epv_inside_circ_per90' as keyof SpaceControlIndex, label: 'Circ. EPV /90' },
+    ],
   },
-  '103': {
-    player_id: 103, player_name: 'Florian Wirtz', source_team_name: 'Germany',
-    primary_role: 'attacking_midfielder', age: 21, preferred_foot: 'right',
-    similarity_score: 0.88, minutes_played: 575,
-    goals: 2, xg_total: 2.8, assists: 5, key_passes: 22, dribbles_successful: 19,
-    pass_completion_pct: 86, total_touches: 498,
-    ball_recoveries: 17, interceptions: 8, aerials_won: 4,
+  {
+    key: 'RECEPTION',     label: 'Reception',     color: '#4da6ff',
+    axes: [
+      { k: 'pct__between_lines_pct'          as keyof SpaceControlIndex, label: 'Between Lines %' },
+      { k: 'pct__successful_hull_exits_per90' as keyof SpaceControlIndex, label: 'Hull Exits /90' },
+      { k: 'pct__pressure_resistance_pct'    as keyof SpaceControlIndex, label: 'Press. Resist %' },
+    ],
   },
-  '104': {
-    player_id: 104, player_name: 'Khvicha Kvaratskhelia', source_team_name: 'Georgia',
-    primary_role: 'left_winger', age: 23, preferred_foot: 'left',
-    similarity_score: 0.83, minutes_played: 345,
-    goals: 2, xg_total: 1.9, assists: 3, key_passes: 11, dribbles_successful: 24,
-    pass_completion_pct: 74, total_touches: 294,
-    ball_recoveries: 10, interceptions: 4, aerials_won: 2,
+  {
+    key: 'GRAVITY',       label: 'Gravity',       color: '#ffc947',
+    axes: [
+      { k: 'pct__gravity_proximity_pct' as keyof SpaceControlIndex, label: 'Space Attract %' },
+      { k: 'pct__gravity_hull_pct'      as keyof SpaceControlIndex, label: 'Gravity Hull %' },
+      { k: 'pct__gravity_abs_m'         as keyof SpaceControlIndex, label: 'Def. Pull |m|' },
+    ],
   },
-  '105': {
-    player_id: 105, player_name: 'Dani Olmo', source_team_name: 'Spain',
-    primary_role: 'attacking_midfielder', age: 26, preferred_foot: 'right',
-    similarity_score: 0.79, minutes_played: 498,
-    goals: 4, xg_total: 3.1, assists: 2, key_passes: 16, dribbles_successful: 12,
-    pass_completion_pct: 88, total_touches: 461,
-    ball_recoveries: 22, interceptions: 9, aerials_won: 6,
+] as const;
+
+// ── Mother stat definitions per dimension × mode ──────────────────────────────
+
+type StatDef = { col: keyof SpaceControlAggregated; label: string };
+
+const MOTHER: Record<string, Record<StatViewMode, StatDef[]>> = {
+  PROGRESSION: {
+    raw:      [{ col: 'lb_geom', label: 'LB Geom' }, { col: 'lb_quality', label: 'LB Quality' }, { col: 'lb_epv', label: 'LB EPV' }, { col: 'hull_penetration_n', label: 'Hull Penetr.' }, { col: 'defenders_bypassed_mean', label: 'Def. Bypassed (avg)' }],
+    per90:       [{ col: 'lb_geom_per90', label: 'LB Geom /90' }, { col: 'lb_quality_per90', label: 'LB Quality /90' }, { col: 'lb_epv_per90', label: 'LB EPV /90' }, { col: 'successful_hull_penetrations_per90', label: 'Hull Penetr. /90' }],
+    percentages: [{ col: 'lb_geom_pct', label: 'LB Geom %' }, { col: 'lb_quality_pct', label: 'LB Quality %' }, { col: 'lb_epv_pct', label: 'LB EPV %' }, { col: 'hull_penetration_pct', label: 'Hull Penetr. %' }],
+  },
+  DANGEROUSNESS: {
+    raw:      [{ col: 'epv_added_sum', label: 'EPV Added (sum)' }, { col: 'epv_added_mean', label: 'EPV Added (avg)' }, { col: 'epv_penetration_sum', label: 'EPV Penetr. (sum)' }, { col: 'epv_inside_circ_sum', label: 'Circ. EPV (sum)' }, { col: 'penetration_n', label: 'Penetrations' }, { col: 'inside_circ_n', label: 'Inside Circ.' }],
+    per90:       [{ col: 'epv_added_per90', label: 'EPV Added /90' }, { col: 'epv_penetration_per90', label: 'EPV Penetr. /90' }, { col: 'epv_inside_circ_per90', label: 'Circ. EPV /90' }, { col: 'penetration_per90', label: 'Penetr. /90' }],
+    percentages: [],
+  },
+  RECEPTION: {
+    raw:      [{ col: 'between_lines_n', label: 'Between Lines' }, { col: 'hull_exit_n', label: 'Hull Exits' }, { col: 'pressure_resistance_n', label: 'Press. Resist' }],
+    per90:       [{ col: 'between_lines_per90', label: 'Btw Lines /90' }, { col: 'successful_hull_exits_per90', label: 'Hull Exits /90' }],
+    percentages: [{ col: 'between_lines_pct', label: 'Between Lines %' }, { col: 'hull_exit_pct', label: 'Hull Exits %' }, { col: 'pressure_resistance_pct', label: 'Press. Resist %' }],
+  },
+  GRAVITY: {
+    raw:      [{ col: 'gravity_n', label: 'Gravity (n)' }, { col: 'gravity_directional_n', label: 'Grav. Dir. (n)' }, { col: 'gravity_directional_m', label: 'Def. Pull (m)' }],
+    per90:       [],
+    percentages: [{ col: 'gravity_proximity_pct', label: 'Space Attract %' }, { col: 'gravity_hull_pct', label: 'Gravity Hull %' }, { col: 'gravity_composite_pct', label: 'Composite %' }],
   },
 };
 
-// Source player mock (used when real API not available)
-const SOURCE_MOCK: any = {
-  player_id: 0, player_name: 'Selected Player', source_team_name: 'Team',
-  primary_role: 'forward', age: 24, preferred_foot: 'right',
-  similarity_score: 1, minutes_played: 510,
-  goals: 3, xg_total: 2.6, assists: 3, key_passes: 16, dribbles_successful: 20,
-  pass_completion_pct: 80, total_touches: 400,
-  ball_recoveries: 12, interceptions: 6, aerials_won: 3,
-};
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-// ── Palette for charts ───────────────────────────────────────────────────────
-const CHART_COLORS = ['#39ff14', '#4da6ff', '#ffc947'];
-
-// ── Score badge ───────────────────────────────────────────────────────────────
-function ScoreBadge({ score }: { score: number }) {
-  const pct = Math.round(score * 100);
-  const color = pct >= 90 ? 'var(--win)' : pct >= 80 ? 'var(--blue)' : 'var(--gold)';
-  return (
-    <span
-      className="font-mono font-700 text-xs px-2.5 py-1 rounded-full"
-      style={{ background: `${color}20`, color }}
-      aria-label={`${pct}% similarity`}
-    >
-      {pct}% match
-    </span>
-  );
+function fmt(v: unknown): string {
+  if (v == null) return '—';
+  if (typeof v === 'number') return Math.abs(v) < 10 ? v.toFixed(2) : v.toFixed(1);
+  return String(v);
 }
 
-// ── Score bar ─────────────────────────────────────────────────────────────────
-function ScoreBar({ score }: { score: number }) {
-  const pct = Math.round(score * 100);
-  const color = pct >= 90 ? 'var(--win)' : pct >= 80 ? 'var(--blue)' : 'var(--gold)';
-  return (
-    <div className="w-full h-1 rounded-full overflow-hidden" style={{ background: 'var(--surface2)' }}>
-      <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color, boxShadow: `0 0 6px ${color}` }} />
-    </div>
-  );
+function ScoreBadge() {
+  return <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, fontSize: '11px', padding: '3px 10px', borderRadius: '999px', background: 'var(--surface2)', color: 'var(--text-dim)' }}>N/A</span>;
+}
+function ScoreBar() {
+  return <div style={{ width: '100%', height: '3px', borderRadius: '999px', background: 'var(--surface2)' }} />;
 }
 
-// ── Radar chart ───────────────────────────────────────────────────────────────
-const RADAR_STATS = ['goals','assists','key_passes','dribbles_successful','ball_recoveries','interceptions'];
-const RADAR_LABELS: Record<string, string> = {
-  goals:'Goals', assists:'Assists', key_passes:'Key Passes',
-  dribbles_successful:'Dribbles', ball_recoveries:'Recoveries', interceptions:'Interceptions',
-};
-
-function toRadarData(source: any, similar: any) {
-  return RADAR_STATS.map(key => ({
-    stat: RADAR_LABELS[key],
-    [source.player_name]: source[key] ?? 0,
-    [similar.player_name]: similar[key] ?? 0,
-  }));
-}
-
-// ── Bar chart data (attacking) ────────────────────────────────────────────────
-const BAR_STATS = ['goals','xg_total','assists','key_passes','dribbles_successful'];
-const BAR_LABELS: Record<string,string> = {
-  goals:'Goals', xg_total:'xG', assists:'Assists', key_passes:'Key P.', dribbles_successful:'Dribbles'
-};
-
-function toBarData(source: any, similar: any) {
-  return BAR_STATS.map(key => ({
-    stat: BAR_LABELS[key],
-    [source.player_name]: source[key] ?? 0,
-    [similar.player_name]: similar[key] ?? 0,
-  }));
-}
-
-// ── Comparison line chart (all stats normalised 0-100) ────────────────────────
-function toLineData(source: any, similar: any) {
-  // Normalise each stat relative to a reasonable max
-  const maxima: Record<string, number> = {
-    minutes_played: 720, goals: 10, xg_total: 8, assists: 8, key_passes: 30,
-    dribbles_successful: 40, pass_completion_pct: 100, total_touches: 700,
-    ball_recoveries: 40, interceptions: 20, aerials_won: 15,
-  };
-  return ALL_STATS.map(s => ({
-    stat: s.label,
-    [source.player_name]: Math.round(Math.min(100, ((source[s.key] ?? 0) / (maxima[s.key] ?? 1)) * 100)),
-    [similar.player_name]: Math.round(Math.min(100, ((similar[s.key] ?? 0) / (maxima[s.key] ?? 1)) * 100)),
-  }));
-}
-
-// ── Custom tooltip ────────────────────────────────────────────────────────────
-function CustomTooltip({ active, payload, label }: any) {
+function RadarTooltip({ active, payload }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-xl border px-4 py-3 text-sm" style={{ background: 'var(--surface2)', borderColor: 'var(--border2)' }}>
-      <p className="font-display font-800 mb-2" style={{ color: 'var(--text)' }}>{label}</p>
+    <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '10px', padding: '10px 14px', fontSize: '12px' }}>
+      <p style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>{payload[0]?.payload?.stat}</p>
       {payload.map((p: any) => (
-        <p key={p.name} className="font-mono font-600" style={{ color: p.color }}>
-          {p.name}: {p.value}
+        <p key={p.name} style={{ fontFamily: 'JetBrains Mono, monospace', color: p.color }}>
+          {p.name}: <strong>{typeof p.value === 'number' ? p.value.toFixed(1) : '—'}</strong>
         </p>
       ))}
     </div>
   );
 }
 
-// ── Charts section ────────────────────────────────────────────────────────────
-function ChartsSection({ source, similar }: { source: any; similar: any }) {
-  const radarData = toRadarData(source, similar);
-  const barData   = toBarData(source, similar);
-  const lineData  = toLineData(source, similar);
-  const c0 = CHART_COLORS[0];
-  const c1 = CHART_COLORS[1];
+// ── Overlapping dual radar card ───────────────────────────────────────────────
 
-  const sectionStyle: React.CSSProperties = {
-    background: 'var(--surface)',
-    border: '1px solid var(--border)',
-    borderRadius: 'var(--radius-lg)',
-    padding: '24px',
-  };
+function DualRadarCard({
+  def, sourceIdx, similarIdx, sourceAgg, similarAgg,
+  sourceName, similarName, mode,
+}: {
+  def: typeof RADAR_DEFS[number];
+  sourceIdx: SpaceControlIndex;
+  similarIdx: SpaceControlIndex;
+  sourceAgg: SpaceControlAggregated | null | undefined;
+  similarAgg: SpaceControlAggregated | null | undefined;
+  sourceName: string;
+  similarName: string;
+  mode: StatViewMode;
+}) {
+  const radarData = def.axes.map(ax => ({
+    stat: ax.label,
+    [sourceName]:  (sourceIdx[ax.k]  as number) ?? 0,
+    [similarName]: (similarIdx[ax.k] as number) ?? 0,
+  }));
 
-  return (
-    <div className="space-y-6">
-      {/* Row 1: radar + bar */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Radar */}
-        <div style={sectionStyle}>
-          <h3 className="font-display font-800 text-lg mb-4" style={{ color: 'var(--text)' }}>
-            Radar Overview
-          </h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <RadarChart data={radarData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
-              <PolarGrid stroke="rgba(255,255,255,0.06)" />
-              <PolarAngleAxis
-                dataKey="stat"
-                tick={{ fill: 'var(--text-muted)', fontSize: 11, fontFamily: 'Barlow', fontWeight: 600 }}
-              />
-              <PolarRadiusAxis tick={false} axisLine={false} />
-              <Radar name={source.player_name} dataKey={source.player_name}
-                stroke={c0} fill={c0} fillOpacity={0.18} strokeWidth={2} />
-              <Radar name={similar.player_name} dataKey={similar.player_name}
-                stroke={c1} fill={c1} fillOpacity={0.18} strokeWidth={2} />
-              <Legend
-                formatter={(v) => <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{v}</span>}
-                wrapperStyle={{ paddingTop: 12 }}
-              />
-            </RadarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Bar – Attacking */}
-        <div style={sectionStyle}>
-          <h3 className="font-display font-800 text-lg mb-4" style={{ color: 'var(--text)' }}>
-            Attacking Stats
-          </h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={barData} margin={{ top: 10, right: 10, bottom: 10, left: -10 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-              <XAxis dataKey="stat" tick={{ fill: 'var(--text-muted)', fontSize: 11, fontFamily: 'Barlow' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'JetBrains Mono' }} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend formatter={(v) => <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{v}</span>} />
-              <Bar dataKey={source.player_name}  fill={c0} radius={[4,4,0,0]} opacity={0.85} />
-              <Bar dataKey={similar.player_name} fill={c1} radius={[4,4,0,0]} opacity={0.85} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Row 2: Normalised line */}
-      <div style={sectionStyle}>
-        <h3 className="font-display font-800 text-lg mb-1" style={{ color: 'var(--text)' }}>
-          Full Profile Comparison
-          <span className="font-mono font-400 text-xs ml-3" style={{ color: 'var(--text-dim)' }}>
-            (values normalised 0–100)
-          </span>
-        </h3>
-        <p className="text-xs mb-4" style={{ color: 'var(--text-dim)' }}>
-          Each stat shown relative to its expected maximum for a tournament
-        </p>
-        <ResponsiveContainer width="100%" height={240}>
-          <LineChart data={lineData} margin={{ top: 10, right: 20, bottom: 10, left: -10 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-            <XAxis dataKey="stat" tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Barlow' }} axisLine={false} tickLine={false} angle={-30} textAnchor="end" height={50} />
-            <YAxis domain={[0,100]} tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'JetBrains Mono' }} axisLine={false} tickLine={false} />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend formatter={(v) => <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{v}</span>} />
-            <Line dataKey={source.player_name}  stroke={c0} strokeWidth={2} dot={{ fill: c0, r: 3 }} activeDot={{ r: 5 }} />
-            <Line dataKey={similar.player_name} stroke={c1} strokeWidth={2} dot={{ fill: c1, r: 3 }} activeDot={{ r: 5 }} />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* Row 3: Defending bar */}
-      <div style={sectionStyle}>
-        <h3 className="font-display font-800 text-lg mb-4" style={{ color: 'var(--text)' }}>
-          Defensive &amp; General Stats
-        </h3>
-        <ResponsiveContainer width="100%" height={220}>
-          <BarChart
-            data={[
-              { stat: 'Minutes',    [source.player_name]: source.minutes_played,    [similar.player_name]: similar.minutes_played },
-              { stat: 'Pass %',     [source.player_name]: source.pass_completion_pct,[similar.player_name]: similar.pass_completion_pct },
-              { stat: 'Touches',    [source.player_name]: source.total_touches,      [similar.player_name]: similar.total_touches },
-              { stat: 'Recoveries',[source.player_name]: source.ball_recoveries,     [similar.player_name]: similar.ball_recoveries },
-              { stat: 'Intercepts',[source.player_name]: source.interceptions,       [similar.player_name]: similar.interceptions },
-              { stat: 'Aerials',   [source.player_name]: source.aerials_won,         [similar.player_name]: similar.aerials_won },
-            ]}
-            margin={{ top: 10, right: 10, bottom: 10, left: -10 }}
-            layout="vertical"
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
-            <XAxis type="number" tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'JetBrains Mono' }} axisLine={false} tickLine={false} />
-            <YAxis type="category" dataKey="stat" tick={{ fill: 'var(--text-muted)', fontSize: 11, fontFamily: 'Barlow', fontWeight: 600 }} axisLine={false} tickLine={false} width={70} />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend formatter={(v) => <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{v}</span>} />
-            <Bar dataKey={source.player_name}  fill={c0} radius={[0,4,4,0]} opacity={0.85} />
-            <Bar dataKey={similar.player_name} fill={c1} radius={[0,4,4,0]} opacity={0.85} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  );
-}
-
-// ── Stat row ──────────────────────────────────────────────────────────────────
-function StatCompRow({ stat, source, similar }: { stat: typeof ALL_STATS[number]; source: any; similar: any }) {
-  const sv = source[stat.key]  ?? 0;
-  const mv = similar[stat.key] ?? 0;
-  const diff = mv - sv;
-  const accent = CAT_ACCENT[stat.category];
-  const display = (v: any) => v != null ? (stat.unit === '%' ? `${v}%` : v) : '—';
+  const statList = MOTHER[def.key]?.[mode] ?? [];
+  const noStatMsg = mode === 'per90' ? `No /90 stats for ${def.label}` : `No percentage stats for ${def.label}`;
 
   return (
-    <div className="grid grid-cols-3 items-center gap-3 py-2.5 border-b text-sm" style={{ borderColor: 'var(--border)' }}>
-      {/* Source */}
-      <div className="text-right font-mono font-700" style={{ color: 'var(--text)' }}>
-        {display(source[stat.key])}
-      </div>
-      {/* Label */}
-      <div className="text-center">
-        <span className="font-mono text-[10px] tracking-wider uppercase" style={{ color: accent }}>
-          {stat.label}
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderTop: `3px solid ${def.color}`, borderRadius: 'var(--radius-lg)', padding: '20px' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 700, color: def.color }}>
+          {def.label}
         </span>
-        {diff !== 0 && (
-          <div className="text-[10px] font-mono mt-0.5" style={{ color: diff > 0 ? 'var(--win)' : 'var(--lose)' }}>
-            {diff > 0 ? `+${diff.toFixed(1)}` : diff.toFixed(1)}
+        <div style={{ display: 'flex', gap: '12px' }}>
+          {(['idx__PROGRESSION','idx__DANGEROUSNESS','idx__RECEPTION','idx__GRAVITY'] as (keyof SpaceControlIndex)[])
+            .filter(k => k === `idx__${def.key}`)
+            .map(k => (
+              <div key={String(k)} style={{ textAlign: 'right' }}>
+                <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '18px', fontWeight: 900, lineHeight: 1 }}>
+                  <span style={{ color: C_SOURCE }}>{fmt(sourceIdx[k])}</span>
+                  <span style={{ color: 'var(--text-dim)', fontSize: 12, margin: '0 4px' }}>vs</span>
+                  <span style={{ color: C_SIMILAR }}>{fmt(similarIdx[k])}</span>
+                </div>
+                <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '8px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-dim)', marginTop: 2 }}>Index</div>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+
+      {/* Overlapping radar */}
+      <ResponsiveContainer width="100%" height={220}>
+        <RadarChart data={radarData} margin={{ top: 8, right: 16, bottom: 8, left: 16 }}>
+          <PolarGrid stroke="rgba(255,255,255,0.07)" />
+          <PolarAngleAxis dataKey="stat" tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Barlow', fontWeight: 600 }} />
+          <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
+          <Tooltip content={<RadarTooltip />} />
+          <Radar name={sourceName}  dataKey={sourceName}  stroke={C_SOURCE}  fill={C_SOURCE}  fillOpacity={0.15} strokeWidth={2} dot={{ fill: C_SOURCE,  r: 3 }} activeDot={{ r: 5 }} />
+          <Radar name={similarName} dataKey={similarName} stroke={C_SIMILAR} fill={C_SIMILAR} fillOpacity={0.15} strokeWidth={2} dot={{ fill: C_SIMILAR, r: 3 }} activeDot={{ r: 5 }} />
+          <Legend formatter={(v: string) => (
+            <span style={{ fontSize: 10, color: v === sourceName ? C_SOURCE : C_SIMILAR, fontFamily: 'Barlow' }}>{v}</span>
+          )} wrapperStyle={{ paddingTop: 4 }} />
+        </RadarChart>
+      </ResponsiveContainer>
+
+      {/* Mother stats comparison */}
+      <div style={{ marginTop: 12, background: 'var(--surface2)', borderRadius: 10, padding: '12px 14px' }}>
+        <p style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '8px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: 8 }}>Core Stat</p>
+        {statList.length === 0 ? (
+          <p style={{ fontSize: 11, color: 'var(--text-dim)', fontStyle: 'italic' }}>{noStatMsg}</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {/* Column headers */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 8, paddingBottom: 4, borderBottom: '1px solid var(--border)' }}>
+              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: 'var(--text-dim)', textTransform: 'uppercase' }}>Stat</span>
+              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: C_SOURCE, textTransform: 'uppercase', textAlign: 'right', minWidth: 52 }}>{sourceName.split(' ')[0]}</span>
+              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: C_SIMILAR, textTransform: 'uppercase', textAlign: 'right', minWidth: 52 }}>{similarName.split(' ')[0]}</span>
+            </div>
+            {statList.map(s => {
+              const sv = sourceAgg  ? (sourceAgg[s.col]  as number) : null;
+              const mv = similarAgg ? (similarAgg[s.col] as number) : null;
+              const diff = sv != null && mv != null ? mv - sv : null;
+              const better = diff != null && diff > 0;
+              const worse  = diff != null && diff < 0;
+              return (
+                <div key={s.col} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 8, alignItems: 'center' }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>{s.label}</span>
+                  <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, fontWeight: 700, color: C_SOURCE, textAlign: 'right', minWidth: 52 }}>{fmt(sv)}</span>
+                  <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, fontWeight: 700, textAlign: 'right', minWidth: 52, color: better ? 'var(--win)' : worse ? 'var(--lose)' : C_SIMILAR }}>
+                    {fmt(mv)}
+                    {diff != null && diff !== 0 && (
+                      <span style={{ fontSize: 9, marginLeft: 2, opacity: 0.8 }}>{better ? `▲` : `▼`}</span>
+                    )}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         )}
-      </div>
-      {/* Similar */}
-      <div className="text-left font-mono font-700" style={{ color: diff > 0 ? 'var(--win)' : diff < 0 ? 'var(--lose)' : 'var(--text)' }}>
-        {display(similar[stat.key])}
       </div>
     </div>
   );
 }
 
 // ── Main page ─────────────────────────────────────────────────────────────────
+
 export default function SimilarPlayers() {
   const [searchParams] = useSearchParams();
   const playerName = searchParams.get('playerName') || 'Player';
   const playerId   = searchParams.get('playerId');
-  const filtersParam = searchParams.get('filters') || '';
-  const activeFilters = filtersParam ? filtersParam.split(',') : [];
+  const macroRole  = searchParams.get('macroRole') || '';
 
-  const similarList = Object.values(MOCK_SIMILAR);
-  const [selectedId, setSelectedId] = useState<string>(Object.keys(MOCK_SIMILAR)[0]);
-  const selectedPlayer = MOCK_SIMILAR[selectedId];
   const dropdownId = useId();
+  const [selectedIdx, setSelectedIdx] = useState(0);
+  const [statMode, setStatMode] = useState<StatViewMode>('raw');
 
-  // Source player: use mock but name it after the actual player
-  const source = { ...SOURCE_MOCK, player_name: playerName, player_id: playerId ? Number(playerId) : 0 };
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+
+  // Fetch similar players list
+  const { players: similarList, loading, error } = useSimilarPlayers(
+    macroRole || undefined,
+    playerName,
+  );
+
+  // Fetch source player's SC data via playerId
+  const { data: sourceScData, loading: sourceScLoading } = usePlayerSpaceControl(
+    playerId ?? undefined,
+  );
+
+  const selectedPlayer = similarList[selectedIdx] ?? null;
+  const sourceIdx = sourceScData?.indices ?? null;
+  const sourceAgg = sourceScData?.aggregated ?? null;
+
+  // Fetch selected similar player's aggregated data
+  const [similarAgg, setSimilarAgg] = useState<SpaceControlAggregated | null>(null);
+  const [loadingAgg, setLoadingAgg] = useState(false);
+
+  // When selected player changes, fetch their aggregated stats
+  // (sc_indices is already in similarList; sc_aggregated needs a separate call)
+  // We reuse the space-control endpoint via their db_player_id — but we don't
+  // have their player_id here. Instead we fetch /space-control/aggregated by player+team.
+  // Since we don't have that endpoint yet, we read from the similar player's sc_indices
+  // row which has pct__ data. For the mother stats table we need sc_aggregated.
+  // Solution: add a backend endpoint GET /space-control/aggregated?player=&team=
+  const fetchAgg = async (player: string, team: string) => {
+    setLoadingAgg(true);
+    try {
+      const params = new URLSearchParams({ player, team });
+      const res = await fetch(`${API_BASE_URL}/space-control/aggregated?${params}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSimilarAgg(data ?? null);
+      } else {
+        setSimilarAgg(null);
+      }
+    } catch {
+      setSimilarAgg(null);
+    } finally {
+      setLoadingAgg(false);
+    }
+  };
+
+  // Effect: fetch aggregated when selected player changes
+  const [prevSelected, setPrevSelected] = useState<string | null>(null);
+  if (selectedPlayer && `${selectedPlayer.player}__${selectedPlayer.team}` !== prevSelected) {
+    setPrevSelected(`${selectedPlayer.player}__${selectedPlayer.team}`);
+    fetchAgg(selectedPlayer.player, selectedPlayer.team);
+  }
+
+  // ── Loading / error screens ───────────────────────────────────────────────
+
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center py-40">
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ width: 32, height: 32, border: '3px solid var(--accent)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite', margin: '0 auto 16px' }} />
+          <p className="font-mono text-xs" style={{ color: 'var(--text-dim)' }}>Loading similar players…</p>
+        </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  if (error === 'timeout') {
+    return (
+      <div className="flex-1 flex items-center justify-center py-40 text-center px-6">
+        <div>
+          <p style={{ fontSize: 40, marginBottom: 12 }}>⏱</p>
+          <p className="font-display font-700 text-xl mb-2" style={{ color: 'var(--text)' }}>Request Timeout</p>
+          <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>The backend did not respond within 15 seconds. Make sure the server is running.</p>
+          <Link to={playerId ? `/player/${playerId}` : '/'} className="btn btn-primary">← Back to Profile</Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && error !== 'no_macro_role') {
+    return (
+      <div className="flex-1 flex items-center justify-center py-40 text-center px-6">
+        <div>
+          <p style={{ fontSize: 40, marginBottom: 12 }}>⚠️</p>
+          <p className="font-display font-700 text-xl mb-2" style={{ color: 'var(--text)' }}>Connection Error</p>
+          <p className="text-sm mb-2" style={{ color: 'var(--text-muted)' }}>Unable to reach the backend.</p>
+          <p className="font-mono text-xs mb-6" style={{ color: 'var(--text-dim)' }}>{error}</p>
+          <Link to={playerId ? `/player/${playerId}` : '/'} className="btn btn-primary">← Back to Profile</Link>
+        </div>
+      </div>
+    );
+  }
+
+  const chartsReady = sourceIdx && selectedPlayer && !sourceScLoading;
 
   return (
     <div className="w-full pb-16 min-h-screen" style={{ background: 'var(--bg)' }}>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+
       {/* Breadcrumb */}
       <nav aria-label="Breadcrumb" className="max-w-6xl mx-auto px-6 pt-8 mb-6">
         <ol className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-muted)' }}>
           <li><Link to="/" className="hover:text-[--accent] transition-colors font-600">Dashboard</Link></li>
           <li aria-hidden>/</li>
-          {playerId && (
-            <>
-              <li>
-                <Link to={`/player/${playerId}`} className="hover:text-[--accent] transition-colors font-600">
-                  {playerName}
-                </Link>
-              </li>
-              <li aria-hidden>/</li>
-            </>
-          )}
+          {playerId && <>
+            <li><Link to={`/player/${playerId}`} className="hover:text-[--accent] transition-colors font-600">{playerName}</Link></li>
+            <li aria-hidden>/</li>
+          </>}
           <li className="font-600" style={{ color: 'var(--text)' }} aria-current="page">Similar Players</li>
         </ol>
       </nav>
 
-      {/* Header */}
+      {/* Page header */}
       <div className="max-w-6xl mx-auto px-6 mb-8">
-        <p className="font-mono text-xs tracking-widest mb-2" style={{ color: 'var(--accent)' }}>
-          SIMILARITY ANALYSIS
-        </p>
+        <p className="font-mono text-xs tracking-widest mb-2" style={{ color: 'var(--accent)' }}>SIMILARITY ANALYSIS</p>
         <h1 className="font-display font-900 text-5xl sm:text-6xl leading-none tracking-tight mb-3" style={{ color: 'var(--text)' }}>
           Similar Players
         </h1>
         <p className="text-base" style={{ color: 'var(--text-muted)' }}>
-          Comparison with <span className="font-700" style={{ color: 'var(--text)' }}>{playerName}</span> · {similarList.length} profiles found
+          Comparison with <span className="font-700" style={{ color: 'var(--text)' }}>{playerName}</span>
+          {macroRole && <> · Macro role: <span className="font-700" style={{ color: 'var(--accent)' }}>{macroRole}</span></>}
+          {' '}· {similarList.length} profiles found
         </p>
-
-        {/* Mock notice */}
-        <div className="mt-4 flex items-start gap-3 px-4 py-3 rounded-xl border inline-flex" style={{ background: 'var(--gold-dim)', borderColor: 'rgba(255,201,71,0.25)' }}>
-          <span aria-hidden style={{ color: 'var(--gold)' }}>🔧</span>
-          <p className="text-sm font-600" style={{ color: 'var(--gold)' }}>
-            Mock data — real similarity logic will be integrated into the backend.
-          </p>
-        </div>
+        {(!macroRole || error === 'no_macro_role') && (
+          <div className="mt-4 px-4 py-3 rounded-xl border inline-flex gap-3" style={{ background: 'var(--gold-dim)', borderColor: 'rgba(255,201,71,0.25)' }}>
+            <span style={{ color: 'var(--gold)' }}>⚠️</span>
+            <p className="text-sm font-600" style={{ color: 'var(--gold)' }}>
+              No macro role available. The player may have less than 90 minutes or SC tables have not been imported.
+            </p>
+          </div>
+        )}
       </div>
 
-      {/* Main panel */}
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="card p-6 sm:p-8 mb-8">
-          {/* Two-column header: source | similar */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8 pb-8 border-b" style={{ borderColor: 'var(--border)' }}>
-            {/* Source player */}
-            <div className="flex items-center gap-4">
-              <div
-                className="w-14 h-14 rounded-xl flex-shrink-0 flex items-center justify-center font-display font-900 text-2xl select-none"
-                style={{ background: 'rgba(57,255,20,0.15)', color: 'var(--accent)' }}
-                aria-hidden
-              >
-                {playerName[0]}
+      {similarList.length > 0 && (
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="card p-6 sm:p-8 mb-8">
+
+            {/* Two-col header: source + selector */}
+            <div className="grid gap-6 mb-8 pb-8 border-b" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', borderColor: 'var(--border)' }}>
+              {/* Source */}
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-xl flex-shrink-0 flex items-center justify-center font-display font-900 text-2xl select-none" style={{ background: `${C_SOURCE}18`, color: C_SOURCE }} aria-hidden>
+                  {playerName[0]}
+                </div>
+                <div>
+                  <p className="font-mono text-[10px] tracking-widest uppercase mb-1" style={{ color: C_SOURCE }}>Selected player</p>
+                  <p className="font-display font-900 text-2xl leading-tight" style={{ color: 'var(--text)' }}>{playerName}</p>
+                  {macroRole && <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Macro role: {macroRole}</p>}
+                  {playerId && <Link to={`/player/${playerId}`} className="text-xs font-600 hover:text-[--accent] transition-colors" style={{ color: 'var(--text-muted)' }}>View Profile →</Link>}
+                </div>
               </div>
+
+              {/* Selector */}
               <div>
-                <p className="font-mono text-[10px] tracking-widest uppercase mb-1" style={{ color: 'var(--accent)' }}>Selected player</p>
-                <p className="font-display font-900 text-2xl leading-tight" style={{ color: 'var(--text)' }}>{playerName}</p>
-                {playerId && (
-                  <Link to={`/player/${playerId}`} className="text-xs font-600 hover:text-[--accent] transition-colors" style={{ color: 'var(--text-muted)' }}>
-                    View Profile →
-                  </Link>
+                <label htmlFor={dropdownId} className="block font-mono text-[10px] tracking-widest uppercase mb-2" style={{ color: 'var(--text-dim)' }}>
+                  Select player to compare
+                </label>
+                <select id={dropdownId} value={selectedIdx} onChange={e => setSelectedIdx(Number(e.target.value))} className="input">
+                  {similarList.map((p, i) => (
+                    <option key={`${p.player}-${p.team}`} value={i}>{p.player} ({p.team}) — Similarity: N/A</option>
+                  ))}
+                </select>
+
+                {selectedPlayer && (
+                  <div className="mt-3 flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: 'var(--surface2)' }}>
+                    {getFlagUrl(selectedPlayer.team)
+                      ? <img src={getFlagUrl(selectedPlayer.team)!} alt="" className="w-6 object-cover rounded-sm shadow-sm shrink-0" aria-hidden />
+                      : <span className="text-xs font-mono font-700 rounded shrink-0" style={{ background: 'var(--surface)', padding: '2px 6px', color: 'var(--text-muted)' }} aria-hidden>{selectedPlayer.team?.substring(0,3).toUpperCase()}</span>
+                    }
+                    <div className="flex-1 min-w-0">
+                      <p className="font-display font-800 text-base leading-tight truncate" style={{ color: C_SIMILAR }}>{selectedPlayer.player}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{selectedPlayer.team} · {selectedPlayer.primary_role} · {selectedPlayer.minutes_played}'</p>
+                        <ScoreBadge />
+                      </div>
+                      <div className="mt-2"><ScoreBar /></div>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
 
-            {/* Similar player selector */}
-            <div>
-              <label htmlFor={dropdownId} className="block font-mono text-[10px] tracking-widest uppercase mb-2" style={{ color: 'var(--text-dim)' }}>
-                Select similar player to compare
-              </label>
-              <select
-                id={dropdownId}
-                value={selectedId}
-                onChange={e => setSelectedId(e.target.value)}
-                className="input"
-                aria-label="Select similar player to compare"
-              >
-                {similarList.map(p => (
-                  <option key={p.player_id} value={String(p.player_id)}>
-                    {p.player_name} ({p.source_team_name}) — {Math.round(p.similarity_score * 100)}% match
-                  </option>
-                ))}
-              </select>
-
-              {/* Selected player card preview */}
-              {selectedPlayer && (
-                <div className="mt-3 flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: 'var(--surface2)' }}>
-                  {getFlagUrl(selectedPlayer.source_team_name) ? (
-                    <img src={getFlagUrl(selectedPlayer.source_team_name)!} alt="" className="w-6 h-4.5 object-cover rounded-sm shadow-sm" aria-hidden />
-                  ) : (
-                    <span className="text-xs font-mono font-700 bg-[--surface] px-1.5 py-0.5 rounded text-[--text-muted]" aria-hidden>
-                      {selectedPlayer.source_team_name?.substring(0,3).toUpperCase()}
-                    </span>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-display font-800 text-base leading-tight truncate" style={{ color: 'var(--text)' }}>
-                      {selectedPlayer.player_name}
-                    </p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <p className="text-xs capitalize" style={{ color: 'var(--text-muted)' }}>
-                        {selectedPlayer.source_team_name} · {selectedPlayer.primary_role?.replace(/_/g,' ')}
-                      </p>
-                      <ScoreBadge score={selectedPlayer.similarity_score} />
-                    </div>
-                    <div className="mt-2">
-                      <ScoreBar score={selectedPlayer.similarity_score} />
-                    </div>
-                  </div>
+            {/* Stat view toggle */}
+            <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
+              <StatViewToggle mode={statMode} onChange={setStatMode} />
+              {/* Legend */}
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1.5">
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: C_SOURCE }} />
+                  <span className="text-xs font-600" style={{ color: 'var(--text-muted)' }}>{playerName.split(' ')[0]}</span>
                 </div>
-              )}
+                <div className="flex items-center gap-1.5">
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: C_SIMILAR }} />
+                  <span className="text-xs font-600" style={{ color: 'var(--text-muted)' }}>{selectedPlayer?.player.split(' ')[0] ?? '—'}</span>
+                </div>
+              </div>
             </div>
+
+            {/* ── 4 dual radar cards ── */}
+            {chartsReady && selectedPlayer ? (
+              loadingAgg ? (
+                <div style={{ textAlign: 'center', padding: '32px' }}>
+                  <div style={{ width: 24, height: 24, border: `2px solid ${C_SIMILAR}`, borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite', margin: '0 auto' }} />
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '20px' }}>
+                  {RADAR_DEFS.map(def => (
+                    <DualRadarCard
+                      key={def.key}
+                      def={def}
+                      sourceIdx={sourceIdx}
+                      similarIdx={selectedPlayer}
+                      sourceAgg={sourceAgg}
+                      similarAgg={similarAgg}
+                      sourceName={playerName}
+                      similarName={selectedPlayer.player}
+                      mode={statMode}
+                    />
+                  ))}
+                </div>
+              )
+            ) : sourceScLoading ? (
+              <div style={{ textAlign: 'center', padding: '32px' }}>
+                <p className="font-mono text-xs" style={{ color: 'var(--text-dim)' }}>Loading source player's space control profile…</p>
+              </div>
+            ) : (
+              <div className="rounded-xl px-4 py-3 border" style={{ background: 'var(--surface2)', borderColor: 'var(--border)' }}>
+                <p className="text-xs font-mono" style={{ color: 'var(--text-dim)' }}>
+                  ℹ️ The source player's space control profile is not available. Make sure the SC tables have been imported.
+                </p>
+              </div>
+            )}
           </div>
 
-          {/* Active filters */}
-          {activeFilters.length > 0 && (
-            <div className="mb-8">
-              <p className="font-mono text-[10px] tracking-widest uppercase mb-3" style={{ color: 'var(--text-dim)' }}>Statistics used for search</p>
-              <div className="flex flex-wrap gap-2">
-                {activeFilters.map(f => {
-                  const stat = ALL_STATS.find(s => s.key === f);
-                  const accent = stat ? CAT_ACCENT[stat.category] : 'var(--text-muted)';
-                  return (
-                    <span key={f} className="tag" style={{ background: `${accent}18`, color: accent, border: `1px solid ${accent}40` }}>
-                      {stat?.label ?? f}
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Charts */}
-          {selectedPlayer && (
-            <>
-              <ChartsSection source={source} similar={selectedPlayer} />
-
-              {/* Stat-by-stat table */}
-              <div className="mt-8">
-                <div className="grid grid-cols-3 mb-3">
-                  <div className="text-right font-display font-800 text-base" style={{ color: 'var(--accent)' }}>{playerName}</div>
-                  <div className="text-center font-mono text-[10px] tracking-widest uppercase" style={{ color: 'var(--text-dim)' }}>Stat</div>
-                  <div className="text-left font-display font-800 text-base" style={{ color: 'var(--blue)' }}>{selectedPlayer.player_name}</div>
-                </div>
-                {ALL_STATS.map(stat => (
-                  <StatCompRow key={stat.key} stat={stat} source={source} similar={selectedPlayer} />
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* List of all similar players */}
-        <h2 className="font-display font-900 text-2xl mb-4" style={{ color: 'var(--text)' }}>All similar profiles</h2>
-        <div className="space-y-3" role="list" aria-label="Similar players list">
-          {similarList.map((player, idx) => {
-            const isSelected = String(player.player_id) === selectedId;
-            const flagUrl = getFlagUrl(player.source_team_name);
-            return (
-              <div
-                key={player.player_id}
-                role="listitem"
-                className="card p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 transition-all cursor-pointer"
-                style={isSelected ? { borderColor: 'var(--accent)', boxShadow: '0 0 0 1px var(--accent)' } : {}}
-                onClick={() => setSelectedId(String(player.player_id))}
-                tabIndex={0}
-                onKeyDown={e => e.key === 'Enter' && setSelectedId(String(player.player_id))}
-                aria-selected={isSelected}
-                aria-label={`${player.player_name}, ${Math.round(player.similarity_score * 100)}% similarity`}
-              >
-                <span className="font-mono font-700 text-xl w-8 text-center" style={{ color: 'var(--text-dim)' }} aria-hidden>
-                  {idx + 1}
-                </span>
-                
-                {flagUrl ? (
-                  <img src={flagUrl} alt="" className="w-8 h-6 object-cover rounded shadow-sm shrink-0" aria-hidden />
-                ) : (
-                  <span className="text-xs font-mono font-700 bg-[--surface2] px-2 py-1 rounded text-[--text-muted] shrink-0" aria-hidden>
-                    {player.source_team_name?.substring(0,3).toUpperCase()}
-                  </span>
-                )}
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <span className="font-display font-900 text-xl" style={{ color: isSelected ? 'var(--accent)' : 'var(--text)' }}>
-                      {player.player_name}
-                    </span>
-                    <ScoreBadge score={player.similarity_score} />
+          {/* Full list */}
+          <h2 className="font-display font-900 text-2xl mb-4" style={{ color: 'var(--text)' }}>
+            All {macroRole} players ({similarList.length})
+          </h2>
+          <div className="space-y-3" role="list">
+            {similarList.map((player, idx) => {
+              const isSelected = idx === selectedIdx;
+              const flagUrl = getFlagUrl(player.team);
+              return (
+                <div
+                  key={`${player.player}-${player.team}`}
+                  role="listitem"
+                  className="card p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 transition-all cursor-pointer"
+                  style={isSelected ? { borderColor: C_SIMILAR, boxShadow: `0 0 0 1px ${C_SIMILAR}` } : undefined}
+                  onClick={() => setSelectedIdx(idx)}
+                  tabIndex={0}
+                  onKeyDown={e => e.key === 'Enter' && setSelectedIdx(idx)}
+                  aria-selected={isSelected}
+                >
+                  <span className="font-mono font-700 text-xl w-8 text-center" style={{ color: idx < 3 ? 'var(--accent)' : 'var(--text-dim)' }} aria-hidden>{idx + 1}</span>
+                  {flagUrl
+                    ? <img src={flagUrl} alt="" className="w-8 h-6 object-cover rounded shadow-sm shrink-0" aria-hidden />
+                    : <span className="text-xs font-mono font-700 rounded shrink-0" style={{ background: 'var(--surface2)', padding: '4px 8px', color: 'var(--text-muted)' }} aria-hidden>{player.team?.substring(0,3).toUpperCase()}</span>
+                  }
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <span className="font-display font-900 text-xl" style={{ color: isSelected ? C_SIMILAR : 'var(--text)' }}>{player.player}</span>
+                      <ScoreBadge />
+                    </div>
+                    <p className="text-xs flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                      <span>{player.team}</span><span aria-hidden>·</span>
+                      <span>{player.primary_role}</span><span aria-hidden>·</span>
+                      <span>{player.minutes_played}' played</span>
+                    </p>
+                    <div className="mt-2 max-w-xs"><ScoreBar /></div>
                   </div>
-                  <p className="text-xs capitalize flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
-                    <span>{player.source_team_name}</span>
-                    <span aria-hidden>·</span>
-                    <span>{player.primary_role?.replace(/_/g,' ')}</span>
-                    <span aria-hidden>·</span>
-                    <span>Age {player.age}</span>
-                  </p>
-                  <div className="mt-2 max-w-xs">
-                    <ScoreBar score={player.similarity_score} />
-                  </div>
-                </div>
-                <div className="flex gap-3 flex-shrink-0">
-                  <Link
-                    to={`/player/${player.player_id}`}
-                    className="btn btn-ghost text-xs px-3 py-1.5"
-                    aria-label={`View profile of ${player.player_name}`}
-                    onClick={e => e.stopPropagation()}
-                  >
-                    Profile →
-                  </Link>
                   <button
-                    className="btn text-xs px-3 py-1.5"
+                    className="btn text-xs px-3 py-1.5 flex-shrink-0"
                     style={isSelected
-                      ? { background: 'var(--accent-dim)', color: 'var(--accent)', border: '1px solid var(--accent)' }
+                      ? { background: `${C_SIMILAR}18`, color: C_SIMILAR, border: `1px solid ${C_SIMILAR}` }
                       : { background: 'var(--surface2)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
                     }
-                    onClick={e => { e.stopPropagation(); setSelectedId(String(player.player_id)); }}
+                    onClick={e => { e.stopPropagation(); setSelectedIdx(idx); }}
                     aria-pressed={isSelected}
-                    aria-label={`${isSelected ? 'Currently comparing' : 'Compare'} ${player.player_name}`}
                   >
                     {isSelected ? '✓ Comparing' : 'Compare'}
                   </button>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
+
+      {!loading && similarList.length === 0 && macroRole && !error && (
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="card p-8 text-center">
+            <p className="text-3xl mb-3">🔍</p>
+            <p className="font-display font-700 text-lg" style={{ color: 'var(--text)' }}>
+              No other {macroRole} players found in the dataset
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
