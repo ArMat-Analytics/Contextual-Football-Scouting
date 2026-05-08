@@ -5,9 +5,13 @@ Builds player_space_control_aggregated.csv by joining:
     - hull rates recomputed on open play from hull_events_lb.csv
     - line-breaker counts and EPV statistics
 
-Hull percentage rates (between_lines_pct, hull_exit_pct, hull_penetration_pct,
-pressure_resistance_pct) and the corresponding per-90 volumes are computed on
-the open-play subset to avoid set-piece dilution of the denominators.
+Hull percentage rates (between_lines_pct, hull_exit_pct, pressure_resistance_pct)
+and the corresponding per-90 volumes are computed on the open-play subset to
+avoid set-piece dilution of the denominators. Penetration rate is split into
+its two atomic components: penetration_per90 (attempts) and
+successful_hull_penetrations_per90 (successful out->in passes), with a clean
+penetration_completion_pct (= successful / attempts) replacing the old
+hull_penetration_pct that mixed selectivity and completion.
 Gravity columns are passed through unchanged from the LOO upstream pipeline.
 
 Filtering rules:
@@ -66,12 +70,11 @@ def main():
         epv_added_mean          = ('epv_added',                'mean'),
         defenders_bypassed_mean = ('defenders_bypassed',       'mean'),
         # Hull-event counts (numerators / denominators for the rates below)
-        between_lines_n         = ('player_between_lines',     'sum'),
-        hull_penetration_n      = ('_not_between',             'sum'),
-        pressure_resistance_n   = ('under_pressure',           'sum'),
-        _succ_hull_exit_n       = ('_succ_hull_exit',          'sum'),
-        _succ_hull_pen_n        = ('_succ_hull_pen',           'sum'),
-        _succ_press_n           = ('_succ_press',              'sum'),
+        between_lines_n                = ('player_between_lines', 'sum'),
+        pressure_resistance_n          = ('under_pressure',       'sum'),
+        _succ_hull_exit_n              = ('_succ_hull_exit',      'sum'),
+        successful_hull_penetrations_n = ('_succ_hull_pen',       'sum'),
+        _succ_press_n                  = ('_succ_press',          'sum'),
     ).reset_index()
 
     # Line-breaker rates (open play)
@@ -83,7 +86,6 @@ def main():
     stats['between_lines_pct']       = _safe_pct(stats['between_lines_n'],     stats['passes_op'])
     stats['hull_exit_n']             = stats['between_lines_n']  # by definition
     stats['hull_exit_pct']           = _safe_pct(stats['_succ_hull_exit_n'],   stats['between_lines_n'])
-    stats['hull_penetration_pct']    = _safe_pct(stats['_succ_hull_pen_n'],    stats['hull_penetration_n'])
     stats['pressure_resistance_pct'] = _safe_pct(stats['_succ_press_n'],       stats['pressure_resistance_n'])
 
     # --- 3) EPV by geom_type --------------------------------------------
@@ -95,6 +97,13 @@ def main():
                   penetration_n='count')
              .reset_index())
     stats = stats.merge(pen, on=['player', 'team'], how='left')
+
+    # Penetration completion rate: successful out->in passes / out->in attempts.
+    # Pure technical-quality signal, separated from selectivity (which lives in
+    # penetration_per90 and the radar). Replaces the old hull_penetration_pct
+    # that mixed both signals through the broader 'passes from outside' denominator.
+    stats['penetration_completion_pct'] = _safe_pct(
+        stats['successful_hull_penetrations_n'], stats['penetration_n'])
 
     ins_mask = df_lb['geom_type'] == 'Inside circulation (in->in)'
     ins = (df_lb[ins_mask]
@@ -120,13 +129,13 @@ def main():
         ('inside_circ_n',       'inside_circ_per90'),
         # Hull volumes (open play)
         ('between_lines_n',     'between_lines_per90'),
-        ('_succ_hull_exit_n',   'successful_hull_exits_per90'),
-        ('_succ_hull_pen_n',    'successful_hull_penetrations_per90'),
+        ('_succ_hull_exit_n',              'successful_hull_exits_per90'),
+        ('successful_hull_penetrations_n', 'successful_hull_penetrations_per90'),
     ]
     for src_col, new_col in per90_pairs:
         stats[new_col] = stats[src_col] / stats['minutes_played'].replace(0, np.nan) * 90
 
-    stats = stats.drop(columns=['_succ_hull_exit_n', '_succ_hull_pen_n', '_succ_press_n',
+    stats = stats.drop(columns=['_succ_hull_exit_n', '_succ_press_n',
                                 'minutes_played'])
 
     # --- 5) Add macro_role ----------------------------------------------
@@ -139,16 +148,16 @@ def main():
     print(f"  {'metric':<26s}{'mean Δ':>10s}{'median Δ':>12s}{'max |Δ|':>10s}{'corr':>8s}")
     _old = (df_agg[['player', 'team',
                     'between_lines_pct', 'hull_exit_pct',
-                    'hull_penetration_pct', 'pressure_resistance_pct']]
+                    'pressure_resistance_pct']]
               .rename(columns={c: c + '__old' for c in
                       ['between_lines_pct', 'hull_exit_pct',
-                       'hull_penetration_pct', 'pressure_resistance_pct']}))
+                       'pressure_resistance_pct']}))
     _chk = stats[['player', 'team',
                   'between_lines_pct', 'hull_exit_pct',
-                  'hull_penetration_pct', 'pressure_resistance_pct']].merge(
+                  'pressure_resistance_pct']].merge(
                 _old, on=['player', 'team'], how='left')
     for m in ['between_lines_pct', 'hull_exit_pct',
-              'hull_penetration_pct', 'pressure_resistance_pct']:
+              'pressure_resistance_pct']:
         d    = _chk[m] - _chk[m + '__old']
         corr = _chk[[m, m + '__old']].corr().iloc[0, 1]
         print(f"  {m:<26s}{d.mean():>10.2f}{d.median():>12.2f}"

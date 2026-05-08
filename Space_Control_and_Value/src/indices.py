@@ -20,7 +20,7 @@ RADAR_SPECS = {
         ("LB Geom /90",       "lb_geom_per90",                     "lb_geom"),
         ("LB Quality /90",    "lb_quality_per90",                  "lb_quality"),
         ("LB EPV /90",        "lb_epv_per90",                      "lb_epv"),
-        ("Hull Penetr. /90",  "successful_hull_penetrations_per90","hull_penetration_n"),
+        ("Hull Penetr. /90",  "successful_hull_penetrations_per90","successful_hull_penetrations_n"),
         ("Def. Bypassed Avg", "defenders_bypassed_mean",           "lb_geom"),
     ],
     "DANGEROUSNESS": [
