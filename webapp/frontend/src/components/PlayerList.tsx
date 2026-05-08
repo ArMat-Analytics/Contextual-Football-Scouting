@@ -11,6 +11,8 @@ interface Player {
   primary_role?: string;
   market_value_before_euros?: string;
   market_value_after_euros?: string;
+  val_pre_num?: number;
+  val_post_num?: number;
   age?: number;
   source_team_name?: string;
   preferred_foot?: string;
@@ -25,19 +27,25 @@ interface PlayerListProps {
 type SortCol =
   | 'player_name' | 'primary_role' | 'age'
   | 'source_team_name' | 'preferred_foot'
-  | 'market_value_before_euros' | 'market_value_after_euros';
+  | 'market_value_before_euros' | 'market_value_after_euros' | 'val_diff';
 
 const COLS: { key: SortCol; label: string; align?: string }[] = [
-  { key: 'player_name',              label: 'Player' },
-  { key: 'primary_role',             label: 'Role' },
-  { key: 'age',                      label: 'Age',    align: 'center' },
-  { key: 'source_team_name',         label: 'Nation', align: 'center' },
-  { key: 'preferred_foot',           label: 'Foot',   align: 'center' },
-  { key: 'market_value_before_euros',label: 'Pre €',  align: 'right'  },
-  { key: 'market_value_after_euros', label: 'Post €', align: 'right'  },
+  { key: 'player_name',               label: 'Player' },
+  { key: 'primary_role',              label: 'Role' },
+  { key: 'age',                       label: 'Age',         align: 'center' },
+  { key: 'source_team_name',          label: 'Nation',      align: 'center' },
+  { key: 'preferred_foot',            label: 'Foot',        align: 'center' },
+  { key: 'market_value_before_euros', label: 'Pre €',       align: 'right'  },
+  { key: 'market_value_after_euros',  label: 'Post €',      align: 'right'  },
+  { key: 'val_diff',                  label: 'Δ Value',     align: 'right'  },
 ];
 
 const SKELETON_ROWS = 12;
+const RETIRED_PLAYERS = new Set(['toni kroos', 'pepe']);
+
+function isRetiredPlayer(name?: string) {
+  return RETIRED_PLAYERS.has((name || '').trim().toLowerCase());
+}
 
 function SkeletonRow() {
   return (
@@ -52,20 +60,10 @@ function SkeletonRow() {
 }
 
 function SortIcon({ active, dir }: { active: boolean; dir: 'asc' | 'desc' }) {
-  if (!active) return (
-    <svg className="w-3 h-3 inline ml-1 opacity-30" aria-hidden viewBox="0 0 12 12" fill="currentColor">
-      <path d="M6 2l3 4H3zM6 10L3 6h6z"/>
-    </svg>
-  );
-  return dir === 'asc' ? (
-    <svg className="w-3 h-3 inline ml-1" aria-hidden viewBox="0 0 12 12" fill="currentColor" style={{ color: 'var(--accent)' }}>
-      <path d="M6 2l3 4H3z"/>
-    </svg>
-  ) : (
-    <svg className="w-3 h-3 inline ml-1" aria-hidden viewBox="0 0 12 12" fill="currentColor" style={{ color: 'var(--accent)' }}>
-      <path d="M6 10L3 6h6z"/>
-    </svg>
-  );
+  if (!active) return <svg className="w-3 h-3 inline ml-1 opacity-30" aria-hidden viewBox="0 0 12 12" fill="currentColor"><path d="M6 2l3 4H3zM6 10L3 6h6z"/></svg>;
+  return dir === 'asc'
+    ? <svg className="w-3 h-3 inline ml-1" aria-hidden viewBox="0 0 12 12" fill="currentColor" style={{ color: 'var(--accent)' }}><path d="M6 2l3 4H3z"/></svg>
+    : <svg className="w-3 h-3 inline ml-1" aria-hidden viewBox="0 0 12 12" fill="currentColor" style={{ color: 'var(--accent)' }}><path d="M6 10L3 6h6z"/></svg>;
 }
 
 function FootBadge({ foot }: { foot?: string }) {
@@ -73,11 +71,24 @@ function FootBadge({ foot }: { foot?: string }) {
   const map: Record<string, string> = { right: 'R', left: 'L', both: 'B' };
   const colors: Record<string, string> = { right: '#4da6ff', left: '#ffc947', both: '#39ff14' };
   return (
-    <span
-      className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-mono font-700"
-      style={{ background: `${colors[foot] ?? '#fff'}22`, color: colors[foot] ?? 'var(--text)' }}
-    >
+    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-mono font-700"
+      style={{ background: `${colors[foot] ?? '#fff'}22`, color: colors[foot] ?? 'var(--text)' }}>
       {map[foot] ?? foot[0].toUpperCase()}
+    </span>
+  );
+}
+
+function DeltaBadge({ pre, post }: { pre?: number; post?: number }) {
+  if (pre == null || post == null || pre === 0) return <span style={{ color: 'var(--text-dim)', fontFamily: 'JetBrains Mono, monospace', fontSize: '11px' }}>—</span>;
+  const diff = post - pre;
+  const pct  = ((diff / pre) * 100).toFixed(0);
+  const abs  = Math.abs(diff);
+  const fmt  = abs >= 1_000_000 ? `${(diff / 1_000_000).toFixed(1)}M` : abs >= 1000 ? `${(diff / 1000).toFixed(0)}K` : String(diff);
+  const color = diff > 0 ? 'var(--win)' : diff < 0 ? 'var(--lose)' : 'var(--text-dim)';
+  return (
+    <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '11px', fontWeight: 700, color }}>
+      {diff > 0 ? '+' : ''}{fmt}
+      <span style={{ fontSize: '9px', opacity: 0.75, marginLeft: 3 }}>({diff > 0 ? '+' : ''}{pct}%)</span>
     </span>
   );
 }
@@ -91,22 +102,37 @@ export default function PlayerList({ searchTerm, selectedTeams, filters }: Playe
 
   useEffect(() => {
     setLoading(true);
-    const params = new URLSearchParams({ search: searchTerm, sort_by: sortCol, sort_order: sortOrder });
+    // val_diff sort is client-side only; send player_name to backend
+    const backendSort = sortCol === 'val_diff' ? 'player_name' : sortCol;
+    const params = new URLSearchParams({ search: searchTerm, sort_by: backendSort, sort_order: sortOrder });
     selectedTeams.forEach(t => params.append('teams', t));
-    if (filters.ageMin)  params.append('age_min',    filters.ageMin);
-    if (filters.ageMax)  params.append('age_max',    filters.ageMax);
-    if (filters.role)    params.append('role',       filters.role);
-    if (filters.foot)    params.append('foot',       filters.foot);
-    if (filters.vPreMin) params.append('val_pre_min', filters.vPreMin);
-    if (filters.vPreMax) params.append('val_pre_max', filters.vPreMax);
-    if (filters.vPostMin)params.append('val_post_min',filters.vPostMin);
-    if (filters.vPostMax)params.append('val_post_max',filters.vPostMax);
-    if (filters.vDiffMin)params.append('val_diff_min',filters.vDiffMin);
-    if (filters.vDiffMax)params.append('val_diff_max',filters.vDiffMax);
+    if (filters.ageMin)   params.append('age_min',     filters.ageMin);
+    if (filters.ageMax)   params.append('age_max',     filters.ageMax);
+    if (filters.role)     params.append('role',        filters.role);
+    if (filters.foot)     params.append('foot',        filters.foot);
+    if (filters.vPreMin)  params.append('val_pre_min', filters.vPreMin);
+    if (filters.vPreMax)  params.append('val_pre_max', filters.vPreMax);
+    if (filters.vPostMin) params.append('val_post_min',filters.vPostMin);
+    if (filters.vPostMax) params.append('val_post_max',filters.vPostMax);
+    if (filters.vDiffMin) params.append('val_diff_min',filters.vDiffMin);
+    if (filters.vDiffMax) params.append('val_diff_max',filters.vDiffMax);
 
     fetch(`${API_BASE_URL}/players/?${params}`)
       .then(r => r.json())
-      .then(d => { setPlayers(d); setLoading(false); })
+      .then(d => {
+        let rows: Player[] = Array.isArray(d) ? d : [];
+        rows = Array.from(new Map(rows.map((row) => [row.player_id, row])).values());
+        // Client-side sort for Δ Value
+        if (sortCol === 'val_diff') {
+          rows = [...rows].sort((a, b) => {
+            const da = (a.val_post_num ?? 0) - (a.val_pre_num ?? 0);
+            const db2 = (b.val_post_num ?? 0) - (b.val_pre_num ?? 0);
+            return sortOrder === 'asc' ? da - db2 : db2 - da;
+          });
+        }
+        setPlayers(rows);
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
   }, [searchTerm, sortCol, sortOrder, selectedTeams, filters]);
 
@@ -116,108 +142,70 @@ export default function PlayerList({ searchTerm, selectedTeams, filters }: Playe
   };
 
   return (
-    <section
-      className="rounded-2xl overflow-hidden border"
-      style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
-      aria-label="Player database"
-    >
-      {/* Header */}
-      <div
-        className="flex items-center justify-between px-5 py-4 border-b"
-        style={{ borderColor: 'var(--border)' }}
-      >
-        <h2 className="font-display font-800 text-lg tracking-tight" style={{ color: 'var(--text)' }}>
-          Player Database
-        </h2>
-        <span
-          className="tag font-mono"
-          style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}
-          aria-live="polite"
-          aria-atomic="true"
-        >
+    <section className="rounded-2xl overflow-hidden border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }} aria-label="Player database">
+      <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'var(--border)' }}>
+        <h2 className="font-display font-800 text-lg tracking-tight" style={{ color: 'var(--text)' }}>Player Database</h2>
+        <span className="tag font-mono" style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }} aria-live="polite" aria-atomic="true">
           {loading ? '…' : `${players.length} players`}
         </span>
       </div>
 
-      {/* Table */}
       <div className="overflow-auto" style={{ maxHeight: '640px' }}>
-        <table
-          className="w-full border-collapse text-sm whitespace-nowrap"
-          aria-labelledby={captionId}
-          aria-busy={loading}
-        >
-          <caption id={captionId} className="sr-only">
-            Sortable player statistics table. {players.length} players shown.
-          </caption>
+        <table className="w-full border-collapse text-sm whitespace-nowrap" aria-labelledby={captionId} aria-busy={loading}>
+          <caption id={captionId} className="sr-only">Sortable player statistics. {players.length} players shown.</caption>
           <thead className="sticky top-0 z-10" style={{ background: 'var(--surface)' }}>
             <tr style={{ borderBottom: '1px solid var(--border)' }}>
               {COLS.map(col => (
-                <th
-                  key={col.key}
-                  scope="col"
+                <th key={col.key} scope="col"
                   className={`px-4 py-3 font-mono text-[10px] tracking-widest uppercase cursor-pointer select-none transition-colors hover:bg-[--surface2] ${col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left'}`}
                   style={{ color: sortCol === col.key ? 'var(--accent)' : 'var(--text-dim)' }}
                   onClick={() => handleSort(col.key)}
                   aria-sort={sortCol === col.key ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
-                  tabIndex={0}
-                  onKeyDown={e => e.key === 'Enter' && handleSort(col.key)}
+                  tabIndex={0} onKeyDown={e => e.key === 'Enter' && handleSort(col.key)}
                 >
-                  {col.label}
-                  <SortIcon active={sortCol === col.key} dir={sortOrder} />
+                  {col.label}<SortIcon active={sortCol === col.key} dir={sortOrder} />
                 </th>
               ))}
             </tr>
           </thead>
-
           <tbody>
             {loading
               ? Array.from({ length: SKELETON_ROWS }).map((_, i) => <SkeletonRow key={i} />)
               : players.map((player, idx) => {
                   const flagUrl = getFlagUrl(player.source_team_name);
+                  const retired = isRetiredPlayer(player.player_name);
                   return (
-                    <tr
-                      key={`${player.player_id}-${idx}`}
+                    <tr key={player.player_id}
                       className="border-b transition-colors hover:bg-[--surface2] fade-up"
                       style={{ borderColor: 'var(--border)', animationDelay: `${Math.min(idx * 18, 300)}ms` }}
                     >
                       <td className="px-4 py-3 font-600" style={{ color: 'var(--text)' }}>
-                        {player.player_id ? (
-                          <Link
-                            to={`/player/${player.player_id}`}
-                            className="hover:text-[--accent] transition-colors focus-visible:outline-none focus-visible:underline"
-                          >
-                            {player.player_name || '—'}
-                          </Link>
-                        ) : (
-                          player.player_name || '—'
-                        )}
+                        {player.player_id
+                          ? <Link to={`/player/${player.player_id}`} className="hover:text-[--accent] transition-colors focus-visible:outline-none focus-visible:underline">{player.player_name || '—'}</Link>
+                          : player.player_name || '—'
+                        }
                       </td>
-                      <td className="px-4 py-3 capitalize text-xs" style={{ color: 'var(--text-muted)' }}>
-                        {player.primary_role?.replace(/_/g, ' ') || '—'}
-                      </td>
-                      <td className="px-4 py-3 text-center font-mono" style={{ color: 'var(--text-muted)' }}>
-                        {player.age || '—'}
-                      </td>
+                      <td className="px-4 py-3 capitalize text-xs" style={{ color: 'var(--text-muted)' }}>{player.primary_role?.replace(/_/g, ' ') || '—'}</td>
+                      <td className="px-4 py-3 text-center font-mono" style={{ color: 'var(--text-muted)' }}>{player.age || '—'}</td>
                       <td className="px-4 py-3 text-center">
                         <span className="inline-flex items-center justify-center gap-2 font-600 text-xs" style={{ color: 'var(--text)' }}>
-                          {flagUrl ? (
-                            <img src={flagUrl} alt="" className="w-5 h-3.5 object-cover rounded-sm shadow-sm" aria-hidden />
-                          ) : (
-                            <span className="font-mono text-[10px] bg-[--surface2] px-1.5 py-0.5 rounded text-[--text-muted]" aria-hidden>
-                              {player.source_team_name?.substring(0,3).toUpperCase()}
-                            </span>
-                          )}
+                          {flagUrl
+                            ? <img src={flagUrl} alt="" className="w-5 h-3.5 object-cover rounded-sm shadow-sm" aria-hidden />
+                            : <span className="font-mono text-[10px] bg-[--surface2] px-1.5 py-0.5 rounded text-[--text-muted]" aria-hidden>{player.source_team_name?.substring(0,3).toUpperCase()}</span>
+                          }
                           <span>{player.source_team_name || '—'}</span>
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-center">
-                        <FootBadge foot={player.preferred_foot} />
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono text-xs" style={{ color: 'var(--text-muted)' }}>
-                        {player.market_value_before_euros || '—'}
-                      </td>
+                      <td className="px-4 py-3 text-center"><FootBadge foot={player.preferred_foot} /></td>
+                      <td className="px-4 py-3 text-right font-mono text-xs" style={{ color: 'var(--text-muted)' }}>{player.market_value_before_euros || '—'}</td>
                       <td className="px-4 py-3 text-right font-mono text-xs font-700" style={{ color: 'var(--accent)' }}>
-                        {player.market_value_after_euros || '—'}
+                        {retired ? 'RETIRED' : (player.market_value_after_euros || '—')}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        {retired
+                          ? <span style={{ color: 'var(--text-dim)', fontFamily: 'JetBrains Mono, monospace', fontSize: '11px', fontWeight: 700 }}>RETIRED</span>
+                          : <DeltaBadge pre={player.val_pre_num} post={player.val_post_num} />
+                        }
                       </td>
                     </tr>
                   );

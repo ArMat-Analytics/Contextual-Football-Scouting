@@ -26,6 +26,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+def market_value_numeric_sql(column_name: str) -> str:
+    return (
+        f"CASE "
+        f"WHEN {column_name} IS NULL OR {column_name} = '' THEN NULL "
+        f"WHEN {column_name} ILIKE '%,%' THEN REGEXP_REPLACE(REPLACE(REPLACE({column_name}, '.', ''), ',', '.'), '[^0-9.]', '', 'g') "
+        f"ELSE REGEXP_REPLACE({column_name}, '[^0-9.]', '', 'g') "
+        f"END"
+    )
+
 @app.get("/")
 def test_connection():
     try:
@@ -69,25 +79,35 @@ def get_players(
     db: Session = Depends(database.get_db)
 ):
     # Using a CTE (Common Table Expression) to pre-calculate market values as numbers
-    query_str = """
-        WITH PlayerData AS (
+    pre_value_sql = market_value_numeric_sql("p.market_value_before_euros")
+    post_value_sql = market_value_numeric_sql("p.market_value_after_euros")    
+    query_str = f"""
+        WITH CorrectedSC AS (
             SELECT 
+                sc.*,
+                CASE 
+                    WHEN sc.player = 'Daniel Olmo Carvajal' THEN (SELECT player_id FROM player_profiles WHERE player_name ILIKE '%Olmo%' LIMIT 1)
+                    ELSE sc.db_player_id
+                END as fixed_db_player_id
+            FROM sc_indices sc
+        ),
+        PlayerData AS (
+            SELECT DISTINCT ON (p.player_id)
                 p.player_id, p.player_name, p.age, p.source_team_name, 
                 p.preferred_foot, p.market_value_before_euros, p.market_value_after_euros, 
                 pt.primary_role,
                 (CASE 
-                    WHEN p.market_value_before_euros ILIKE '%m%' THEN CAST(NULLIF(REGEXP_REPLACE(p.market_value_before_euros, '[^0-9.]', '', 'g'), '') AS NUMERIC) * 1000000
-                    WHEN p.market_value_before_euros ILIKE '%k%' THEN CAST(NULLIF(REGEXP_REPLACE(p.market_value_before_euros, '[^0-9.]', '', 'g'), '') AS NUMERIC) * 1000
-                    ELSE 0 END) as val_pre_num,
+                    WHEN p.market_value_before_euros ILIKE '%m%' THEN CAST(NULLIF({pre_value_sql}, '') AS NUMERIC) * 1000000
+                    WHEN p.market_value_before_euros ILIKE '%k%' THEN CAST(NULLIF({pre_value_sql}, '') AS NUMERIC) * 1000
+                    ELSE NULL END) as val_pre_num,
                 (CASE 
-                    WHEN p.market_value_after_euros ILIKE '%m%' THEN CAST(NULLIF(REGEXP_REPLACE(p.market_value_after_euros, '[^0-9.]', '', 'g'), '') AS NUMERIC) * 1000000
-                    WHEN p.market_value_after_euros ILIKE '%k%' THEN CAST(NULLIF(REGEXP_REPLACE(p.market_value_after_euros, '[^0-9.]', '', 'g'), '') AS NUMERIC) * 1000
-                    ELSE 0 END) as val_post_num
+                    WHEN p.market_value_after_euros ILIKE '%m%' THEN CAST(NULLIF({post_value_sql}, '') AS NUMERIC) * 1000000
+                    WHEN p.market_value_after_euros ILIKE '%k%' THEN CAST(NULLIF({post_value_sql}, '') AS NUMERIC) * 1000
+                    ELSE NULL END) as val_post_num
             FROM player_profiles p
-            -- INNER JOIN: only players that exist in sc_indices (the 272 with space-control data)
-            -- Join via db_player_id (pre-computed in import_space_control.py) to handle name mismatches
             INNER JOIN player_totals pt ON p.truth_player_id = pt.player_id
-            INNER JOIN sc_indices sc   ON sc.db_player_id = p.player_id
+            INNER JOIN CorrectedSC sc   ON sc.fixed_db_player_id = p.player_id
+            ORDER BY p.player_id, p.player_name
         )
         SELECT * FROM PlayerData WHERE 1=1
     """
@@ -169,20 +189,40 @@ def get_player_stats(player_id: int, db: Session = Depends(database.get_db)):
 
 @app.get("/players/{player_id}/space-control")
 def get_player_space_control(player_id: int, db: Session = Depends(database.get_db)):
-    # Use db_player_id join — robust to name/team-name mismatches between datasets
     idx_row = db.execute(text(
-        "SELECT * FROM sc_indices WHERE db_player_id = :pid LIMIT 1"
+        """
+        WITH CorrectedSC AS (
+            SELECT 
+                sc.*,
+                CASE 
+                    WHEN sc.player = 'Daniel Olmo Carvajal' THEN (SELECT player_id FROM player_profiles WHERE player_name ILIKE '%Olmo%' LIMIT 1)
+                    ELSE sc.db_player_id
+                END as fixed_db_player_id
+            FROM sc_indices sc
+        )
+        SELECT sc.*, COALESCE(p.player_name, sc.player) as tm_player_name 
+        FROM CorrectedSC sc
+        LEFT JOIN player_profiles p ON sc.fixed_db_player_id = p.player_id
+        WHERE sc.fixed_db_player_id = :pid LIMIT 1
+        """
     ), {"pid": player_id}).fetchone()
 
     agg_row = None
     if idx_row:
-        # sc_aggregated has no db_player_id — join via sc_indices player+team keys
+        # sc_aggregated uses StatsBomb player names + team, so we need to query using those values
         agg_row = db.execute(text(
             "SELECT * FROM sc_aggregated WHERE player = :player AND team = :team LIMIT 1"
         ), {"player": idx_row.player, "team": idx_row.team}).fetchone()
 
+        # Use Transfermarkt name for frontend compatibility
+        idx_dict = dict(idx_row._mapping)
+        idx_dict["player"] = idx_dict.pop("tm_player_name")
+        idx_row_final = idx_dict
+    else:
+        idx_row_final = None
+
     return {
-        "indices":    dict(idx_row._mapping) if idx_row else None,
+        "indices":    idx_row_final,
         "aggregated": dict(agg_row._mapping) if agg_row else None,
     }
 
@@ -194,76 +234,147 @@ def get_similar_players(
     db: Session = Depends(database.get_db)
 ):
     try:
-        q = "SELECT * FROM sc_indices WHERE macro_role = :macro_role"
+        q = """
+            WITH CorrectedSC AS (
+                SELECT 
+                    sc.*,
+                    CASE 
+                        WHEN sc.player = 'Daniel Olmo Carvajal' THEN (SELECT player_id FROM player_profiles WHERE player_name ILIKE '%Olmo%' LIMIT 1)
+                        ELSE sc.db_player_id
+                    END as fixed_db_player_id
+                FROM sc_indices sc
+            )
+            SELECT sc.*, COALESCE(p.player_name, sc.player) as player, p.player_id 
+            FROM CorrectedSC sc
+            LEFT JOIN player_profiles p ON sc.fixed_db_player_id = p.player_id
+            WHERE sc.macro_role = :macro_role
+        """
         params: dict = {"macro_role": macro_role}
+        
+        # Exclude the original player from results if specified (using Transfermarkt name for comparison)
         if exclude_player:
-            q += " AND player != :exclude_player"
+            q += " AND COALESCE(p.player_name, sc.player) != :exclude_player"
             params["exclude_player"] = exclude_player
-        q += " ORDER BY player ASC"
+            
+        q += " ORDER BY COALESCE(p.player_name, sc.player) ASC"
+        
         rows = [dict(r._mapping) for r in db.execute(text(q), params)]
         for r in rows:
             r["similarity_score"] = None
         return rows
     except Exception as e:
-        # Return a structured error instead of a 500 so the frontend can handle it gracefully
         return JSONResponse(
             status_code=500,
             content={"error": str(e), "hint": "Run import_space_control.py to create sc_indices table"}
         )
+    
 
+@app.get("/space-control/aggregated")
+def get_sc_aggregated(player: str, team: str, db: Session = Depends(database.get_db)):
+    """Return sc_aggregated row for a single player by StatsBomb name OR Transfermarkt name."""
+    # 1. Try to find the player using the StatsBomb name (which is what's in sc_aggregated)
+    row = db.execute(text(
+        "SELECT * FROM sc_aggregated WHERE player = :player AND team = :team LIMIT 1"
+    ), {"player": player, "team": team}).fetchone()
+    
+    if not row:
+        # If not found, it might be because the player is listed under a different name in sc_indices (e.g. Daniel Olmo Carvajal vs Daniel Olmo).
+        q = """
+            WITH CorrectedSC AS (
+                SELECT sc.player as sb_player_name, sc.team, p.player_name
+                FROM sc_indices sc
+                LEFT JOIN player_profiles p ON (
+                    CASE 
+                        WHEN sc.player = 'Daniel Olmo Carvajal' THEN (SELECT player_id FROM player_profiles WHERE player_name ILIKE '%Olmo%' LIMIT 1)
+                        ELSE sc.db_player_id
+                    END
+                ) = p.player_id
+            )
+            SELECT agg.* FROM sc_aggregated agg
+            JOIN CorrectedSC c ON agg.player = c.sb_player_name AND agg.team = c.team
+            WHERE c.player_name = :player AND agg.team = :team
+            LIMIT 1
+        """
+        row = db.execute(text(q), {"player": player, "team": team}).fetchone()
+        
+    if not row:
+        return None
+    return dict(row._mapping)
 
 
 @app.get("/space-control/search")
 def search_space_control(
     macro_role: Optional[str] = None,
     role: Optional[str] = None,
-    prog_min: Optional[float] = None,
-    prog_max: Optional[float] = None,
-    danger_min: Optional[float] = None,
-    danger_max: Optional[float] = None,
-    recep_min: Optional[float] = None,
-    recep_max: Optional[float] = None,
-    grav_min: Optional[float] = None,
-    grav_max: Optional[float] = None,
+    prog_min: Optional[float] = Query(None),
+    prog_max: Optional[float] = Query(None),
+    danger_min: Optional[float] = Query(None),
+    danger_max: Optional[float] = Query(None),
+    recep_min: Optional[float] = Query(None),
+    recep_max: Optional[float] = Query(None),
+    grav_min: Optional[float] = Query(None),
+    grav_max: Optional[float] = Query(None),
     db: Session = Depends(database.get_db)
 ):
     """
     Filter sc_indices by macro_role, primary_role, and index ranges.
     Returns players ordered by average index score descending.
     """
-    q = "SELECT * FROM sc_indices WHERE 1=1"
+    q = """
+        WITH CorrectedSC AS (
+            SELECT 
+                sc.*,
+                CASE 
+                    WHEN sc.player = 'Daniel Olmo Carvajal' THEN (SELECT player_id FROM player_profiles WHERE player_name ILIKE '%Olmo%' LIMIT 1)
+                    ELSE sc.db_player_id
+                END as fixed_db_player_id
+            FROM sc_indices sc
+        )
+        SELECT sc.*, COALESCE(p.player_name, sc.player) as player, p.player_id 
+        FROM CorrectedSC sc
+        LEFT JOIN player_profiles p ON sc.fixed_db_player_id = p.player_id
+        WHERE 1=1
+    """
     params: dict = {}
+    
     if macro_role:
-        q += " AND macro_role = :macro_role"
+        q += " AND sc.macro_role = :macro_role"
         params["macro_role"] = macro_role
     if role:
-        q += " AND primary_role = :role"
+        q += " AND sc.primary_role = :role"
         params["role"] = role
+        
+    # Using CAST to NUMERIC for safe comparison, and allowing nulls to be ignored in filtering
     if prog_min is not None:
-        q += ' AND "idx__PROGRESSION" >= :prog_min'
+        q += ' AND CAST(sc."idx__PROGRESSION" AS NUMERIC) >= :prog_min'
         params["prog_min"] = prog_min
     if prog_max is not None:
-        q += ' AND "idx__PROGRESSION" <= :prog_max'
+        q += ' AND CAST(sc."idx__PROGRESSION" AS NUMERIC) <= :prog_max'
         params["prog_max"] = prog_max
+        
     if danger_min is not None:
-        q += ' AND "idx__DANGEROUSNESS" >= :danger_min'
+        q += ' AND CAST(sc."idx__DANGEROUSNESS" AS NUMERIC) >= :danger_min'
         params["danger_min"] = danger_min
     if danger_max is not None:
-        q += ' AND "idx__DANGEROUSNESS" <= :danger_max'
+        q += ' AND CAST(sc."idx__DANGEROUSNESS" AS NUMERIC) <= :danger_max'
         params["danger_max"] = danger_max
+        
     if recep_min is not None:
-        q += ' AND "idx__RECEPTION" >= :recep_min'
+        q += ' AND CAST(sc."idx__RECEPTION" AS NUMERIC) >= :recep_min'
         params["recep_min"] = recep_min
     if recep_max is not None:
-        q += ' AND "idx__RECEPTION" <= :recep_max'
+        q += ' AND CAST(sc."idx__RECEPTION" AS NUMERIC) <= :recep_max'
         params["recep_max"] = recep_max
+        
     if grav_min is not None:
-        q += ' AND "idx__GRAVITY" >= :grav_min'
+        q += ' AND CAST(sc."idx__GRAVITY" AS NUMERIC) >= :grav_min'
         params["grav_min"] = grav_min
     if grav_max is not None:
-        q += ' AND "idx__GRAVITY" <= :grav_max'
+        q += ' AND CAST(sc."idx__GRAVITY" AS NUMERIC) <= :grav_max'
         params["grav_max"] = grav_max
-    q += ' ORDER BY (COALESCE("idx__PROGRESSION",0) + COALESCE("idx__DANGEROUSNESS",0) + COALESCE("idx__RECEPTION",0) + COALESCE("idx__GRAVITY",0)) / 4 DESC'
+        
+    q += ' ORDER BY (COALESCE(sc."idx__PROGRESSION",0) + COALESCE(sc."idx__DANGEROUSNESS",0) + COALESCE(sc."idx__RECEPTION",0) + COALESCE(sc."idx__GRAVITY",0)) / 4 DESC'
+    
     rows = [dict(r._mapping) for r in db.execute(text(q), params)]
     return rows
 

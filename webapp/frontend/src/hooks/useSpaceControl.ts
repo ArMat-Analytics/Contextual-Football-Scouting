@@ -24,9 +24,11 @@ export interface SpaceControlAggregated {
   minutes_played: number; passes_total: number; passes_op: number; passes_analysed: number;
   coverage_pct: number; lb_geom: number; lb_quality: number; lb_epv: number;
   hull_penetration_n: number; defenders_bypassed_mean: number;
+  successful_hull_penetrations_n: number;
   lb_geom_per90: number; lb_quality_per90: number; lb_epv_per90: number;
   successful_hull_penetrations_per90: number;
   lb_geom_pct: number; lb_quality_pct: number; lb_epv_pct: number; hull_penetration_pct: number;
+  penetration_completion_pct: number;
   epv_added_sum: number; epv_added_mean: number; epv_penetration_sum: number;
   epv_penetration_mean: number; epv_inside_circ_sum: number; epv_inside_circ_mean: number;
   penetration_n: number; inside_circ_n: number;
@@ -89,10 +91,6 @@ export function useSimilarPlayers(
 
     const controller = new AbortController();
 
-    // Separate flag so we can distinguish a real timeout from the
-    // immediate cleanup abort that React StrictMode triggers in development.
-    // StrictMode mounts every component twice: mount → cleanup → mount again.
-    // The cleanup calls controller.abort() before the first fetch resolves,
     let timedOut = false;
     const timeout = setTimeout(() => {
       timedOut = true;
@@ -116,9 +114,6 @@ export function useSimilarPlayers(
       .catch((err: Error) => {
         clearTimeout(timeout);
         if (err.name === 'AbortError') {
-          // Only a real error if we explicitly triggered the timeout.
-          // If timedOut is false this is a StrictMode cleanup abort — ignore it
-          // silently; the second mount will re-run the effect and fetch again.
           if (timedOut) {
             setError('timeout');
             setLoading(false);
@@ -131,7 +126,7 @@ export function useSimilarPlayers(
 
     return () => {
       clearTimeout(timeout);
-      controller.abort(); // safe: if already resolved this is a no-op
+      controller.abort();
     };
   }, [macroRole, excludePlayer]);
 

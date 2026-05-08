@@ -26,7 +26,7 @@ const RADAR_DEFS = [
       { k: 'pct__lb_quality_per90'                   as keyof SpaceControlIndex, label: 'LB Quality /90' },
       { k: 'pct__lb_epv_per90'                       as keyof SpaceControlIndex, label: 'LB EPV /90' },
       { k: 'pct__successful_hull_penetrations_per90' as keyof SpaceControlIndex, label: 'Hull Penetr. /90' },
-      { k: 'pct__defenders_bypassed_mean'            as keyof SpaceControlIndex, label: 'Def. Bypassed' },
+      { k: 'pct__defenders_bypassed_mean'            as keyof SpaceControlIndex, label: 'Def. Bypassed Avg' },
     ],
   },
   {
@@ -48,7 +48,7 @@ const RADAR_DEFS = [
   {
     key: 'GRAVITY',       label: 'Gravity',       color: '#ffc947',
     axes: [
-      { k: 'pct__gravity_proximity_pct' as keyof SpaceControlIndex, label: 'Space Attract %' },
+      { k: 'pct__gravity_proximity_pct' as keyof SpaceControlIndex, label: 'Space Attraction %' },
       { k: 'pct__gravity_hull_pct'      as keyof SpaceControlIndex, label: 'Gravity Hull %' },
       { k: 'pct__gravity_abs_m'         as keyof SpaceControlIndex, label: 'Def. Pull |m|' },
     ],
@@ -61,24 +61,74 @@ type StatDef = { col: keyof SpaceControlAggregated; label: string };
 
 const MOTHER: Record<string, Record<StatViewMode, StatDef[]>> = {
   PROGRESSION: {
-    raw:      [{ col: 'lb_geom', label: 'LB Geom' }, { col: 'lb_quality', label: 'LB Quality' }, { col: 'lb_epv', label: 'LB EPV' }, { col: 'hull_penetration_n', label: 'Hull Penetr.' }, { col: 'defenders_bypassed_mean', label: 'Def. Bypassed (avg)' }],
-    per90:       [{ col: 'lb_geom_per90', label: 'LB Geom /90' }, { col: 'lb_quality_per90', label: 'LB Quality /90' }, { col: 'lb_epv_per90', label: 'LB EPV /90' }, { col: 'successful_hull_penetrations_per90', label: 'Hull Penetr. /90' }],
-    percentages: [{ col: 'lb_geom_pct', label: 'LB Geom %' }, { col: 'lb_quality_pct', label: 'LB Quality %' }, { col: 'lb_epv_pct', label: 'LB EPV %' }, { col: 'hull_penetration_pct', label: 'Hull Penetr. %' }],
+    raw: [
+      { col: 'lb_geom', label: 'LB Geom' },
+      { col: 'lb_quality', label: 'LB Quality' },
+      { col: 'lb_epv', label: 'LB EPV' },
+      { col: 'defenders_bypassed_mean', label: 'Def. Bypassed (avg)' },
+      { col: 'penetration_n', label: 'Penetration Attempts (n)' },
+      { col: 'successful_hull_penetrations_n', label: 'Successful Penetrations (n)' }
+    ],
+    per90: [
+      { col: 'lb_geom_per90', label: 'LB Geom /90' },
+      { col: 'lb_quality_per90', label: 'LB Quality /90' },
+      { col: 'lb_epv_per90', label: 'LB EPV /90' },
+      { col: 'penetration_per90', label: 'Penetration Attempts /90' },
+      { col: 'successful_hull_penetrations_per90', label: 'Successful Penetrations /90' }
+    ],
+    percentages: [
+      { col: 'lb_geom_pct', label: 'LB Geom %' },
+      { col: 'lb_quality_pct', label: 'LB Quality %' },
+      { col: 'lb_epv_pct', label: 'LB EPV %' },
+      { col: 'penetration_completion_pct', label: 'Penetration Completion %' }
+    ],
   },
   DANGEROUSNESS: {
-    raw:      [{ col: 'epv_added_sum', label: 'EPV Added (sum)' }, { col: 'epv_added_mean', label: 'EPV Added (avg)' }, { col: 'epv_penetration_sum', label: 'EPV Penetr. (sum)' }, { col: 'epv_inside_circ_sum', label: 'Circ. EPV (sum)' }, { col: 'penetration_n', label: 'Penetrations' }, { col: 'inside_circ_n', label: 'Inside Circ.' }],
-    per90:       [{ col: 'epv_added_per90', label: 'EPV Added /90' }, { col: 'epv_penetration_per90', label: 'EPV Penetr. /90' }, { col: 'epv_inside_circ_per90', label: 'Circ. EPV /90' }, { col: 'penetration_per90', label: 'Penetr. /90' }],
+    raw: [
+      { col: 'epv_added_sum', label: 'EPV Added (sum)' },
+      { col: 'epv_added_mean', label: 'EPV Added (avg)' },
+      { col: 'epv_penetration_sum', label: 'EPV Penetr. (sum)' },
+      { col: 'epv_penetration_mean', label: 'EPV Penetr. (avg)' },
+      { col: 'epv_inside_circ_sum', label: 'Circ. EPV (sum)' },
+      { col: 'epv_inside_circ_mean', label: 'Circ. EPV (avg)' },
+      { col: 'inside_circ_n', label: 'Inside Circ. (n)' }
+    ],
+    per90: [
+      { col: 'epv_added_per90', label: 'EPV Added /90' },
+      { col: 'epv_penetration_per90', label: 'EPV Penetr. /90' },
+      { col: 'epv_inside_circ_per90', label: 'Circ. EPV /90' },
+      { col: 'inside_circ_per90', label: 'Inside Circ. /90' }
+    ],
     percentages: [],
   },
   RECEPTION: {
-    raw:      [{ col: 'between_lines_n', label: 'Between Lines' }, { col: 'hull_exit_n', label: 'Hull Exits' }, { col: 'pressure_resistance_n', label: 'Press. Resist' }],
-    per90:       [{ col: 'between_lines_per90', label: 'Btw Lines /90' }, { col: 'successful_hull_exits_per90', label: 'Hull Exits /90' }],
-    percentages: [{ col: 'between_lines_pct', label: 'Between Lines %' }, { col: 'hull_exit_pct', label: 'Hull Exits %' }, { col: 'pressure_resistance_pct', label: 'Press. Resist %' }],
+    raw: [
+      { col: 'between_lines_n', label: 'Between Lines (n)' },
+      { col: 'hull_exit_n', label: 'Hull Exits (n)' },
+      { col: 'pressure_resistance_n', label: 'Press. Resist (n)' }
+    ],
+    per90: [
+      { col: 'between_lines_per90', label: 'Between Lines /90' },
+      { col: 'successful_hull_exits_per90', label: 'Hull Exits /90' }
+    ],
+    percentages: [
+      { col: 'between_lines_pct', label: 'Between Lines %' },
+      { col: 'hull_exit_pct', label: 'Hull Exits %' },
+      { col: 'pressure_resistance_pct', label: 'Press. Resist %' }
+    ],
   },
   GRAVITY: {
-    raw:      [{ col: 'gravity_n', label: 'Gravity (n)' }, { col: 'gravity_directional_n', label: 'Grav. Dir. (n)' }, { col: 'gravity_directional_m', label: 'Def. Pull (m)' }],
-    per90:       [],
-    percentages: [{ col: 'gravity_proximity_pct', label: 'Space Attract %' }, { col: 'gravity_hull_pct', label: 'Gravity Hull %' }, { col: 'gravity_composite_pct', label: 'Composite %' }],
+    raw: [
+      { col: 'gravity_n', label: 'Gravity (n)' },
+      { col: 'gravity_directional_n', label: 'Gravity Dir. (n)' },
+      { col: 'gravity_directional_m', label: 'Def. Pull (m)' }
+    ],
+    per90: [],
+    percentages: [
+      { col: 'gravity_proximity_pct', label: 'Space Attraction %' },
+      { col: 'gravity_hull_pct', label: 'Gravity Hull %' },
+      { col: 'gravity_composite_pct', label: 'Gravity Composite %' }
+    ],
   },
 };
 
@@ -126,14 +176,26 @@ function DualRadarCard({
   similarName: string;
   mode: StatViewMode;
 }) {
+  // Extract last names
+  const sName = sourceName.trim().split(' ').pop() || sourceName;
+  const mName = similarName.trim().split(' ').pop() || similarName;
+
   const radarData = def.axes.map(ax => ({
     stat: ax.label,
-    [sourceName]:  (sourceIdx[ax.k]  as number) ?? 0,
-    [similarName]: (similarIdx[ax.k] as number) ?? 0,
+    [sName]:  (sourceIdx[ax.k]  as number) ?? 0,
+    [mName]: (similarIdx[ax.k] as number) ?? 0,
   }));
 
   const statList = MOTHER[def.key]?.[mode] ?? [];
-  const noStatMsg = mode === 'per90' ? `No /90 stats for ${def.label}` : `No percentage stats for ${def.label}`;
+  
+  // ── LOGICA PER I MESSAGGI PERSONALIZZATI ──
+  let emptyMessage = mode === 'per90' ? `No /90 stats for ${def.label}` : `No percentage stats for ${def.label}`;
+  
+  if (def.key === 'DANGEROUSNESS' && mode === 'percentages') {
+    emptyMessage = "The Dangerousness index does not include percentage statistics because it is based on EPV (Expected Pass Value) and absolute penetration volumes. Being a probabilistic measure that calculates the net offensive 'weight' generated by a player, it is evaluated exclusively in absolute values (Raw) or scaled to playing time (Per 90).";
+  } else if (def.key === 'GRAVITY' && mode === 'per90') {
+    emptyMessage = "GRAVITY: Gravity statistics are not calculated 'Per 90' because they measure the reaction and spatial deformation of the opposing defense (in meters or percentage deviations). Since it represents an average effect calculated every time the player has the ball, it reflects a constant 'magnetic pull' rather than a cumulative volume of actions over time.";
+  }
 
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderTop: `3px solid ${def.color}`, borderRadius: 'var(--radius-lg)', padding: '20px' }}>
@@ -166,10 +228,10 @@ function DualRadarCard({
           <PolarAngleAxis dataKey="stat" tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Barlow', fontWeight: 600 }} />
           <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
           <Tooltip content={<RadarTooltip />} />
-          <Radar name={sourceName}  dataKey={sourceName}  stroke={C_SOURCE}  fill={C_SOURCE}  fillOpacity={0.15} strokeWidth={2} dot={{ fill: C_SOURCE,  r: 3 }} activeDot={{ r: 5 }} />
-          <Radar name={similarName} dataKey={similarName} stroke={C_SIMILAR} fill={C_SIMILAR} fillOpacity={0.15} strokeWidth={2} dot={{ fill: C_SIMILAR, r: 3 }} activeDot={{ r: 5 }} />
+          <Radar name={sName}  dataKey={sName}  stroke={C_SOURCE}  fill={C_SOURCE}  fillOpacity={0.15} strokeWidth={2} dot={{ fill: C_SOURCE,  r: 3 }} activeDot={{ r: 5 }} />
+          <Radar name={mName} dataKey={mName} stroke={C_SIMILAR} fill={C_SIMILAR} fillOpacity={0.15} strokeWidth={2} dot={{ fill: C_SIMILAR, r: 3 }} activeDot={{ r: 5 }} />
           <Legend formatter={(v: string) => (
-            <span style={{ fontSize: 10, color: v === sourceName ? C_SOURCE : C_SIMILAR, fontFamily: 'Barlow' }}>{v}</span>
+            <span style={{ fontSize: 10, color: v === sName ? C_SOURCE : C_SIMILAR, fontFamily: 'Barlow' }}>{v}</span>
           )} wrapperStyle={{ paddingTop: 4 }} />
         </RadarChart>
       </ResponsiveContainer>
@@ -178,14 +240,18 @@ function DualRadarCard({
       <div style={{ marginTop: 12, background: 'var(--surface2)', borderRadius: 10, padding: '12px 14px' }}>
         <p style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '8px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: 8 }}>Core Stat</p>
         {statList.length === 0 ? (
-          <p style={{ fontSize: 11, color: 'var(--text-dim)', fontStyle: 'italic' }}>{noStatMsg}</p>
+          <div style={{ background: 'var(--bg)', padding: '12px 14px', borderRadius: '6px', border: '1px solid var(--border)' }}>
+             <p style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+               {emptyMessage}
+             </p>
+          </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {/* Column headers */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 8, paddingBottom: 4, borderBottom: '1px solid var(--border)' }}>
               <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: 'var(--text-dim)', textTransform: 'uppercase' }}>Stat</span>
-              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: C_SOURCE, textTransform: 'uppercase', textAlign: 'right', minWidth: 52 }}>{sourceName.split(' ')[0]}</span>
-              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: C_SIMILAR, textTransform: 'uppercase', textAlign: 'right', minWidth: 52 }}>{similarName.split(' ')[0]}</span>
+              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: C_SOURCE, textTransform: 'uppercase', textAlign: 'right', minWidth: 52 }}>{sName}</span>
+              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: C_SIMILAR, textTransform: 'uppercase', textAlign: 'right', minWidth: 52 }}>{mName}</span>
             </div>
             {statList.map(s => {
               const sv = sourceAgg  ? (sourceAgg[s.col]  as number) : null;
@@ -246,13 +312,6 @@ export default function SimilarPlayers() {
   const [similarAgg, setSimilarAgg] = useState<SpaceControlAggregated | null>(null);
   const [loadingAgg, setLoadingAgg] = useState(false);
 
-  // When selected player changes, fetch their aggregated stats
-  // (sc_indices is already in similarList; sc_aggregated needs a separate call)
-  // We reuse the space-control endpoint via their db_player_id — but we don't
-  // have their player_id here. Instead we fetch /space-control/aggregated by player+team.
-  // Since we don't have that endpoint yet, we read from the similar player's sc_indices
-  // row which has pct__ data. For the mother stats table we need sc_aggregated.
-  // Solution: add a backend endpoint GET /space-control/aggregated?player=&team=
   const fetchAgg = async (player: string, team: string) => {
     setLoadingAgg(true);
     try {
@@ -415,11 +474,11 @@ export default function SimilarPlayers() {
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1.5">
                   <div style={{ width: 10, height: 10, borderRadius: '50%', background: C_SOURCE }} />
-                  <span className="text-xs font-600" style={{ color: 'var(--text-muted)' }}>{playerName.split(' ')[0]}</span>
+                  <span className="text-xs font-600" style={{ color: 'var(--text-muted)' }}>{playerName.trim().split(' ').pop()}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div style={{ width: 10, height: 10, borderRadius: '50%', background: C_SIMILAR }} />
-                  <span className="text-xs font-600" style={{ color: 'var(--text-muted)' }}>{selectedPlayer?.player.split(' ')[0] ?? '—'}</span>
+                  <span className="text-xs font-600" style={{ color: 'var(--text-muted)' }}>{selectedPlayer?.player.trim().split(' ').pop() ?? '—'}</span>
                 </div>
               </div>
             </div>
