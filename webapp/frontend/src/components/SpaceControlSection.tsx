@@ -55,7 +55,7 @@ const RADAR_DEFS = [
       { dataKey: 'pct__lb_quality_per90'                   as keyof SpaceControlIndex, label: 'LB Quality /90' },
       { dataKey: 'pct__lb_epv_per90'                       as keyof SpaceControlIndex, label: 'LB EPV /90' },
       { dataKey: 'pct__successful_hull_penetrations_per90' as keyof SpaceControlIndex, label: 'Hull Penetr. /90' },
-      { dataKey: 'pct__defenders_bypassed_mean'            as keyof SpaceControlIndex, label: 'Def. Bypassed' },
+      { dataKey: 'pct__defenders_bypassed_mean'            as keyof SpaceControlIndex, label: 'Def. Bypassed Avg' },
     ],
   },
   {
@@ -88,7 +88,6 @@ const RADAR_DEFS = [
 ] as const;
 
 // ── Mother stats — one entry per [dimension × mode] ───────────────────────────
-// Empty array = no stats defined for that combination (correct per spec)
 
 type StatDef = { col: keyof SpaceControlAggregated; label: string };
 type MotherBlock = { raw: StatDef[]; per90: StatDef[]; percentages: StatDef[] };
@@ -96,77 +95,66 @@ type MotherBlock = { raw: StatDef[]; per90: StatDef[]; percentages: StatDef[] };
 const MOTHER_STATS: Record<'PROGRESSION' | 'DANGEROUSNESS' | 'RECEPTION' | 'GRAVITY', MotherBlock> = {
   PROGRESSION: {
     raw: [
-      { col: 'lb_geom',               label: 'LB Geom' },
-      { col: 'lb_quality',            label: 'LB Quality' },
-      { col: 'lb_epv',                label: 'LB EPV' },
-      { col: 'hull_penetration_n',    label: 'Hull Penetr.' },
+      { col: 'lb_geom', label: 'LB Geom' },
+      { col: 'lb_quality', label: 'LB Quality' },
+      { col: 'lb_epv', label: 'LB EPV' },
       { col: 'defenders_bypassed_mean', label: 'Def. Bypassed (avg)' },
+      { col: 'penetration_n', label: 'Penetration Attempts (n)' },
+      { col: 'successful_hull_penetrations_n', label: 'Successful Penetrations (n)' }
     ],
     per90: [
-      { col: 'lb_geom_per90',                     label: 'LB Geom /90' },
-      { col: 'lb_quality_per90',                   label: 'LB Quality /90' },
-      { col: 'lb_epv_per90',                       label: 'LB EPV /90' },
-      { col: 'successful_hull_penetrations_per90', label: 'Hull Penetr. /90' },
+      { col: 'lb_geom_per90', label: 'LB Geom /90' },
+      { col: 'lb_quality_per90', label: 'LB Quality /90' },
+      { col: 'lb_epv_per90', label: 'LB EPV /90' },
+      { col: 'penetration_per90', label: 'Penetration Attempts /90' },
+      { col: 'successful_hull_penetrations_per90', label: 'Successful Penetrations /90' }
     ],
     percentages: [
-      { col: 'lb_geom_pct',          label: 'LB Geom %' },
-      { col: 'lb_quality_pct',       label: 'LB Quality %' },
-      { col: 'lb_epv_pct',           label: 'LB EPV %' },
-      { col: 'hull_penetration_pct', label: 'Hull Penetr. %' },
+      { col: 'lb_geom_pct', label: 'LB Geom %' },
+      { col: 'lb_quality_pct', label: 'LB Quality %' },
+      { col: 'lb_epv_pct', label: 'LB EPV %' },
+      { col: 'penetration_completion_pct', label: 'Penetration Completion %' }
     ],
   },
-
   DANGEROUSNESS: {
     raw: [
-      { col: 'epv_added_sum',        label: 'EPV Added (sum)' },
-      { col: 'epv_added_mean',       label: 'EPV Added (avg)' },
-      { col: 'epv_penetration_sum',  label: 'EPV Penetr. (sum)' },
-      { col: 'epv_penetration_mean', label: 'EPV Penetr. (avg)' },
-      { col: 'epv_inside_circ_sum',  label: 'Circ. EPV (sum)' },
-      { col: 'epv_inside_circ_mean', label: 'Circ. EPV (avg)' },
-      { col: 'penetration_n',        label: 'Penetrations (n)' },
-      { col: 'inside_circ_n',        label: 'Inside Circ. (n)' },
+      { col: 'epv_added_sum', label: 'EPV Added (sum)' },
+      { col: 'epv_penetration_sum', label: 'EPV Penetr. (sum)' },
+      { col: 'epv_inside_circ_sum', label: 'Circ. EPV (sum)' },
+      { col: 'inside_circ_n', label: 'Inside Circ. (n)' }
     ],
     per90: [
-      { col: 'epv_added_per90',       label: 'EPV Added /90' },
+      { col: 'epv_added_per90', label: 'EPV Added /90' },
       { col: 'epv_penetration_per90', label: 'EPV Penetr. /90' },
       { col: 'epv_inside_circ_per90', label: 'Circ. EPV /90' },
-      { col: 'penetration_per90',     label: 'Penetr. /90' },
-      { col: 'inside_circ_per90',     label: 'Inside Circ. /90' },
+      { col: 'inside_circ_per90', label: 'Inside Circ. /90' }
     ],
-    // Dangerousness has only absolute and per-90 values — no percentage stats in the spec
     percentages: [],
   },
-
   RECEPTION: {
     raw: [
-      { col: 'between_lines_n',       label: 'Between Lines (n)' },
-      { col: 'hull_exit_n',           label: 'Hull Exits (n)' },
-      { col: 'pressure_resistance_n', label: 'Press. Resist (n)' },
+      { col: 'between_lines_n', label: 'Block Receipts (n)' },
+      { col: 'pressure_resistance_n', label: 'Press. Resist (n)' }
     ],
     per90: [
-      { col: 'between_lines_per90',        label: 'Between Lines /90' },
-      { col: 'successful_hull_exits_per90', label: 'Hull Exits /90' },
+      { col: 'between_lines_per90', label: 'Between Lines /90' },
+      { col: 'successful_hull_exits_per90', label: 'Hull Exits /90' }
     ],
     percentages: [
-      { col: 'between_lines_pct',       label: 'Between Lines %' },
-      { col: 'hull_exit_pct',           label: 'Hull Exits %' },
-      { col: 'pressure_resistance_pct', label: 'Press. Resist %' },
+      { col: 'between_lines_pct', label: 'Between Lines %' },
+      { col: 'hull_exit_pct', label: 'Hull Exits %' },
+      { col: 'pressure_resistance_pct', label: 'Press. Resist %' }
     ],
   },
-
   GRAVITY: {
     raw: [
-      { col: 'gravity_n',             label: 'Gravity (n)' },
-      { col: 'gravity_directional_n', label: 'Gravity Dir. (n)' },
-      { col: 'gravity_directional_m', label: 'Def. Pull (m)' },
+      { col: 'gravity_directional_m', label: 'Def. Pull (m)' }
     ],
-    // Gravity has no per-90 stats in the spec
     per90: [],
     percentages: [
-      { col: 'gravity_proximity_pct',  label: 'Space Attraction %' },
-      { col: 'gravity_hull_pct',       label: 'Gravity Hull %' },
-      { col: 'gravity_composite_pct',  label: 'Gravity Composite %' },
+      { col: 'gravity_proximity_pct', label: 'Space Attraction %' },
+      { col: 'gravity_hull_pct', label: 'Gravity Hull %' },
+      { col: 'gravity_composite_pct', label: 'Gravity Composite %' }
     ],
   },
 };
@@ -204,14 +192,16 @@ function fmt(v: unknown): string {
 // ── Single radar card ─────────────────────────────────────────────────────────
 
 function RadarCard({
-  def, indexRow, aggRow, mode,
+  def, indexRow, aggRow, mode, playerName
 }: {
   def: typeof RADAR_DEFS[number];
   indexRow: SpaceControlIndex;
   aggRow: SpaceControlAggregated | null | undefined;
   mode: StatViewMode;
+  playerName: string;
 }) {
   const idxValue = indexRow[def.idxKey] as number | undefined;
+  const lastName = playerName.trim().split(' ').pop() || playerName;
 
   const radarData = def.axes.map(ax => ({
     stat: ax.label,
@@ -221,11 +211,14 @@ function RadarCard({
   const block = MOTHER_STATS[def.key];
   const statList: StatDef[] = block[mode];
 
-  // Human-readable explanation for empty stat sets
-  const emptyNote: Record<string, string> = {
-    per90:       `${def.label} has no per-90 statistics in the spec`,
-    percentages: `${def.label} has no percentage statistics in the spec`,
-  };
+  // Logica box messaggi informativi e stati vuoti
+  let emptyMessage = mode === 'per90' ? `${def.label} has no per-90 statistics in the spec` : `${def.label} has no percentage statistics in the spec`;
+  
+  if (def.key === 'DANGEROUSNESS' && mode === 'percentages') {
+    emptyMessage = "The Dangerousness index does not include percentage statistics because it is based on EPV (Expected Pass Value) and absolute penetration volumes. Being a probabilistic measure that calculates the net offensive 'weight' generated by a player, it is evaluated exclusively in absolute values (Raw) or scaled to playing time (Per 90).";
+  } else if (def.key === 'GRAVITY' && mode === 'per90') {
+    emptyMessage = "GRAVITY: Gravity statistics are not calculated 'Per 90' because they measure the reaction and spatial deformation of the opposing defense (in meters or percentage deviations). Since it represents an average effect calculated every time the player has the ball, it reflects a constant 'magnetic pull' rather than a cumulative volume of actions over time.";
+  }
 
   return (
     <div style={{
@@ -256,6 +249,7 @@ function RadarCard({
           <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
           <Tooltip content={<RadarTooltip />} />
           <Radar
+            name={lastName}
             dataKey="value"
             stroke={def.color} fill={def.color} fillOpacity={0.2} strokeWidth={2}
             dot={{ fill: def.color, r: 3, strokeWidth: 0 }}
@@ -275,10 +269,12 @@ function RadarCard({
         </p>
 
         {statList.length === 0 ? (
-          // Empty is intentional per spec — show a tasteful note instead of an error
-          <p style={{ fontSize: '11px', color: 'var(--text-dim)', fontStyle: 'italic' }}>
-            {emptyNote[mode] ?? '—'}
-          </p>
+          // Custom formatted empty states
+          <div style={{ background: 'var(--bg)', padding: '12px 14px', borderRadius: '6px', border: '1px solid var(--border)' }}>
+             <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+               {emptyMessage}
+             </p>
+          </div>
         ) : aggRow == null ? (
           <p style={{ fontSize: '11px', color: 'var(--text-dim)' }}>Aggregated data not available</p>
         ) : (
@@ -322,7 +318,14 @@ export default function SpaceControlSection({
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '24px' }}>
         {RADAR_DEFS.map(def => (
-          <RadarCard key={def.key} def={def} indexRow={indexRow} aggRow={aggRow} mode={mode} />
+          <RadarCard 
+            key={def.key} 
+            def={def} 
+            indexRow={indexRow} 
+            aggRow={aggRow} 
+            mode={mode} 
+            playerName={playerName} 
+          />
         ))}
       </div>
     </section>

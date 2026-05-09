@@ -86,11 +86,8 @@ const MOTHER: Record<string, Record<StatViewMode, StatDef[]>> = {
   DANGEROUSNESS: {
     raw: [
       { col: 'epv_added_sum', label: 'EPV Added (sum)' },
-      { col: 'epv_added_mean', label: 'EPV Added (avg)' },
       { col: 'epv_penetration_sum', label: 'EPV Penetr. (sum)' },
-      { col: 'epv_penetration_mean', label: 'EPV Penetr. (avg)' },
       { col: 'epv_inside_circ_sum', label: 'Circ. EPV (sum)' },
-      { col: 'epv_inside_circ_mean', label: 'Circ. EPV (avg)' },
       { col: 'inside_circ_n', label: 'Inside Circ. (n)' }
     ],
     per90: [
@@ -103,8 +100,7 @@ const MOTHER: Record<string, Record<StatViewMode, StatDef[]>> = {
   },
   RECEPTION: {
     raw: [
-      { col: 'between_lines_n', label: 'Between Lines (n)' },
-      { col: 'hull_exit_n', label: 'Hull Exits (n)' },
+      { col: 'between_lines_n', label: 'Block Receipts (n)' },
       { col: 'pressure_resistance_n', label: 'Press. Resist (n)' }
     ],
     per90: [
@@ -119,8 +115,6 @@ const MOTHER: Record<string, Record<StatViewMode, StatDef[]>> = {
   },
   GRAVITY: {
     raw: [
-      { col: 'gravity_n', label: 'Gravity (n)' },
-      { col: 'gravity_directional_n', label: 'Gravity Dir. (n)' },
       { col: 'gravity_directional_m', label: 'Def. Pull (m)' }
     ],
     per90: [],
