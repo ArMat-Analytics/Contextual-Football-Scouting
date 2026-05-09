@@ -308,6 +308,8 @@ export default function SimilarPlayers() {
   const sourceIdx = sourceScData?.indices ?? null;
   const sourceAgg = sourceScData?.aggregated ?? null;
 
+  const sourcePassesAnalysed = (sourceAgg as any)?.passes_analysed as number | null | undefined;
+
   // Fetch selected similar player's aggregated data
   const [similarAgg, setSimilarAgg] = useState<SpaceControlAggregated | null>(null);
   const [loadingAgg, setLoadingAgg] = useState(false);
@@ -424,16 +426,55 @@ export default function SimilarPlayers() {
 
             {/* Two-col header: source + selector */}
             <div className="grid gap-6 mb-8 pb-8 border-b" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', borderColor: 'var(--border)' }}>
-              {/* Source */}
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-xl flex-shrink-0 flex items-center justify-center font-display font-900 text-2xl select-none" style={{ background: `${C_SOURCE}18`, color: C_SOURCE }} aria-hidden>
+
+              {/* Source player*/}
+              <div
+                style={{
+                  position: 'relative',
+                  overflow: 'hidden',
+                  background: 'var(--surface2)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 14,
+                  padding: 16,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 14,
+                }}
+              >
+                <div style={{
+                  position: 'absolute', left: 0, top: 0, bottom: 0,
+                  width: 3, background: C_SOURCE,
+                  borderRadius: '3px 0 0 3px',
+                }} />
+
+                <div
+                  className="w-14 h-14 rounded-xl flex-shrink-0 flex items-center justify-center font-display font-900 text-2xl select-none"
+                  style={{ background: `${C_SOURCE}18`, color: C_SOURCE }}
+                  aria-hidden
+                >
                   {playerName[0]}
                 </div>
+
                 <div>
                   <p className="font-mono text-[10px] tracking-widest uppercase mb-1" style={{ color: C_SOURCE }}>Selected player</p>
                   <p className="font-display font-900 text-2xl leading-tight" style={{ color: 'var(--text)' }}>{playerName}</p>
                   {macroRole && <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Macro role: {macroRole}</p>}
-                  {playerId && <Link to={`/player/${playerId}`} className="text-xs font-600 hover:text-[--accent] transition-colors" style={{ color: 'var(--text-muted)' }}>View Profile →</Link>}
+                  {/* minutes + passes_analysed sub-line */}
+                  <p className="font-mono text-[10px] mt-1" style={{ color: 'var(--text-dim)' }}>
+                    {sourceIdx?.minutes_played != null ? `${sourceIdx.minutes_played} min` : ''}
+                    {sourcePassesAnalysed != null
+                      ? `${sourceIdx?.minutes_played != null ? ' · ' : ''}${sourcePassesAnalysed} passes analysed`
+                      : ''}
+                  </p>
+                  {playerId && (
+                    <Link
+                      to={`/player/${playerId}`}
+                      className="text-xs font-600 hover:text-[--accent] transition-colors"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
+                      View Profile →
+                    </Link>
+                  )}
                 </div>
               </div>
 
@@ -442,14 +483,37 @@ export default function SimilarPlayers() {
                 <label htmlFor={dropdownId} className="block font-mono text-[10px] tracking-widest uppercase mb-2" style={{ color: 'var(--text-dim)' }}>
                   Select player to compare
                 </label>
-                <select id={dropdownId} value={selectedIdx} onChange={e => setSelectedIdx(Number(e.target.value))} className="input">
-                  {similarList.map((p, i) => (
-                    <option key={`${p.player}-${p.team}`} value={i}>{p.player} ({p.team}) — Similarity: N/A</option>
-                  ))}
-                </select>
+
+                {/* Custom select wrapper for the arrow indicator */}
+                <div style={{ position: 'relative' }}>
+                  <select
+                    id={dropdownId}
+                    value={selectedIdx}
+                    onChange={e => setSelectedIdx(Number(e.target.value))}
+                    className="input"
+                    style={{ paddingRight: 36, appearance: 'none' }}
+                  >
+                    {similarList.map((p, i) => (
+                      <option key={`${p.player}-${p.team}`} value={i}>{p.player} ({p.team}) — Similarity: N/A</option>
+                    ))}
+                  </select>
+                  <span style={{
+                    position: 'absolute', right: 12, top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: 'var(--text-dim)', fontSize: 13,
+                    pointerEvents: 'none',
+                  }}>▾</span>
+                </div>
 
                 {selectedPlayer && (
-                  <div className="mt-3 flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: 'var(--surface2)' }}>
+                  <div
+                    className="mt-3 flex items-center gap-3 px-4 py-3"
+                    style={{
+                      background: 'var(--surface2)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 14,
+                    }}
+                  >
                     {getFlagUrl(selectedPlayer.team)
                       ? <img src={getFlagUrl(selectedPlayer.team)!} alt="" className="w-6 object-cover rounded-sm shadow-sm shrink-0" aria-hidden />
                       : <span className="text-xs font-mono font-700 rounded shrink-0" style={{ background: 'var(--surface)', padding: '2px 6px', color: 'var(--text-muted)' }} aria-hidden>{selectedPlayer.team?.substring(0,3).toUpperCase()}</span>
