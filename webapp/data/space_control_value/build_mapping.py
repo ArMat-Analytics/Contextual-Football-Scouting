@@ -50,12 +50,12 @@ def main() -> None:
         for r in csv.DictReader(f):
             profiles[(r["player_name"], r["source_team_name"])] = r["player_id"]
 
-    sc_rows: list[dict] = []
     with open(SC_CSV, newline="", encoding="utf-8") as f:
         sc_rows = list(csv.DictReader(f))
 
     mapping: list[dict] = []
-    matched = no_db = 0
+    matched = 0
+    no_db = 0
 
     for r in sc_rows:
         sc_name, sc_team = r["player"], r["team"]
@@ -63,16 +63,14 @@ def main() -> None:
 
         # 1. Exact match (with team alias)
         if (sc_name, db_team) in profiles:
-            mapping.append({"sc_player": sc_name, "sc_team": sc_team,
-                             "db_player_id": profiles[(sc_name, db_team)]})
+            mapping.append({"sc_player": sc_name, "sc_team": sc_team, "db_player_id": profiles[(sc_name, db_team)]})
             matched += 1
             continue
 
         # 2. Manual nickname override
         override = MANUAL_NAME.get((sc_name, sc_team))
         if override and (override, db_team) in profiles:
-            mapping.append({"sc_player": sc_name, "sc_team": sc_team,
-                             "db_player_id": profiles[(override, db_team)]})
+            mapping.append({"sc_player": sc_name, "sc_team": sc_team, "db_player_id": profiles[(override, db_team)]})
             matched += 1
             continue
 
@@ -89,12 +87,10 @@ def main() -> None:
                 best_pid = pid
 
         if best_pid and best_score >= 1:
-            mapping.append({"sc_player": sc_name, "sc_team": sc_team,
-                             "db_player_id": best_pid})
+            mapping.append({"sc_player": sc_name, "sc_team": sc_team, "db_player_id": best_pid})
             matched += 1
         else:
-            mapping.append({"sc_player": sc_name, "sc_team": sc_team,
-                             "db_player_id": None})
+            mapping.append({"sc_player": sc_name, "sc_team": sc_team, "db_player_id": None})
             no_db += 1
             print(f"  NO_DB: [{sc_name}] [{sc_team}]")
 
@@ -102,7 +98,7 @@ def main() -> None:
         json.dump(mapping, f, indent=2, ensure_ascii=False)
 
     print(f"\nMatched: {matched}/272  |  No DB entry: {no_db}")
-    print(f"Saved → {OUT_FILE}")
+    print(f"Saved -> {OUT_FILE}")
 
 
 if __name__ == "__main__":

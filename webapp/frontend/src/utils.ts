@@ -38,7 +38,7 @@ export function getFlagUrl(teamName?: string | null): string | null {
 
 // ── Shared stat definitions ──────────────────────────────────────────────────
 export const ALL_STATS = [
-  { key: 'minutes_played',      label: 'Minutes',          category: 'General',   unit: '' },
+  /*{ key: 'minutes_played',      label: 'Minutes',          category: 'General',   unit: '' },*/
   { key: 'goals',               label: 'Goals',            category: 'Attacking', unit: '' },
   { key: 'xg_total',            label: 'xG',               category: 'Attacking', unit: '' },
   { key: 'assists',             label: 'Assists',          category: 'Attacking', unit: '' },
@@ -48,7 +48,7 @@ export const ALL_STATS = [
   { key: 'total_touches',       label: 'Touches',          category: 'Passing',   unit: '' },
   { key: 'ball_recoveries',     label: 'Recoveries',       category: 'Defending', unit: '' },
   { key: 'interceptions',       label: 'Interceptions',    category: 'Defending', unit: '' },
-  { key: 'aerials_won',         label: 'Aerials Won',      category: 'Defending', unit: '' },
+  /*{ key: 'aerials_won',         label: 'Aerials Won',      category: 'Defending', unit: '' },*/
 ] as const;
 
 export type StatKey = typeof ALL_STATS[number]['key'];

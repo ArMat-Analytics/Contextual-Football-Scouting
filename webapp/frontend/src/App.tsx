@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import PlayerList from './components/PlayerList';
 import TeamList from './components/TeamList';
 import SearchBar from './components/SearchBar';
@@ -7,6 +7,22 @@ import Filters, { type FilterState } from './components/Filters';
 import PlayerProfile from './pages/PlayerProfile';
 import SimilarPlayers from './pages/SimilarPlayers';
 import SearchByAttribute from './pages/SearchByAttribute';
+import Home from './pages/Home';
+
+// ── Nav link that highlights when active ──────────────────────────────────────
+function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
+  const { pathname } = useLocation();
+  const active = pathname === to || (to !== '/' && pathname.startsWith(to));
+  return (
+    <Link
+      to={to}
+      className="font-600 text-xs sm:text-sm uppercase tracking-wider transition-colors"
+      style={{ color: active ? 'var(--accent)' : 'var(--text-muted)' }}
+    >
+      {children}
+    </Link>
+  );
+}
 
 function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -35,10 +51,10 @@ function Layout({ children }: { children: React.ReactNode }) {
               ArMat Analytics
             </span>
           </Link>
-
-          <div className="flex items-center gap-4 sm:gap-6" role="list">
-            <Link to="/search" className="text-[--text-muted] hover:text-[--accent] transition-colors font-600 text-xs sm:text-sm uppercase tracking-wider">Search</Link>
-            <a className="text-[--text-muted] hover:text-[--text] transition-colors font-600 text-xs sm:text-sm uppercase tracking-wider" href="https://github.com/armat-analytics/Contextual-Football-Scouting" target="_blank" rel="noreferrer">GitHub</a>
+          <div className="flex items-center gap-4 sm:gap-6">
+            <NavLink to="/">Home</NavLink>
+            <NavLink to="/players">Search by Player</NavLink>
+            <NavLink to="/search">Search by Attribute</NavLink>
           </div>
         </nav>
       </header>
@@ -62,8 +78,9 @@ function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Dashboard() {
-  const [searchTerm, setSearchTerm]     = useState('');
+// ── Search by Player page ─────────────────────────────────────────────────────
+function SearchByPlayer() {
+  const [searchTerm, setSearchTerm]       = useState('');
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
   const [filters, setFilters] = useState<FilterState>({
     ageMin: '', ageMax: '', role: '', foot: '',
@@ -78,44 +95,52 @@ function Dashboard() {
         style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
       >
         <div className="max-w-7xl mx-auto">
+          {/* Breadcrumb */}
+          <nav aria-label="Breadcrumb" className="mb-4">
+            <ol className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-muted)' }}>
+              <li><Link to="/" className="hover:text-[--accent] transition-colors font-600">Home</Link></li>
+              <li aria-hidden>/</li>
+              <li className="font-600" style={{ color: 'var(--text)' }} aria-current="page">Search by Player</li>
+            </ol>
+          </nav>
           <p className="font-mono text-xs tracking-widest mb-2" style={{ color: 'var(--accent)' }}>
             UEFA EURO 2024 · PLAYER DATABASE
           </p>
           <h1 className="font-display font-900 text-5xl sm:text-6xl leading-none tracking-tight" style={{ color: 'var(--text)' }}>
-            Player Intelligence
+            Search by Player
           </h1>
           <p className="mt-3 text-base max-w-xl" style={{ color: 'var(--text-muted)' }}>
-            Contextual performance data powered by 360° spatial tracking, EPV grids, and Voronoi analysis.
+            272 players with full stats, market values, space-control indices, and value delta. Click any name to open the full profile.
           </p>
         </div>
       </div>
 
       {/* Search + Filters */}
       <div className="max-w-7xl mx-auto w-full px-6 pt-6 pb-4 flex flex-col sm:flex-row gap-3">
-        <div className="flex-1">
-          <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
-        </div>
+        <div className="flex-1"><SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} /></div>
         <Filters filters={filters} setFilters={setFilters} />
       </div>
 
-      <main className="max-w-7xl mx-auto w-full px-6" aria-label="Player list">
+      <div className="max-w-7xl mx-auto w-full px-6" aria-label="Player list">
         <PlayerList searchTerm={searchTerm} selectedTeams={selectedTeams} filters={filters} />
-      </main>
+      </div>
 
       <TeamList selectedTeams={selectedTeams} setSelectedTeams={setSelectedTeams} />
     </div>
   );
 }
 
+// ── Router ────────────────────────────────────────────────────────────────────
 export default function App() {
   return (
     <Router>
       <Layout>
         <Routes>
-          <Route path="/"                element={<Dashboard />} />
+          <Route path="/"                 element={<Home />} />
+          <Route path="/players"          element={<SearchByPlayer />} />
           <Route path="/player/:playerId" element={<PlayerProfile />} />
-          <Route path="/similar"         element={<SimilarPlayers />} />
-          <Route path="/search"          element={<SearchByAttribute />} />
+          <Route path="/similar"          element={<SimilarPlayers />} />
+          <Route path="/search"           element={<SearchByAttribute />} />
         </Routes>
       </Layout>
     </Router>

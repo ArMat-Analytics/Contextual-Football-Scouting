@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getFlagUrl } from '../utils';
 
@@ -55,6 +55,7 @@ interface Filters {
 
 interface PlayerRow {
   player: string;
+  player_id?: number;
   team: string;
   primary_role: string;
   macro_role: string;
@@ -65,7 +66,14 @@ interface PlayerRow {
   idx__GRAVITY: number;
 }
 
-// ── Range slider + number input ───────────────────────────────────────────────
+// ── Shared UI Components ──────────────────────────────────────────────────────
+
+function SortIcon({ active, dir }: { active: boolean; dir: 'asc' | 'desc' }) {
+  if (!active) return <svg className="w-3 h-3 inline ml-1 opacity-30" aria-hidden viewBox="0 0 12 12" fill="currentColor"><path d="M6 2l3 4H3zM6 10L3 6h6z"/></svg>;
+  return dir === 'asc'
+    ? <svg className="w-3 h-3 inline ml-1" aria-hidden viewBox="0 0 12 12" fill="currentColor" style={{ color: 'inherit' }}><path d="M6 2l3 4H3z"/></svg>
+    : <svg className="w-3 h-3 inline ml-1" aria-hidden viewBox="0 0 12 12" fill="currentColor" style={{ color: 'inherit' }}><path d="M6 10L3 6h6z"/></svg>;
+}
 
 function RangeFilter({
   label,
@@ -81,7 +89,7 @@ function RangeFilter({
   const minId = useId();
   const maxId = useId();
 
-  const minVal = range.min === '' ? 0   : Number(range.min);
+  const minVal = range.min === '' ? 1   : Number(range.min);
   const maxVal = range.max === '' ? 100 : Number(range.max);
 
   // Progress bar percentage
@@ -123,12 +131,20 @@ function RangeFilter({
           <input
             id={minId}
             type="number"
-            min={0}
+            min={1}
             max={100}
             step={1}
             value={range.min}
-            placeholder="0"
-            onChange={e => onChange({ ...range, min: e.target.value })}
+            placeholder="1"
+            onChange={e => {
+              let val = e.target.value;
+              if (val !== '') {
+                let num = parseInt(val, 10);
+                if (num > 100) val = '100';
+                if (num < 1) val = '1';
+              }
+              onChange({ ...range, min: val });
+            }}
             className="input"
             style={{ padding: '6px 10px', fontSize: '13px', fontFamily: 'JetBrains Mono, monospace' }}
           />
@@ -138,12 +154,20 @@ function RangeFilter({
           <input
             id={maxId}
             type="number"
-            min={0}
+            min={1}
             max={100}
             step={1}
             value={range.max}
             placeholder="100"
-            onChange={e => onChange({ ...range, max: e.target.value })}
+            onChange={e => {
+              let val = e.target.value;
+              if (val !== '') {
+                let num = parseInt(val, 10);
+                if (num > 100) val = '100';
+                if (num < 1) val = '1';
+              }
+              onChange({ ...range, max: val });
+            }}
             className="input"
             style={{ padding: '6px 10px', fontSize: '13px', fontFamily: 'JetBrains Mono, monospace' }}
           />
@@ -193,8 +217,7 @@ function PlayerRow({ player, rank }: { player: PlayerRow; rank: number }) {
         {/* Rank */}
         <span style={{
           fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, fontSize: '13px',
-          color: rank <= 3 ? 'var(--accent)' : 'var(--text-dim)',
-          minWidth: '28px', textAlign: 'right',
+          color: rank <= 3 ? 'var(--accent)' : 'var(--text-dim)', minWidth: '28px', textAlign: 'right',
         }}>
           {rank}
         </span>
@@ -207,9 +230,22 @@ function PlayerRow({ player, rank }: { player: PlayerRow; rank: number }) {
 
         {/* Name + role */}
         <div style={{ flex: '1 1 160px', minWidth: 0 }}>
-          <p style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 900, fontSize: '18px', color: 'var(--text)', lineHeight: 1.1, marginBottom: '2px' }}>
-            {player.player}
-          </p>
+          {player.player_id ? (
+            <Link 
+              to={`/player/${player.player_id}`}
+              className="hover:text-[--accent] transition-colors focus-visible:outline-none focus-visible:underline"
+              style={{ display: 'block', textDecoration: 'none' }}
+            >
+              <p style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 900, fontSize: '18px', color: 'inherit', lineHeight: 1.1, marginBottom: '2px' }}>
+                {player.player}
+              </p>
+            </Link>
+          ) : (
+            <p style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 900, fontSize: '18px', color: 'var(--text)', lineHeight: 1.1, marginBottom: '2px' }}>
+              {player.player}
+            </p>
+          )}
+
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
             <span style={{ fontFamily: 'Barlow Condensed, sans-serif', fontSize: '10px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
               {player.team}
@@ -218,10 +254,7 @@ function PlayerRow({ player, rank }: { player: PlayerRow; rank: number }) {
             <span style={{ fontFamily: 'Barlow Condensed, sans-serif', fontSize: '10px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
               {player.primary_role}
             </span>
-            <span
-              className="tag"
-              style={{ background: `${macroColor}18`, color: macroColor, border: `1px solid ${macroColor}40`, fontSize: '9px' }}
-            >
+            <span className="tag" style={{ background: `${macroColor}18`, color: macroColor, border: `1px solid ${macroColor}40`, fontSize: '9px' }}>
               {macro}
             </span>
           </div>
@@ -324,15 +357,14 @@ const DEFAULT_RANGES: Record<IndexKey, IndexRange> = {
 
 export default function SearchByAttribute() {
   const [filters, setFilters] = useState<Filters>({
-    macroRole: '',
-    role: '',
-    ranges: DEFAULT_RANGES,
+    macroRole: '', role: '', ranges: DEFAULT_RANGES,
   });
 
-  const [results, setResults] = useState<PlayerRow[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [allPlayers, setAllPlayers] = useState<PlayerRow[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searched, setSearched] = useState(false);
   const [sortKey, setSortKey] = useState<IndexKey | 'avg'>('avg');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const macroRoleId = useId();
   const roleId      = useId();
@@ -342,49 +374,74 @@ export default function SearchByAttribute() {
     ? PRIMARY_ROLES.filter(r => ROLE_TO_MACRO[r] === filters.macroRole)
     : PRIMARY_ROLES;
 
-  const fetchResults = useCallback(async () => {
-    setLoading(true);
-    setSearched(true);
-    const params = new URLSearchParams();
-    if (filters.macroRole) params.set('macro_role', filters.macroRole);
-    if (filters.role)      params.set('role', filters.role);
-    INDICES.forEach(idx => {
-      const r = filters.ranges[idx.key];
-      const paramPrefix = idx.key.replace('idx__', '').toLowerCase();
-      if (r.min !== '') params.set(`${paramPrefix}_min`, r.min);
-      if (r.max !== '') params.set(`${paramPrefix}_max`, r.max);
-    });
-    try {
-      const data: PlayerRow[] = await fetch(`${API_BASE_URL}/space-control/search?${params}`).then(r => r.json());
-      setResults(data);
-    } catch {
-      setResults([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [filters]);
-
-  // Auto-search on mount to show all 272 players
-  useEffect(() => { fetchResults(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Carica TUTTI i giocatori 1 sola volta al montaggio del componente
+  useEffect(() => {
+    const fetchAll = async () => {
+      setLoading(true);
+      try {
+        const data: PlayerRow[] = await fetch(`${API_BASE_URL}/space-control/search`).then(r => r.json());
+        setAllPlayers(data);
+      } catch {
+        setAllPlayers([]);
+      } finally {
+        setLoading(false);
+        setSearched(true);
+      }
+    };
+    fetchAll();
+  }, []);
 
   const clearFilters = () => {
     setFilters({ macroRole: '', role: '', ranges: DEFAULT_RANGES });
   };
 
-  // Client-side sort of results
-  const sorted = [...results].sort((a, b) => {
-    if (sortKey === 'avg') {
-      const avgA = (a.idx__PROGRESSION + a.idx__DANGEROUSNESS + a.idx__RECEPTION + a.idx__GRAVITY) / 4;
-      const avgB = (b.idx__PROGRESSION + b.idx__DANGEROUSNESS + b.idx__RECEPTION + b.idx__GRAVITY) / 4;
-      return avgB - avgA;
+  // Client-side filtering (since we fetch all players at once, we can do it here)
+  const filtered = allPlayers.filter(player => {
+    const f = filters;
+    
+    // Filtro per Ruolo
+    if (f.macroRole && player.macro_role !== f.macroRole) return false;
+    if (f.role && player.primary_role !== f.role) return false;
+
+    // Numerical filters: check if player indices fall within selected ranges
+    for (const idx of INDICES) {
+      const val = player[idx.key] ?? 0;
+      const r = f.ranges[idx.key];
+      const min = r.min === '' ? 1 : Number(r.min);
+      const max = r.max === '' ? 100 : Number(r.max);
+      
+      if (val < min || val > max) return false;
     }
-    return (b[sortKey as keyof PlayerRow] as number) - (a[sortKey as keyof PlayerRow] as number);
+
+    return true;
   });
+
+  // Client side sorting (for now, since we fetch all players at once)
+  const sorted = filtered.sort((a, b) => {
+    let valA = 0;
+    let valB = 0;
+    if (sortKey === 'avg') {
+      valA = ((a.idx__PROGRESSION ?? 0) + (a.idx__DANGEROUSNESS ?? 0) + (a.idx__RECEPTION ?? 0) + (a.idx__GRAVITY ?? 0)) / 4;
+      valB = ((b.idx__PROGRESSION ?? 0) + (b.idx__DANGEROUSNESS ?? 0) + (b.idx__RECEPTION ?? 0) + (b.idx__GRAVITY ?? 0)) / 4;
+    } else {
+      valA = (a[sortKey as keyof PlayerRow] as number) ?? 0;
+      valB = (b[sortKey as keyof PlayerRow] as number) ?? 0;
+    }
+    return sortOrder === 'asc' ? valA - valB : valB - valA;
+  });
+
+  const handleSort = (key: IndexKey | 'avg') => {
+    if (sortKey === key) {
+      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortOrder('desc');
+    }
+  };
 
   return (
     <div className="w-full pb-16 min-h-screen" style={{ background: 'var(--bg)' }}>
-
-      {/* ── Breadcrumb ──────────────────────────────────────────────────── */}
+      {/* Breadcrumb */}
       <nav aria-label="Breadcrumb" className="max-w-7xl mx-auto px-6 pt-8 mb-6">
         <ol className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-muted)' }}>
           <li>
@@ -397,19 +454,13 @@ export default function SearchByAttribute() {
         </ol>
       </nav>
 
-      {/* ── Page header ─────────────────────────────────────────────────── */}
-      <div
-        className="border-b px-6 pb-8 mb-8"
-        style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
-      >
+      {/* Page header */}
+      <div className="border-b px-6 pb-8 mb-8" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
         <div className="max-w-7xl mx-auto">
           <p className="font-mono text-xs tracking-widest mb-2" style={{ color: 'var(--accent)' }}>
             SPACE CONTROL & VALUE · EURO 2024
           </p>
-          <h1
-            className="font-display font-900 leading-none tracking-tight mb-3"
-            style={{ color: 'var(--text)', fontSize: 'clamp(36px, 6vw, 64px)' }}
-          >
+          <h1 className="font-display font-900 leading-none tracking-tight mb-3" style={{ color: 'var(--text)', fontSize: 'clamp(36px, 6vw, 64px)' }}>
             Search by Attribute
           </h1>
           <p style={{ fontSize: '15px', color: 'var(--text-muted)', maxWidth: '560px' }}>
@@ -422,7 +473,7 @@ export default function SearchByAttribute() {
       <div className="max-w-7xl mx-auto px-6">
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 320px) 1fr', gap: '32px', alignItems: 'start' }}>
 
-          {/* ── Left panel: filters ──────────────────────────────────────── */}
+          {/* Left panel: filters */}
           <aside aria-label="Search filters">
             <div className="card" style={{ padding: '24px', position: 'sticky', top: '80px' }}>
               <h2
@@ -522,55 +573,17 @@ export default function SearchByAttribute() {
                 ))}
               </div>
 
-              {/* Apply button */}
-              <button
-                onClick={fetchResults}
-                className="btn btn-primary"
-                style={{ width: '100%', justifyContent: 'center' }}
-                disabled={loading}
-                aria-busy={loading}
-              >
-                {loading ? (
-                  <>
-                    <span style={{ display: 'inline-block', width: 14, height: 14, border: '2px solid #000', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} aria-hidden />
-                    Searching…
-                  </>
-                ) : (
-                  <>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden>
-                      <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
-                    </svg>
-                    Search Players
-                  </>
-                )}
-              </button>
-
-              {/* Clear */}
-              <button
-                onClick={() => { clearFilters(); }}
-                className="btn btn-ghost"
-                style={{ width: '100%', justifyContent: 'center', marginTop: '8px' }}
-              >
+              <button onClick={clearFilters} className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center', marginTop: '8px' }}>
                 Reset Filters
               </button>
             </div>
           </aside>
 
-          {/* ── Right panel: results ─────────────────────────────────────── */}
+          {/* Right panel: results */}
           <section aria-label="Search results">
-
-            {/* Results header */}
-            <div
-              style={{
-                display: 'flex', flexWrap: 'wrap', alignItems: 'center',
-                justifyContent: 'space-between', gap: '12px', marginBottom: '16px',
-              }}
-            >
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '16px' }}>
               <div>
-                <span
-                  className="font-display font-900"
-                  style={{ fontSize: '22px', color: 'var(--text)', marginRight: '10px' }}
-                >
+                <span className="font-display font-900" style={{ fontSize: '22px', color: 'var(--text)', marginRight: '10px' }}>
                   {loading ? '…' : sorted.length} players
                 </span>
                 {searched && !loading && (
@@ -579,31 +592,11 @@ export default function SearchByAttribute() {
                   </span>
                 )}
               </div>
-
-              {/* Sort selector */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '10px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                  Sort by
-                </span>
-                <select
-                  value={sortKey}
-                  onChange={e => setSortKey(e.target.value as IndexKey | 'avg')}
-                  className="input select"
-                  style={{ width: 'auto', fontSize: '12px', padding: '6px 28px 6px 10px' }}
-                  aria-label="Sort results by"
-                >
-                  <option value="avg">Avg Index</option>
-                  {INDICES.map(idx => (
-                    <option key={idx.key} value={idx.key}>{idx.label}</option>
-                  ))}
-                </select>
-              </div>
             </div>
 
-            {/* Active filter pills */}
             <ActiveFilterPills filters={filters} onClear={clearFilters} />
 
-            {/* Column header */}
+            {/* Clickable Header sorting ticks */}
             {sorted.length > 0 && (
               <div
                 style={{
@@ -612,17 +605,44 @@ export default function SearchByAttribute() {
                   gap: '16px',
                   padding: '8px 20px',
                   marginBottom: '6px',
+                  alignItems: 'center'
                 }}
               >
                 <span />
                 <span />
                 <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', color: 'var(--text-dim)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Player</span>
+                
                 {INDICES.map(idx => (
-                  <span key={idx.key} style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', color: idx.color, letterSpacing: '0.1em', textTransform: 'uppercase', textAlign: 'center' }}>
-                    {idx.short}
-                  </span>
+                  <button
+                    key={idx.key}
+                    onClick={() => handleSort(idx.key)}
+                    style={{
+                      background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                      fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', 
+                      color: sortKey === idx.key ? idx.color : 'var(--text-dim)', 
+                      letterSpacing: '0.1em', textTransform: 'uppercase', textAlign: 'center',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      transition: 'color 0.2s'
+                    }}
+                  >
+                    {idx.short} <SortIcon active={sortKey === idx.key} dir={sortOrder} />
+                  </button>
                 ))}
-                <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', color: 'var(--text-dim)', letterSpacing: '0.1em', textTransform: 'uppercase', textAlign: 'center' }}>AVG</span>
+                
+                <button
+                  onClick={() => handleSort('avg')}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                    fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', 
+                    color: sortKey === 'avg' ? 'var(--text)' : 'var(--text-dim)', 
+                    letterSpacing: '0.1em', textTransform: 'uppercase', textAlign: 'center',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'color 0.2s'
+                  }}
+                >
+                  AVG <SortIcon active={sortKey === 'avg'} dir={sortOrder} />
+                </button>
+                
                 <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', color: 'var(--text-dim)', letterSpacing: '0.1em', textTransform: 'uppercase', textAlign: 'right' }}>MIN</span>
               </div>
             )}

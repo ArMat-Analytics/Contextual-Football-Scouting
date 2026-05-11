@@ -96,6 +96,7 @@ export default function PlayerProfile() {
 
   const flagUrl = getFlagUrl(stats.source_team_name);
   const minutesPlayed = scData?.indices?.minutes_played ?? stats.minutes_played;
+  const passesAnalysed = (scData?.aggregated as any)?.passes_analysed as number | null | undefined;
 
   return (
     <div className="w-full pb-16 min-h-screen" style={{ background: 'var(--bg)' }}>
@@ -111,11 +112,34 @@ export default function PlayerProfile() {
 
       {/* Hero */}
       <div className="max-w-5xl mx-auto px-6 mb-10">
-        <div className="card p-7 sm:p-8 fade-up">
+
+        <div className="card p-7 sm:p-8 fade-up" style={{ position: 'relative', overflow: 'hidden' }}>
+
+          <div style={{
+            position: 'absolute', top: -60, right: -60,
+            width: 240, height: 240,
+            background: 'radial-gradient(circle, rgba(57,255,20,0.07) 0%, transparent 65%)',
+            pointerEvents: 'none',
+          }} />
+
           <div className="flex flex-col sm:flex-row items-start gap-6">
-            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex items-center justify-center font-display font-900 text-4xl flex-shrink-0 select-none" style={{ background: 'var(--surface2)', color: 'var(--accent)' }} aria-hidden>
-              {stats.player_name?.[0] ?? '?'}
+
+            {/* Avatar */}
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              
+              <div style={{
+                position: 'absolute', inset: -2, borderRadius: 20,
+                background: 'linear-gradient(135deg, rgba(57,255,20,0.45) 0%, transparent 55%)',
+              }} />
+              <div
+                className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex items-center justify-center font-display font-900 text-4xl select-none"
+                style={{ position: 'relative', background: 'var(--surface2)', color: 'var(--accent)' }}
+                aria-hidden
+              >
+                {stats.player_name?.[0] ?? '?'}
+              </div>
             </div>
+
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2 mb-1">
                 {stats.primary_role && (
@@ -124,7 +148,7 @@ export default function PlayerProfile() {
                   </span>
                 )}
                 {scData?.indices?.macro_role && (
-                  <span className="tag" style={{ background: 'var(--surface2)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+                  <span className="tag" style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}>
                     {scData.indices.macro_role}
                   </span>
                 )}
@@ -137,11 +161,12 @@ export default function PlayerProfile() {
                 {stats.source_team_name}
               </p>
               <div className="flex flex-wrap gap-3 mb-5">
-                <InfoPill label="Age"        value={stats.age} />
-                <InfoPill label="Foot"       value={stats.preferred_foot} />
-                <InfoPill label="Minutes"    value={minutesPlayed != null ? `${minutesPlayed}'` : null} />
-                <InfoPill label="Pre Value"  value={stats.market_value_before_euros} />
-                <InfoPill label="Post Value" value={stats.market_value_after_euros} />
+                <InfoPill label="Age"              value={stats.age} />
+                <InfoPill label="Foot"             value={stats.preferred_foot} />
+                <InfoPill label="Minutes"          value={minutesPlayed != null ? `${minutesPlayed}'` : null} />
+                <InfoPill label="Passes Analysed"  value={passesAnalysed} />
+                <InfoPill label="Pre Value"        value={stats.market_value_before_euros} />
+                <InfoPill label="Post Value"       value={stats.market_value_after_euros} />
               </div>
               <button onClick={handleFindSimilar} className="btn btn-primary" aria-label="Find a player similar to this one">
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" aria-hidden fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
