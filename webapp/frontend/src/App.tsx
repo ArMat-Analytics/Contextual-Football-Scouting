@@ -83,7 +83,7 @@ function SearchByPlayer() {
   const [searchTerm, setSearchTerm]       = useState('');
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
   const [filters, setFilters] = useState<FilterState>({
-    ageMin: '', ageMax: '', role: '', foot: '',
+    ageMin: '', ageMax: '', macroRole: '', role: '', foot: '',
     vPreMin: '', vPreMax: '', vPostMin: '', vPostMax: '', vDiffMin: '', vDiffMax: '',
   });
 
