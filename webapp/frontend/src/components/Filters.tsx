@@ -4,6 +4,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
 export interface FilterState {
   ageMin: string; ageMax: string;
+  macroRole: string;
   role: string; foot: string;
   vPreMin: string; vPreMax: string;
   vPostMin: string; vPostMax: string;
@@ -14,6 +15,8 @@ interface FiltersProps {
   filters: FilterState;
   setFilters: (f: FilterState) => void;
 }
+
+const MACRO_ROLES = ['CB', 'FB', 'MID', 'CAM', 'WIDE', 'FW'];
 
 export default function Filters({ filters, setFilters }: FiltersProps) {
   const [isOpen, setIsOpen]           = useState(false);
@@ -53,7 +56,7 @@ export default function Filters({ filters, setFilters }: FiltersProps) {
   };
 
   const reset = () => {
-    setFilters({ ageMin:'',ageMax:'',role:'',foot:'',vPreMin:'',vPreMax:'',vPostMin:'',vPostMax:'',vDiffMin:'',vDiffMax:'' });
+    setFilters({ ageMin:'', ageMax:'', macroRole:'', role:'', foot:'', vPreMin:'', vPreMax:'', vPostMin:'', vPostMax:'', vDiffMin:'', vDiffMax:'' });
   };
 
   const active = Object.values(filters).some(v => v !== '');
@@ -112,6 +115,15 @@ export default function Filters({ filters, setFilters }: FiltersProps) {
                 <div>
                   <label htmlFor="ageMax" className="block text-xs font-600 mb-1" style={{ color: 'var(--text-muted)' }}>Max Age</label>
                   <input id="ageMax" type="number" name="ageMax" value={filters.ageMax} onChange={handleChange} placeholder="e.g. 35" className="input" min={15} max={50} />
+                </div>
+                <div>
+                  <label htmlFor="macroRole" className="block text-xs font-600 mb-1" style={{ color: 'var(--text-muted)' }}>Macro Role</label>
+                  <select id="macroRole" name="macroRole" value={filters.macroRole} onChange={handleChange} className="input">
+                    <option value="">All Macro Roles</option>
+                    {MACRO_ROLES.map(r => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label htmlFor="role" className="block text-xs font-600 mb-1" style={{ color: 'var(--text-muted)' }}>Role</label>

@@ -68,6 +68,7 @@ def get_players(
     teams: List[str] = Query(default=[]),
     age_min: Optional[int] = None,
     age_max: Optional[int] = None,
+    macro_role: str = "",
     role: str = "",
     foot: str = "",
     val_pre_min: Optional[float] = None,
@@ -95,7 +96,7 @@ def get_players(
             SELECT DISTINCT ON (p.player_id)
                 p.player_id, p.player_name, p.age, p.source_team_name, 
                 p.preferred_foot, p.market_value_before_euros, p.market_value_after_euros, 
-                pt.primary_role,
+                pt.primary_role, sc.macro_role,
                 (CASE 
                     WHEN p.market_value_before_euros ILIKE '%m%' THEN CAST(NULLIF({pre_value_sql}, '') AS NUMERIC) * 1000000
                     WHEN p.market_value_before_euros ILIKE '%k%' THEN CAST(NULLIF({pre_value_sql}, '') AS NUMERIC) * 1000
@@ -128,6 +129,9 @@ def get_players(
         query_str += " AND age <= :age_max"
         params["age_max"] = age_max
         
+    if macro_role:
+        query_str += " AND macro_role = :macro_role"
+        params["macro_role"] = macro_role
     if role:
         query_str += " AND primary_role = :role"
         params["role"] = role

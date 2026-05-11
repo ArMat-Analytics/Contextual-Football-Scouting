@@ -108,6 +108,7 @@ export default function PlayerList({ searchTerm, selectedTeams, filters }: Playe
     selectedTeams.forEach(t => params.append('teams', t));
     if (filters.ageMin)   params.append('age_min',     filters.ageMin);
     if (filters.ageMax)   params.append('age_max',     filters.ageMax);
+    if (filters.macroRole) params.append('macro_role', filters.macroRole);
     if (filters.role)     params.append('role',        filters.role);
     if (filters.foot)     params.append('foot',        filters.foot);
     if (filters.vPreMin)  params.append('val_pre_min', filters.vPreMin);

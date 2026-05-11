@@ -89,7 +89,7 @@ function RangeFilter({
   const minId = useId();
   const maxId = useId();
 
-  const minVal = range.min === '' ? 0   : Number(range.min);
+  const minVal = range.min === '' ? 1   : Number(range.min);
   const maxVal = range.max === '' ? 100 : Number(range.max);
 
   // Progress bar percentage
@@ -131,12 +131,20 @@ function RangeFilter({
           <input
             id={minId}
             type="number"
-            min={0}
+            min={1}
             max={100}
             step={1}
             value={range.min}
-            placeholder="0"
-            onChange={e => onChange({ ...range, min: e.target.value })}
+            placeholder="1"
+            onChange={e => {
+              let val = e.target.value;
+              if (val !== '') {
+                let num = parseInt(val, 10);
+                if (num > 100) val = '100';
+                if (num < 1) val = '1';
+              }
+              onChange({ ...range, min: val });
+            }}
             className="input"
             style={{ padding: '6px 10px', fontSize: '13px', fontFamily: 'JetBrains Mono, monospace' }}
           />
@@ -146,12 +154,20 @@ function RangeFilter({
           <input
             id={maxId}
             type="number"
-            min={0}
+            min={1}
             max={100}
             step={1}
             value={range.max}
             placeholder="100"
-            onChange={e => onChange({ ...range, max: e.target.value })}
+            onChange={e => {
+              let val = e.target.value;
+              if (val !== '') {
+                let num = parseInt(val, 10);
+                if (num > 100) val = '100';
+                if (num < 1) val = '1';
+              }
+              onChange({ ...range, max: val });
+            }}
             className="input"
             style={{ padding: '6px 10px', fontSize: '13px', fontFamily: 'JetBrains Mono, monospace' }}
           />
@@ -391,7 +407,7 @@ export default function SearchByAttribute() {
     for (const idx of INDICES) {
       const val = player[idx.key] ?? 0;
       const r = f.ranges[idx.key];
-      const min = r.min === '' ? 0 : Number(r.min);
+      const min = r.min === '' ? 1 : Number(r.min);
       const max = r.max === '' ? 100 : Number(r.max);
       
       if (val < min || val > max) return false;
