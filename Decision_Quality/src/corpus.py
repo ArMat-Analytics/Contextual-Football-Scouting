@@ -227,6 +227,11 @@ def build_corpus(force_refresh: bool = False) -> pd.DataFrame:
     df = df[~is_header].copy()
     print(f"  headers removed       : {is_header.sum():,}")
 
+    if cfg.EXCLUDE_GK_SENDERS:
+        is_gk = df["position"] == "Goalkeeper"
+        df = df[~is_gk].copy()
+        print(f"  GK senders removed    : {is_gk.sum():,}")
+
     has_frame = df["teammates"].apply(
         lambda v: isinstance(v, (list, np.ndarray)) and len(v) > 0)
     n_no_frame = (~has_frame).sum()

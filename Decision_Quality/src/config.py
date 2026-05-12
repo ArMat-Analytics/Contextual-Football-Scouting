@@ -82,6 +82,12 @@ EXCLUDE_BODY_PARTS = ("Head",)
 # excluding genuine "into-space" balls.
 PASS_INTO_SPACE_M = 12.0
 
+# Drop passes whose sender is a goalkeeper. GK distributions (long goal
+# kicks, low-pressure box distribution) have a very different geometry
+# from outfield decisions; keeping them would teach the xPass model
+# patterns that do not generalise to the in-play decision quality use case.
+EXCLUDE_GK_SENDERS = True
+
 
 # =============================================================================
 # xPass training

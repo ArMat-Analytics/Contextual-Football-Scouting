@@ -23,7 +23,8 @@ plot_pass_grid(event_ids, merged_df, ncols=2)
 plot_pass_alternatives(event_id, alternatives_df, merged_df)
 
 `merged_df` is the table you get by joining the xPass-scored features with
-the corpus context (see `notebooks/projDQ.ipynb`, Section 4) — i.e. one row
+the corpus context (see `notebooks/H2-Contextual_Decision_Making.ipynb`,
+Section 4) — i.e. one row
 per event with the columns: event_id, player, team, minute, start_x_m,
 start_y_m, end_x_m, end_y_m, pass_height, pass_complete, xpass_oof,
 teammates, opponents, chosen_teammate_idx, plus all 13 feature columns.
