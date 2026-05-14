@@ -53,7 +53,7 @@ const RADAR_DEFS = [
     axes: [
       { dataKey: 'pct__lb_geom_per90'                      as keyof SpaceControlIndex, label: 'LB Geom /90' },
       { dataKey: 'pct__lb_quality_per90'                   as keyof SpaceControlIndex, label: 'LB Quality /90' },
-      { dataKey: 'pct__lb_epv_per90'                       as keyof SpaceControlIndex, label: 'LB EPV /90' },
+      { dataKey: 'pct__lb_epv_per90'                       as keyof SpaceControlIndex, label: 'High Value Pass /90' },
       { dataKey: 'pct__successful_hull_penetrations_per90' as keyof SpaceControlIndex, label: 'Hull Penetr. /90' },
       { dataKey: 'pct__defenders_bypassed_mean'            as keyof SpaceControlIndex, label: 'Def. Bypassed Avg' },
     ],
@@ -97,7 +97,7 @@ const MOTHER_STATS: Record<'PROGRESSION' | 'DANGEROUSNESS' | 'RECEPTION' | 'GRAV
     raw: [
       { col: 'lb_geom', label: 'LB Geom' },
       { col: 'lb_quality', label: 'LB Quality' },
-      { col: 'lb_epv', label: 'LB EPV' },
+      { col: 'lb_epv', label: 'High Value Pass' },
       { col: 'defenders_bypassed_mean', label: 'Def. Bypassed (avg)' },
       { col: 'penetration_n', label: 'Penetration Attempts (n)' },
       { col: 'successful_hull_penetrations_n', label: 'Successful Penetrations (n)' }
@@ -105,14 +105,14 @@ const MOTHER_STATS: Record<'PROGRESSION' | 'DANGEROUSNESS' | 'RECEPTION' | 'GRAV
     per90: [
       { col: 'lb_geom_per90', label: 'LB Geom /90' },
       { col: 'lb_quality_per90', label: 'LB Quality /90' },
-      { col: 'lb_epv_per90', label: 'LB EPV /90' },
+      { col: 'lb_epv_per90', label: 'High Value Pass /90' },
       { col: 'penetration_per90', label: 'Penetration Attempts /90' },
       { col: 'successful_hull_penetrations_per90', label: 'Successful Penetrations /90' }
     ],
     percentages: [
       { col: 'lb_geom_pct', label: 'LB Geom %' },
       { col: 'lb_quality_pct', label: 'LB Quality %' },
-      { col: 'lb_epv_pct', label: 'LB EPV %' },
+      { col: 'lb_epv_pct', label: 'High Value Pass %' },
       { col: 'penetration_completion_pct', label: 'Penetration Completion %' }
     ],
   },
@@ -153,8 +153,7 @@ const MOTHER_STATS: Record<'PROGRESSION' | 'DANGEROUSNESS' | 'RECEPTION' | 'GRAV
     per90: [],
     percentages: [
       { col: 'gravity_proximity_pct', label: 'Space Attraction %' },
-      { col: 'gravity_hull_pct', label: 'Gravity Hull %' },
-      { col: 'gravity_composite_pct', label: 'Gravity Composite %' }
+      { col: 'gravity_hull_pct', label: 'Gravity Hull %' }
     ],
   },
 };
@@ -281,7 +280,23 @@ function RadarCard({
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {statList.map(s => (
               <div key={s.col} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>{s.label}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>{s.label}</span>
+                  {def.key === 'GRAVITY' && (
+                    <span style={{
+                      fontSize: '9px',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      color: def.color, 
+                      backgroundColor: `${def.color}22`, /* Usa il colore di gravity (#ffc947) con opacità */
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      letterSpacing: '0.02em'
+                    }}>
+                      Experimental
+                    </span>
+                  )}
+                </div>
                 <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, fontSize: '13px', color: def.color } as React.CSSProperties}>
                   {fmt(aggRow[s.col])}
                 </span>
