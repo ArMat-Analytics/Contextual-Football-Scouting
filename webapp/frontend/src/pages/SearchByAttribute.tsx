@@ -181,8 +181,8 @@ function RangeFilter({
 
 function IndexBadge({ label, value, color }: { label: string; value: number | null; color: string }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '52px' }}>
-      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 900, fontSize: '18px', lineHeight: 1, color }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '48px' }}>
+      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 900, fontSize: '16px', lineHeight: 1, color }}>
         {value != null ? value.toFixed(0) : '—'}
       </span>
       <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '8px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-dim)', marginTop: '2px' }}>
@@ -208,89 +208,101 @@ function PlayerRow({ player, rank }: { player: PlayerRow; rank: number }) {
 
   return (
     <div
-      className="card fade-up"
-      style={{ padding: '16px 20px', cursor: 'default' }}
+      className="card fade-up p-4 sm:p-5"
+      style={{ cursor: 'default' }}
       role="listitem"
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        
+        {/* Top: Player Info */}
+        <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+          <span style={{
+            fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, fontSize: '13px',
+            color: rank <= 3 ? 'var(--accent)' : 'var(--text-dim)', minWidth: '24px', textAlign: 'right',
+          }}>
+            {rank}
+          </span>
 
-        {/* Rank */}
-        <span style={{
-          fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, fontSize: '13px',
-          color: rank <= 3 ? 'var(--accent)' : 'var(--text-dim)', minWidth: '28px', textAlign: 'right',
-        }}>
-          {rank}
-        </span>
+          {/* Flag */}
+          {flagUrl
+            ? <img src={flagUrl} alt="" style={{ width: 28, height: 20, objectFit: 'cover', borderRadius: 2, flexShrink: 0 }} aria-hidden />
+            : <span style={{ width: 28, flexShrink: 0, fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', color: 'var(--text-dim)' }}>{player.team.substring(0, 3).toUpperCase()}</span>
+          }
 
-        {/* Flag */}
-        {flagUrl
-          ? <img src={flagUrl} alt="" style={{ width: 28, height: 20, objectFit: 'cover', borderRadius: 2, flexShrink: 0 }} aria-hidden />
-          : <span style={{ width: 28, flexShrink: 0, fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', color: 'var(--text-dim)' }}>{player.team.substring(0, 3).toUpperCase()}</span>
-        }
-
-        {/* Name + role */}
-        <div style={{ flex: '1 1 160px', minWidth: 0 }}>
-          {player.player_id ? (
-            <Link 
-              to={`/player/${player.player_id}`}
-              className="hover:text-[--accent] transition-colors focus-visible:outline-none focus-visible:underline"
-              style={{ display: 'block', textDecoration: 'none' }}
-            >
-              <p style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 900, fontSize: '18px', color: 'inherit', lineHeight: 1.1, marginBottom: '2px' }}>
+          {/* Name + role */}
+          <div className="flex-1 min-w-0">
+            {player.player_id ? (
+              <Link 
+                to={`/player/${player.player_id}`}
+                className="hover:text-[--accent] transition-colors focus-visible:outline-none focus-visible:underline"
+                style={{ display: 'block', textDecoration: 'none' }}
+              >
+                <p style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 900, fontSize: '18px', color: 'inherit', lineHeight: 1.1, marginBottom: '2px' }}>
+                  {player.player}
+                </p>
+              </Link>
+            ) : (
+              <p style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 900, fontSize: '18px', color: 'var(--text)', lineHeight: 1.1, marginBottom: '2px' }}>
                 {player.player}
               </p>
-            </Link>
-          ) : (
-            <p style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 900, fontSize: '18px', color: 'var(--text)', lineHeight: 1.1, marginBottom: '2px' }}>
-              {player.player}
-            </p>
-          )}
+            )}
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-            <span style={{ fontFamily: 'Barlow Condensed, sans-serif', fontSize: '10px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-              {player.team}
-            </span>
-            <span style={{ color: 'var(--text-dim)', fontSize: '10px' }}>·</span>
-            <span style={{ fontFamily: 'Barlow Condensed, sans-serif', fontSize: '10px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-              {player.primary_role}
-            </span>
-            <span className="tag" style={{ background: `${macroColor}18`, color: macroColor, border: `1px solid ${macroColor}40`, fontSize: '9px' }}>
-              {macro}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+              <span style={{ fontFamily: 'Barlow Condensed, sans-serif', fontSize: '10px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                {player.team}
+              </span>
+              <span style={{ color: 'var(--text-dim)', fontSize: '10px' }}>·</span>
+              <span style={{ fontFamily: 'Barlow Condensed, sans-serif', fontSize: '10px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                {player.primary_role}
+              </span>
+              <span className="tag" style={{ background: `${macroColor}18`, color: macroColor, border: `1px solid ${macroColor}40`, fontSize: '9px' }}>
+                {macro}
+              </span>
+            </div>
+          </div>
+
+          {/* Minutes (Mobile) */}
+          <div className="lg:hidden text-right whitespace-nowrap">
+            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '11px', color: 'var(--text-dim)' }}>
+              {player.minutes_played}'
             </span>
           </div>
         </div>
 
-        {/* Index values */}
-        <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
-          {INDICES.map(idx => (
-            <IndexBadge
-              key={idx.key}
-              label={idx.short}
-              value={player[idx.key as keyof PlayerRow] as number}
-              color={idx.color}
-            />
-          ))}
+        {/* Bottom: Indices and Statistics (go below on mobile, right on desktop) */}
+        <div className="flex items-center justify-between lg:justify-end gap-3 pt-3 lg:pt-0 border-t lg:border-t-0" style={{ borderColor: 'var(--border)' }}>
+          <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+            {INDICES.map(idx => (
+              <IndexBadge
+                key={idx.key}
+                label={idx.short}
+                value={player[idx.key as keyof PlayerRow] as number}
+                color={idx.color}
+              />
+            ))}
 
-          {/* Average score */}
-          <div style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center',
-            background: 'var(--surface2)', borderRadius: '8px', padding: '6px 12px', minWidth: '56px',
-          }}>
-            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 900, fontSize: '20px', lineHeight: 1, color: 'var(--text)' }}>
-              {avg.toFixed(0)}
-            </span>
-            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '8px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-dim)', marginTop: '2px' }}>
-              AVG
+            {/* Average score */}
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              background: 'var(--surface2)', borderRadius: '8px', padding: '6px 10px', minWidth: '52px',
+            }}>
+              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 900, fontSize: '18px', lineHeight: 1, color: 'var(--text)' }}>
+                {avg.toFixed(0)}
+              </span>
+              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '8px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-dim)', marginTop: '2px' }}>
+                AVG
+              </span>
+            </div>
+          </div>
+
+          {/* Minutes (Desktop) */}
+          <div className="hidden lg:block text-right min-w-[48px]">
+            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '11px', color: 'var(--text-dim)' }}>
+              {player.minutes_played}'
             </span>
           </div>
         </div>
 
-        {/* Minutes */}
-        <div style={{ textAlign: 'right', minWidth: '48px' }}>
-          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '11px', color: 'var(--text-dim)' }}>
-            {player.minutes_played}'
-          </span>
-        </div>
       </div>
     </div>
   );
@@ -365,6 +377,7 @@ export default function SearchByAttribute() {
   const [searched, setSearched] = useState(false);
   const [sortKey, setSortKey] = useState<IndexKey | 'avg'>('avg');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const macroRoleId = useId();
   const roleId      = useId();
@@ -374,7 +387,7 @@ export default function SearchByAttribute() {
     ? PRIMARY_ROLES.filter(r => ROLE_TO_MACRO[r] === filters.macroRole)
     : PRIMARY_ROLES;
 
-  // Carica TUTTI i giocatori 1 sola volta al montaggio del componente
+  // Load all players on mount
   useEffect(() => {
     const fetchAll = async () => {
       setLoading(true);
@@ -399,7 +412,7 @@ export default function SearchByAttribute() {
   const filtered = allPlayers.filter(player => {
     const f = filters;
     
-    // Filtro per Ruolo
+    // Filter by macro role and primary role
     if (f.macroRole && player.macro_role !== f.macroRole) return false;
     if (f.role && player.primary_role !== f.role) return false;
 
@@ -471,11 +484,42 @@ export default function SearchByAttribute() {
       </div>
 
       <div className="max-w-7xl mx-auto px-6">
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 320px) 1fr', gap: '32px', alignItems: 'start' }}>
+        <div className="flex flex-col lg:grid lg:grid-cols-[300px_1fr] gap-8 items-start">
 
-          {/* Left panel: filters */}
-          <aside aria-label="Search filters">
-            <div className="card" style={{ padding: '24px', position: 'sticky', top: '80px' }}>
+          {/* Hamburger Trigger Button for Mobile */}
+          <div className="lg:hidden w-full mb-2">
+            <button
+              onClick={() => setMobileFiltersOpen(true)}
+              className="w-full flex items-center justify-center gap-2 p-3 rounded font-bold transition-colors"
+              style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)' }}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+              </svg>
+              Filter by Attributes
+            </button>
+          </div>
+
+          {/* Left panel: filters - Drawer overlay (Mobile), static (Desktop) */}
+          <aside 
+            className={`
+              ${mobileFiltersOpen ? 'fixed inset-0 z-50 bg-[var(--bg)] overflow-y-auto p-4 sm:p-6 block' : 'hidden'} 
+              lg:block lg:static lg:p-0 lg:bg-transparent lg:w-full
+            `}
+            aria-label="Search filters"
+          >
+            <div className="card" style={{ padding: '24px', position: 'relative' }}>
+              
+              {/* Close Button X for Mobile */}
+              <button
+                onClick={() => setMobileFiltersOpen(false)}
+                className="lg:hidden absolute top-4 right-4 text-xl font-bold p-2"
+                style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}
+                aria-label="Close filters"
+              >
+                ✕
+              </button>
+
               <h2
                 className="font-display font-900"
                 style={{ color: 'var(--text)', fontSize: '20px', marginBottom: '20px' }}
@@ -576,11 +620,20 @@ export default function SearchByAttribute() {
               <button onClick={clearFilters} className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center', marginTop: '8px' }}>
                 Reset Filters
               </button>
+
+              {/* Final Confirm Button for Mobile */}
+              <button 
+                onClick={() => setMobileFiltersOpen(false)} 
+                className="btn lg:hidden w-full mt-4 flex items-center justify-center font-bold"
+                style={{ background: 'var(--accent)', color: '#000', padding: '12px', borderRadius: 'var(--radius)' }}
+              >
+                Apply Filters
+              </button>
             </div>
           </aside>
 
           {/* Right panel: results */}
-          <section aria-label="Search results">
+          <section aria-label="Search results" className="w-full">
             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '16px' }}>
               <div>
                 <span className="font-display font-900" style={{ fontSize: '22px', color: 'var(--text)', marginRight: '10px' }}>
@@ -596,11 +649,11 @@ export default function SearchByAttribute() {
 
             <ActiveFilterPills filters={filters} onClear={clearFilters} />
 
-            {/* Clickable Header sorting ticks */}
+            {/* Clickable Header sorting ticks (hidden on Mobile) */}
             {sorted.length > 0 && (
               <div
+                className="hidden lg:grid"
                 style={{
-                  display: 'grid',
                   gridTemplateColumns: '28px 28px 1fr repeat(5, 52px) 48px',
                   gap: '16px',
                   padding: '8px 20px',
