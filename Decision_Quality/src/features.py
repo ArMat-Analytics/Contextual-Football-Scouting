@@ -401,12 +401,15 @@ def features_for_all_candidates(df_with_frames: pd.DataFrame,
 
     Important convention — pass_height
     ----------------------------------
-    All candidates (chosen and alternatives alike) are scored as if the
-    pass were a Ground Pass. Reason: for alternatives we cannot know what
-    height the player would have used, and forcing one neutral assumption
-    keeps the chosen-vs-alternatives comparison apples-to-apples. The
-    `xpass_chosen_actual` column on the corpus (computed during training
-    with the recorded pass_height) remains available for reference.
+    Each candidate is scored under the height that the geometry implies:
+    Ground Pass below `cfg.ALT_HEIGHT_DISTANCE_THRESHOLD_M` (default 30 m,
+    where the corpus flips from majority-Ground to majority-High), High
+    Pass above. The previous convention of forcing Ground everywhere
+    inflated xPass on long forward candidates that no one would attempt on
+    the ground (corpus: only 9% Ground at >=40 m). The chosen pass is also
+    scored under the same rule so chosen-vs-alternatives stays apples-to-
+    apples; the recorded actual height lives in `xpass_chosen_actual` on
+    the corpus for reference.
 
     Returns
     -------
@@ -426,12 +429,17 @@ def features_for_all_candidates(df_with_frames: pd.DataFrame,
         opp = getattr(r, "opponents", None)
         chosen_idx = int(getattr(r, "chosen_teammate_idx", -1))
         for cand_idx, target in enumerate(tm):
+            dist = float(np.hypot(target[0] - r.start_x_m,
+                                  target[1] - r.start_y_m))
+            height = ("High Pass"
+                      if dist >= cfg.ALT_HEIGHT_DISTANCE_THRESHOLD_M
+                      else "Ground Pass")
             feats = compute_features(
                 sender_xy=(r.start_x_m, r.start_y_m),
                 target_xy=target,
                 teammates=tm,
                 opponents=opp,
-                pass_height="Ground Pass",
+                pass_height=height,
             )
             feats["event_id"]      = r.event_id
             feats["match_id"]      = r.match_id

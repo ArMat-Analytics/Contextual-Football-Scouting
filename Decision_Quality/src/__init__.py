@@ -11,5 +11,6 @@ Modules:
     corpus   — assemble the H2 working corpus from H1's hull_events_lb.csv
     features — 12 logical features per candidate pass (curated, audited)
     xpass    — multi-model training, calibration, comparison, plots
+    xepv     — bilinear EPV lookup + xEPV per candidate pass
     viz      — pitch plotting helpers for example passes
 """

@@ -26,6 +26,9 @@ for _d in (DATA_DIR, CACHE_DIR, FIGS_DIR):
 H1_DATA_DIR     = DQ_ROOT.parent / "Space_Control_and_Value" / "data"
 HULL_EVENTS_LB  = H1_DATA_DIR / "hull_events_lb.csv"
 EPV_GRID_PATH   = H1_DATA_DIR / "EPV_grid.csv"
+# H1's per-player aggregate: authoritative one role per player + minutes,
+# the pool H2 inherits (135 min, 272 players).
+H1_PLAYER_AGG   = H1_DATA_DIR / "player_space_control_aggregated.csv"
 TOTALS_CSV      = H1_DATA_DIR / "Euro2024_Player_Totals_Distances_Roles.csv"
 
 # H2 outputs
@@ -37,6 +40,11 @@ XPASS_MODEL_PATH    = DATA_DIR / "xpass_model.joblib"
 # and the calibrated xPass. ~7× the corpus size; used for alternatives audit
 # and as the scaffold for the xEPV / Decision Quality index.
 ALTERNATIVES_PATH = DATA_DIR / "alternatives.parquet"
+
+# Final per-player Decision Quality table (the website material): one row
+# per player with the single Score percentile (DQ_index) plus the raw /
+# per90 / pct context columns. Analog of H1's player_space_control_indices.
+PLAYER_DQ_PATH = DATA_DIR / "player_decision_quality.csv"
 
 # StatsBomb caches (gitignored)
 FRAMES360_CACHE  = CACHE_DIR / "frames360_cache.parquet"
@@ -99,6 +107,33 @@ XPASS_CV_FOLDS = 5
 # Pass-height categories (one-hot encoded as 2 binary features after
 # dropping `Ground Pass` as the implicit baseline).
 PASS_HEIGHT_CATS = ("Ground Pass", "Low Pass", "High Pass")
+
+
+# =============================================================================
+# Alternatives — height assumption for hypothetical candidate passes
+# =============================================================================
+# For each candidate teammate we score xPass as if the sender were attempting
+# the pass. We don't know what height the sender WOULD have used, so we
+# pick the empirically dominant height for the geometry: passes below this
+# distance are overwhelmingly Ground (corpus: 77-93% Ground for <30 m),
+# above it they flip to predominantly High (39% Ground / 54% High at 30-40 m,
+# 9% Ground / 91% High at >=40 m). Forcing "Ground" on all candidates
+# inflates xPass on long forward options that nobody would attempt on the
+# ground. The single distance threshold below captures the regime change
+# cleanly without per-bin tuning.
+ALT_HEIGHT_DISTANCE_THRESHOLD_M = 30.0
+
+
+# =============================================================================
+# xEPV — expected Expected-Possession-Value of a candidate pass
+# =============================================================================
+# Multiplier on the turnover-penalty term:
+#     xepv = xpass * EPV(target) - (1 - xpass) * SCALE * EPV(105 - target_x, target_y)
+# 1.0 = symmetric mirror penalty (full opponent value at the mirror
+# point). Lower values (e.g. 0.5) soften the penalty if the harsh
+# mirror discourages ambitious passes too aggressively. Adjustable
+# without retraining xPass.
+XEPV_FAILURE_SCALE = 1.0
 
 
 # =============================================================================
