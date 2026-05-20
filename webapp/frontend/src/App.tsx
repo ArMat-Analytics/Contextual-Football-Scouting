@@ -8,8 +8,10 @@ import PlayerProfile from './pages/PlayerProfile';
 import SimilarPlayers from './pages/SimilarPlayers';
 import SearchByAttribute from './pages/SearchByAttribute';
 import Home from './pages/Home';
+import Glossary from './pages/Glossary';
 
 // ── Nav link that highlights when active ──────────────────────────────────────
+
 function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
   const { pathname } = useLocation();
   const active = pathname === to || (to !== '/' && pathname.startsWith(to));
@@ -38,7 +40,10 @@ function Layout({ children }: { children: React.ReactNode }) {
             borderColor: 'var(--border)',
           }}
         >
-          <Link to="/" className="flex items-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--accent] rounded">
+          <Link
+            to="/"
+            className="flex items-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--accent] rounded"
+          >
             {/* Logo mark */}
             <span
               aria-hidden
@@ -51,10 +56,12 @@ function Layout({ children }: { children: React.ReactNode }) {
               ArMat Analytics
             </span>
           </Link>
+
           <div className="flex items-center gap-4 sm:gap-6">
             <NavLink to="/">Home</NavLink>
             <NavLink to="/players">Search by Player</NavLink>
             <NavLink to="/search">Search by Attribute</NavLink>
+            <NavLink to="/glossary">Glossary</NavLink>
           </div>
         </nav>
       </header>
@@ -68,8 +75,10 @@ function Layout({ children }: { children: React.ReactNode }) {
         className="border-t py-6 px-6 mt-auto"
         style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
       >
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2 text-xs font-mono"
-          style={{ color: 'var(--text-muted)' }}>
+        <div
+          className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2 text-xs font-mono"
+          style={{ color: 'var(--text-muted)' }}
+        >
           <p>© 2026 ArMat Analytics — Contextual Football Scouting</p>
           <p style={{ color: 'var(--text-dim)' }}>UEFA Euro 2024 · StatsBomb 360°</p>
         </div>
@@ -141,6 +150,7 @@ export default function App() {
           <Route path="/player/:playerId" element={<PlayerProfile />} />
           <Route path="/similar"          element={<SimilarPlayers />} />
           <Route path="/search"           element={<SearchByAttribute />} />
+          <Route path="/glossary"         element={<Glossary />} />
         </Routes>
       </Layout>
     </Router>

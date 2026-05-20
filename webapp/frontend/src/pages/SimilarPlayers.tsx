@@ -1,4 +1,4 @@
-import { useState, useId } from 'react';
+import { useState, useRef, useId } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
@@ -10,6 +10,7 @@ import {
   type SpaceControlIndex, type SpaceControlAggregated,
 } from '../hooks/useSpaceControl';
 import { StatViewToggle, type StatViewMode } from '../components/SpaceControlSection';
+import { VARIABLE_DESCRIPTIONS } from '../data/glossary';
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 
@@ -67,20 +68,20 @@ const MOTHER: Record<string, Record<StatViewMode, StatDef[]>> = {
       { col: 'lb_epv', label: 'High Value Pass' },
       { col: 'defenders_bypassed_mean', label: 'Def. Bypassed (avg)' },
       { col: 'penetration_n', label: 'Penetration Attempts (n)' },
-      { col: 'successful_hull_penetrations_n', label: 'Successful Penetrations (n)' }
+      { col: 'successful_hull_penetrations_n', label: 'Successful Penetrations (n)' },
     ],
     per90: [
       { col: 'lb_geom_per90', label: 'LB Geom /90' },
       { col: 'lb_quality_per90', label: 'LB Quality /90' },
       { col: 'lb_epv_per90', label: 'High Value Pass /90' },
       { col: 'penetration_per90', label: 'Penetration Attempts /90' },
-      { col: 'successful_hull_penetrations_per90', label: 'Successful Penetrations /90' }
+      { col: 'successful_hull_penetrations_per90', label: 'Successful Penetrations /90' },
     ],
     percentages: [
       { col: 'lb_geom_pct', label: 'LB Geom %' },
       { col: 'lb_quality_pct', label: 'LB Quality %' },
       { col: 'lb_epv_pct', label: 'High Value Pass %' },
-      { col: 'penetration_completion_pct', label: 'Penetration Completion %' }
+      { col: 'penetration_completion_pct', label: 'Penetration Completion %' },
     ],
   },
   DANGEROUSNESS: {
@@ -88,39 +89,39 @@ const MOTHER: Record<string, Record<StatViewMode, StatDef[]>> = {
       { col: 'epv_added_sum', label: 'EPV Added (sum)' },
       { col: 'epv_penetration_sum', label: 'EPV Penetr. (sum)' },
       { col: 'epv_inside_circ_sum', label: 'Circ. EPV (sum)' },
-      { col: 'inside_circ_n', label: 'Inside Circ. (n)' }
+      { col: 'inside_circ_n', label: 'Inside Circ. (n)' },
     ],
     per90: [
       { col: 'epv_added_per90', label: 'EPV Added /90' },
       { col: 'epv_penetration_per90', label: 'EPV Penetr. /90' },
       { col: 'epv_inside_circ_per90', label: 'Circ. EPV /90' },
-      { col: 'inside_circ_per90', label: 'Inside Circ. /90' }
+      { col: 'inside_circ_per90', label: 'Inside Circ. /90' },
     ],
     percentages: [],
   },
   RECEPTION: {
     raw: [
       { col: 'between_lines_n', label: 'Block Receipts (n)' },
-      { col: 'pressure_resistance_n', label: 'Press. Resist (n)' }
+      { col: 'pressure_resistance_n', label: 'Press. Resist (n)' },
     ],
     per90: [
       { col: 'between_lines_per90', label: 'Between Lines /90' },
-      { col: 'successful_hull_exits_per90', label: 'Hull Exits /90' }
+      { col: 'successful_hull_exits_per90', label: 'Hull Exits /90' },
     ],
     percentages: [
       { col: 'between_lines_pct', label: 'Between Lines %' },
       { col: 'hull_exit_pct', label: 'Hull Exits %' },
-      { col: 'pressure_resistance_pct', label: 'Press. Resist %' }
+      { col: 'pressure_resistance_pct', label: 'Press. Resist %' },
     ],
   },
   GRAVITY: {
     raw: [
-      { col: 'gravity_directional_m', label: 'Def. Pull (m)' }
+      { col: 'gravity_directional_m', label: 'Def. Pull (m)' },
     ],
     per90: [],
     percentages: [
       { col: 'gravity_proximity_pct', label: 'Space Attraction %' },
-      { col: 'gravity_hull_pct', label: 'Gravity Hull %' }
+      { col: 'gravity_hull_pct', label: 'Gravity Hull %' },
     ],
   },
 };
@@ -134,8 +135,13 @@ function fmt(v: unknown): string {
 }
 
 function ScoreBadge() {
-  return <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, fontSize: '11px', padding: '3px 10px', borderRadius: '999px', background: 'var(--surface2)', color: 'var(--text-dim)' }}>N/A</span>;
+  return (
+    <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, fontSize: '11px', padding: '3px 10px', borderRadius: '999px', background: 'var(--surface2)', color: 'var(--text-dim)' }}>
+      N/A
+    </span>
+  );
 }
+
 function ScoreBar() {
   return <div style={{ width: '100%', height: '3px', borderRadius: '999px', background: 'var(--surface2)' }} />;
 }
@@ -150,6 +156,225 @@ function RadarTooltip({ active, payload }: any) {
           {p.name}: <strong>{typeof p.value === 'number' ? p.value.toFixed(1) : '—'}</strong>
         </p>
       ))}
+    </div>
+  );
+}
+
+// ── Axis tooltip state type ───────────────────────────────────────────────────
+
+interface AxisTooltipState {
+  label: string;
+  description: string;
+  /** Coordinates relative to the card container's top-left corner */
+  x: number;
+  y: number;
+}
+
+// ── Custom PolarAngleAxis tick — hover on label text to show description ───────
+// Recharts passes x, y (label centre), payload (payload.value = label string),
+// and textAnchor. Hovering the label fires callbacks so DualRadarCard can
+// display the description overlay. No "?" icon is rendered.
+
+interface CustomRadarTickProps {
+  x?: number;
+  y?: number;
+  payload?: { value: string };
+  textAnchor?: React.SVGAttributes<SVGTextElement>['textAnchor'];
+  onHover: (label: string, description: string, clientX: number, clientY: number) => void;
+  onLeave: () => void;
+}
+
+function CustomRadarTick({
+  x = 0, y = 0,
+  payload, textAnchor = 'middle',
+  onHover, onLeave,
+}: CustomRadarTickProps) {
+  const [hovered, setHovered] = useState(false);
+
+  if (!payload) return null;
+
+  const label       = payload.value;
+  const description = VARIABLE_DESCRIPTIONS[label] ?? 'No description available.';
+
+  const handleMouseEnter = (e: React.MouseEvent<SVGRectElement>) => {
+    setHovered(true);
+    onHover(label, description, e.clientX, e.clientY);
+  };
+
+  const handleMouseLeave = () => {
+    setHovered(false);
+    onLeave();
+  };
+
+  // Estimate text half-width for the invisible hit-area rect
+  const halfW = label.length * 3.5;
+
+  return (
+    <g>
+      {/* Invisible rect — wider hit area so hover is easy to trigger */}
+      <rect
+        x={x - halfW}
+        y={y - 8}
+        width={halfW * 2}
+        height={16}
+        fill="transparent"
+        style={{ cursor: 'help' }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      />
+
+      {/* Axis label text — brightens on hover to signal interactivity */}
+      <text
+        x={x}
+        y={y}
+        textAnchor={textAnchor}
+        dominantBaseline="middle"
+        fill={hovered ? '#ffffff' : 'var(--text-muted)'}
+        fontSize={10}
+        fontFamily="Barlow, sans-serif"
+        fontWeight={hovered ? 700 : 600}
+        style={{
+          transition: 'fill 0.12s',
+          pointerEvents: 'none', /* hit area handled by the rect above */
+        }}
+      >
+        {label}
+      </text>
+    </g>
+  );
+}
+
+// ── Dual mother stat row with inline "?" tooltip ──────────────────────────────
+// Renders a 3-column Core Stats row: label (+ "?" + tooltip) | source val | similar val.
+// The tooltip floats above the row, anchored via position:absolute on the
+// container div, so it always stays inside the card.
+
+function DualMotherStatRow({
+  label,
+  sourceValue,
+  similarValue,
+  diff,
+  color,
+  showExperimental,
+}: {
+  label: string;
+  sourceValue: string;
+  similarValue: string;
+  /** Numeric difference (similar − source); null when either value is missing */
+  diff: number | null;
+  color: string;
+  showExperimental?: boolean;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const description = VARIABLE_DESCRIPTIONS[label] ?? 'No description available.';
+
+  const better = diff != null && diff > 0;
+  const worse  = diff != null && diff < 0;
+
+  return (
+    <div
+      style={{
+        position: 'relative',
+        display: 'grid',
+        gridTemplateColumns: '1fr auto auto',
+        gap: 8,
+        alignItems: 'center',
+      }}
+    >
+      {/* Left cell: label + badges + "?" button + tooltip */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>
+          {label}
+        </span>
+
+        {showExperimental && (
+          <span style={{
+            fontSize: '9px', fontWeight: 700, textTransform: 'uppercase',
+            color, backgroundColor: `${color}22`,
+            padding: '2px 6px', borderRadius: '4px', letterSpacing: '0.02em',
+            flexShrink: 0,
+          }}>
+            Experimental
+          </span>
+        )}
+
+        {/* "?" button */}
+        <button
+          aria-label={`Description for ${label}`}
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
+          style={{
+            flexShrink: 0,
+            width: 15, height: 15,
+            borderRadius: '50%',
+            border: `1px solid ${hovered ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.18)'}`,
+            background: hovered ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.04)',
+            color: hovered ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.35)',
+            fontSize: '8px', fontWeight: 700,
+            fontFamily: 'Barlow, sans-serif',
+            cursor: 'help',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'all 0.12s',
+            padding: 0, lineHeight: 1,
+          }}
+        >
+          ?
+        </button>
+
+        {/* Tooltip — floats above the row */}
+        {hovered && (
+          <div
+            role="tooltip"
+            style={{
+              position: 'absolute',
+              bottom: 'calc(100% + 8px)',
+              left: 0,
+              maxWidth: '240px',
+              background: 'var(--surface)',
+              border: `1px solid ${color}44`,
+              borderLeft: `3px solid ${color}`,
+              borderRadius: '10px',
+              padding: '10px 14px',
+              zIndex: 60,
+              pointerEvents: 'none',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
+            }}
+          >
+            <p style={{
+              fontFamily: 'JetBrains Mono, monospace',
+              fontSize: '10px', fontWeight: 700,
+              color, marginBottom: '6px', letterSpacing: '0.04em',
+            }}>
+              {label}
+            </p>
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.55 }}>
+              {description}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Source value */}
+      <span style={{
+        fontFamily: 'JetBrains Mono, monospace', fontSize: 12, fontWeight: 700,
+        color: C_SOURCE, textAlign: 'right', minWidth: 52,
+      }}>
+        {sourceValue}
+      </span>
+
+      {/* Similar value with ▲▼ indicator */}
+      <span style={{
+        fontFamily: 'JetBrains Mono, monospace', fontSize: 12, fontWeight: 700,
+        textAlign: 'right', minWidth: 52,
+        color: better ? 'var(--win)' : worse ? 'var(--lose)' : C_SIMILAR,
+      }}>
+        {similarValue}
+        {diff != null && diff !== 0 && (
+          <span style={{ fontSize: 9, marginLeft: 2, opacity: 0.8 }}>
+            {better ? '▲' : '▼'}
+          </span>
+        )}
+      </span>
     </div>
   );
 }
@@ -175,30 +400,71 @@ function DualRadarCard({
 
   const radarData = def.axes.map(ax => ({
     stat: ax.label,
-    [sName]:  (sourceIdx[ax.k]  as number) ?? 0,
+    [sName]: (sourceIdx[ax.k] as number) ?? 0,
     [mName]: (similarIdx[ax.k] as number) ?? 0,
   }));
 
   const statList = MOTHER[def.key]?.[mode] ?? [];
-  
-  // ── LOGICA PER I MESSAGGI PERSONALIZZATI ──
-  let emptyMessage = mode === 'per90' ? `No /90 stats for ${def.label}` : `No percentage stats for ${def.label}`;
-  
+
+  // Axis description tooltip state — position relative to the card container
+  const [axisTooltip, setAxisTooltip] = useState<AxisTooltipState | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleAxisHover = (
+    label: string,
+    description: string,
+    clientX: number,
+    clientY: number,
+  ) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    setAxisTooltip({ label, description, x: clientX - rect.left, y: clientY - rect.top });
+  };
+
+  const handleAxisLeave = () => setAxisTooltip(null);
+
+  // Stable tick renderer — avoids re-creating the function on every render
+  const renderTick = (props: any) => (
+    <CustomRadarTick
+      {...props}
+      onHover={handleAxisHover}
+      onLeave={handleAxisLeave}
+    />
+  );
+
+  // Informative messages for empty mother-stat panels
+  let emptyMessage =
+    mode === 'per90'
+      ? `No /90 stats for ${def.label}`
+      : `No percentage stats for ${def.label}`;
+
   if (def.key === 'DANGEROUSNESS' && mode === 'percentages') {
-    emptyMessage = "The Dangerousness index does not include percentage statistics because it is based on EPV (Expected Pass Value) and absolute penetration volumes. Being a probabilistic measure that calculates the net offensive 'weight' generated by a player, it is evaluated exclusively in absolute values (Raw) or scaled to playing time (Per 90).";
+    emptyMessage =
+      "The Dangerousness index does not include percentage statistics because it is based on EPV (Expected Pass Value) and absolute penetration volumes. Being a probabilistic measure that calculates the net offensive 'weight' generated by a player, it is evaluated exclusively in absolute values (Raw) or scaled to playing time (Per 90).";
   } else if (def.key === 'GRAVITY' && mode === 'per90') {
-    emptyMessage = "GRAVITY: Gravity statistics are not calculated 'Per 90' because they measure the reaction and spatial deformation of the opposing defense (in meters or percentage deviations). Since it represents an average effect calculated every time the player has the ball, it reflects a constant 'magnetic pull' rather than a cumulative volume of actions over time.";
+    emptyMessage =
+      "Gravity statistics are not calculated 'Per 90' because they measure the reaction and spatial deformation of the opposing defense (in meters or percentage deviations). Since it represents an average effect calculated every time the player has the ball, it reflects a constant 'magnetic pull' rather than a cumulative volume of actions over time.";
   }
 
   return (
-    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderTop: `3px solid ${def.color}`, borderRadius: 'var(--radius-lg)', padding: '20px' }}>
+    <div
+      ref={containerRef}
+      style={{
+        position: 'relative',  /* required for the axis tooltip overlay */
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderTop: `3px solid ${def.color}`,
+        borderRadius: 'var(--radius-lg)',
+        padding: '20px',
+      }}
+    >
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
         <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 700, color: def.color }}>
           {def.label}
         </span>
         <div style={{ display: 'flex', gap: '12px' }}>
-          {(['idx__PROGRESSION','idx__DANGEROUSNESS','idx__RECEPTION','idx__GRAVITY'] as (keyof SpaceControlIndex)[])
+          {(['idx__PROGRESSION', 'idx__DANGEROUSNESS', 'idx__RECEPTION', 'idx__GRAVITY'] as (keyof SpaceControlIndex)[])
             .filter(k => k === `idx__${def.key}`)
             .map(k => (
               <div key={String(k)} style={{ textAlign: 'right' }}>
@@ -207,36 +473,77 @@ function DualRadarCard({
                   <span style={{ color: 'var(--text-dim)', fontSize: 12, margin: '0 4px' }}>vs</span>
                   <span style={{ color: C_SIMILAR }}>{fmt(similarIdx[k])}</span>
                 </div>
-                <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '8px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-dim)', marginTop: 2 }}>Index</div>
+                <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '8px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-dim)', marginTop: 2 }}>
+                  Index
+                </div>
               </div>
             ))
           }
         </div>
       </div>
 
-      {/* Overlapping radar */}
+      {/* Overlapping dual radar — axes trigger description tooltip on hover */}
       <ResponsiveContainer width="100%" height={220}>
         <RadarChart data={radarData} margin={{ top: 8, right: 16, bottom: 8, left: 16 }}>
           <PolarGrid stroke="rgba(255,255,255,0.07)" />
-          <PolarAngleAxis dataKey="stat" tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Barlow', fontWeight: 600 }} />
+          <PolarAngleAxis dataKey="stat" tick={renderTick} />
           <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
           <Tooltip content={<RadarTooltip />} />
-          <Radar name={sName}  dataKey={sName}  stroke={C_SOURCE}  fill={C_SOURCE}  fillOpacity={0.15} strokeWidth={2} dot={{ fill: C_SOURCE,  r: 3 }} activeDot={{ r: 5 }} />
+          <Radar name={sName} dataKey={sName} stroke={C_SOURCE}  fill={C_SOURCE}  fillOpacity={0.15} strokeWidth={2} dot={{ fill: C_SOURCE,  r: 3 }} activeDot={{ r: 5 }} />
           <Radar name={mName} dataKey={mName} stroke={C_SIMILAR} fill={C_SIMILAR} fillOpacity={0.15} strokeWidth={2} dot={{ fill: C_SIMILAR, r: 3 }} activeDot={{ r: 5 }} />
-          <Legend formatter={(v: string) => (
-            <span style={{ fontSize: 10, color: v === sName ? C_SOURCE : C_SIMILAR, fontFamily: 'Barlow' }}>{v}</span>
-          )} wrapperStyle={{ paddingTop: 4 }} />
+          <Legend
+            formatter={(v: string) => (
+              <span style={{ fontSize: 10, color: v === sName ? C_SOURCE : C_SIMILAR, fontFamily: 'Barlow' }}>{v}</span>
+            )}
+            wrapperStyle={{ paddingTop: 4 }}
+          />
         </RadarChart>
       </ResponsiveContainer>
 
+      {/* Axis description tooltip overlay */}
+      {axisTooltip && (
+        <div
+          role="tooltip"
+          aria-live="polite"
+          style={{
+            position: 'absolute',
+            left: Math.min(axisTooltip.x + 12, 260),
+            top: axisTooltip.y - 6,
+            maxWidth: '220px',
+            background: 'var(--surface2)',
+            border: `1px solid ${def.color}44`,
+            borderLeft: `3px solid ${def.color}`,
+            borderRadius: '10px',
+            padding: '10px 14px',
+            pointerEvents: 'none',
+            zIndex: 50,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+          }}
+        >
+          <p style={{
+            fontFamily: 'JetBrains Mono, monospace',
+            fontSize: '10px', fontWeight: 700,
+            color: def.color, marginBottom: '6px', letterSpacing: '0.04em',
+          }}>
+            {axisTooltip.label}
+          </p>
+          <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.55 }}>
+            {axisTooltip.description}
+          </p>
+        </div>
+      )}
+
       {/* Mother stats comparison */}
       <div style={{ marginTop: 12, background: 'var(--surface2)', borderRadius: 10, padding: '12px 14px' }}>
-        <p style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '8px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: 8 }}>Core Stat</p>
+        <p style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '8px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: 8 }}>
+          Core Stats
+        </p>
+
         {statList.length === 0 ? (
           <div style={{ background: 'var(--bg)', padding: '12px 14px', borderRadius: '6px', border: '1px solid var(--border)' }}>
-             <p style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-               {emptyMessage}
-             </p>
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+              {emptyMessage}
+            </p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -246,39 +553,21 @@ function DualRadarCard({
               <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: C_SOURCE, textTransform: 'uppercase', textAlign: 'right', minWidth: 52 }}>{sName}</span>
               <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: C_SIMILAR, textTransform: 'uppercase', textAlign: 'right', minWidth: 52 }}>{mName}</span>
             </div>
+
             {statList.map(s => {
-              const sv = sourceAgg  ? (sourceAgg[s.col]  as number) : null;
-              const mv = similarAgg ? (similarAgg[s.col] as number) : null;
+              const sv   = sourceAgg  ? (sourceAgg[s.col]  as number) : null;
+              const mv   = similarAgg ? (similarAgg[s.col] as number) : null;
               const diff = sv != null && mv != null ? mv - sv : null;
-              const better = diff != null && diff > 0;
-              const worse  = diff != null && diff < 0;
               return (
-                <div key={s.col} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 8, alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>{s.label}</span>
-                    {def.key === 'GRAVITY' && (
-                      <span style={{
-                        fontSize: '9px',
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        color: def.color,
-                        backgroundColor: `${def.color}22`,
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        letterSpacing: '0.02em'
-                      }}>
-                        Experimental
-                      </span>
-                    )}
-                  </div>
-                  <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, fontWeight: 700, color: C_SOURCE, textAlign: 'right', minWidth: 52 }}>{fmt(sv)}</span>
-                  <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, fontWeight: 700, textAlign: 'right', minWidth: 52, color: better ? 'var(--win)' : worse ? 'var(--lose)' : C_SIMILAR }}>
-                    {fmt(mv)}
-                    {diff != null && diff !== 0 && (
-                      <span style={{ fontSize: 9, marginLeft: 2, opacity: 0.8 }}>{better ? `▲` : `▼`}</span>
-                    )}
-                  </span>
-                </div>
+                <DualMotherStatRow
+                  key={s.col}
+                  label={s.label}
+                  sourceValue={fmt(sv)}
+                  similarValue={fmt(mv)}
+                  diff={diff}
+                  color={def.color}
+                  showExperimental={def.key === 'GRAVITY'}
+                />
               );
             })}
           </div>
@@ -400,10 +689,12 @@ export default function SimilarPlayers() {
         <ol className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-muted)' }}>
           <li><Link to="/" className="hover:text-[--accent] transition-colors font-600">Dashboard</Link></li>
           <li aria-hidden>/</li>
-          {playerId && <>
-            <li><Link to={`/player/${playerId}`} className="hover:text-[--accent] transition-colors font-600">{playerName}</Link></li>
-            <li aria-hidden>/</li>
-          </>}
+          {playerId && (
+            <>
+              <li><Link to={`/player/${playerId}`} className="hover:text-[--accent] transition-colors font-600">{playerName}</Link></li>
+              <li aria-hidden>/</li>
+            </>
+          )}
           <li className="font-600" style={{ color: 'var(--text)' }} aria-current="page">Similar Players</li>
         </ol>
       </nav>
@@ -433,29 +724,20 @@ export default function SimilarPlayers() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="card p-6 sm:p-8 mb-8">
 
-            {/* Two-col header: source + selector */}
+            {/* Two-col header: source player + comparison selector */}
             <div className="grid gap-6 mb-8 pb-8 border-b" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', borderColor: 'var(--border)' }}>
 
-              {/* Source player*/}
-              <div
-                style={{
-                  position: 'relative',
-                  overflow: 'hidden',
-                  background: 'var(--surface2)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 14,
-                  padding: 16,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 14,
-                }}
-              >
+              {/* Source player */}
+              <div style={{
+                position: 'relative', overflow: 'hidden',
+                background: 'var(--surface2)', border: '1px solid var(--border)',
+                borderRadius: 14, padding: 16,
+                display: 'flex', alignItems: 'center', gap: 14,
+              }}>
                 <div style={{
                   position: 'absolute', left: 0, top: 0, bottom: 0,
-                  width: 3, background: C_SOURCE,
-                  borderRadius: '3px 0 0 3px',
+                  width: 3, background: C_SOURCE, borderRadius: '3px 0 0 3px',
                 }} />
-
                 <div
                   className="w-14 h-14 rounded-xl flex-shrink-0 flex items-center justify-center font-display font-900 text-2xl select-none"
                   style={{ background: `${C_SOURCE}18`, color: C_SOURCE }}
@@ -463,7 +745,6 @@ export default function SimilarPlayers() {
                 >
                   {playerName[0]}
                 </div>
-
                 <div>
                   <p className="font-mono text-[10px] tracking-widest uppercase mb-1" style={{ color: C_SOURCE }}>Selected player</p>
                   <p className="font-display font-900 text-2xl leading-tight" style={{ color: 'var(--text)' }}>{playerName}</p>
@@ -487,13 +768,11 @@ export default function SimilarPlayers() {
                 </div>
               </div>
 
-              {/* Selector */}
+              {/* Comparison selector */}
               <div>
                 <label htmlFor={dropdownId} className="block font-mono text-[10px] tracking-widest uppercase mb-2" style={{ color: 'var(--text-dim)' }}>
                   Select player to compare
                 </label>
-
-                {/* Custom select wrapper for the arrow indicator */}
                 <div style={{ position: 'relative' }}>
                   <select
                     id={dropdownId}
@@ -509,23 +788,18 @@ export default function SimilarPlayers() {
                   <span style={{
                     position: 'absolute', right: 12, top: '50%',
                     transform: 'translateY(-50%)',
-                    color: 'var(--text-dim)', fontSize: 13,
-                    pointerEvents: 'none',
+                    color: 'var(--text-dim)', fontSize: 13, pointerEvents: 'none',
                   }}>▾</span>
                 </div>
 
                 {selectedPlayer && (
                   <div
                     className="mt-3 flex items-center gap-3 px-4 py-3"
-                    style={{
-                      background: 'var(--surface2)',
-                      border: '1px solid var(--border)',
-                      borderRadius: 14,
-                    }}
+                    style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 14 }}
                   >
                     {getFlagUrl(selectedPlayer.team)
                       ? <img src={getFlagUrl(selectedPlayer.team)!} alt="" className="w-6 object-cover rounded-sm shadow-sm shrink-0" aria-hidden />
-                      : <span className="text-xs font-mono font-700 rounded shrink-0" style={{ background: 'var(--surface)', padding: '2px 6px', color: 'var(--text-muted)' }} aria-hidden>{selectedPlayer.team?.substring(0,3).toUpperCase()}</span>
+                      : <span className="text-xs font-mono font-700 rounded shrink-0" style={{ background: 'var(--surface)', padding: '2px 6px', color: 'var(--text-muted)' }} aria-hidden>{selectedPlayer.team?.substring(0, 3).toUpperCase()}</span>
                     }
                     <div className="flex-1 min-w-0">
                       <p className="font-display font-800 text-base leading-tight truncate" style={{ color: C_SIMILAR }}>{selectedPlayer.player}</p>
@@ -540,10 +814,9 @@ export default function SimilarPlayers() {
               </div>
             </div>
 
-            {/* Stat view toggle */}
+            {/* Stat view toggle + player legend */}
             <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
               <StatViewToggle mode={statMode} onChange={setStatMode} />
-              {/* Legend */}
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1.5">
                   <div style={{ width: 10, height: 10, borderRadius: '50%', background: C_SOURCE }} />
@@ -556,7 +829,7 @@ export default function SimilarPlayers() {
               </div>
             </div>
 
-            {/* ── 4 dual radar cards ── */}
+            {/* 4 dual radar cards */}
             {chartsReady && selectedPlayer ? (
               loadingAgg ? (
                 <div style={{ textAlign: 'center', padding: '32px' }}>
@@ -586,20 +859,20 @@ export default function SimilarPlayers() {
             ) : (
               <div className="rounded-xl px-4 py-3 border" style={{ background: 'var(--surface2)', borderColor: 'var(--border)' }}>
                 <p className="text-xs font-mono" style={{ color: 'var(--text-dim)' }}>
-                  ℹ️ The source player's space control profile is not available. Make sure the SC tables have been imported.
+                  The source player's space control profile is not available. Make sure the SC tables have been imported.
                 </p>
               </div>
             )}
           </div>
 
-          {/* Full list */}
+          {/* Full similar players list */}
           <h2 className="font-display font-900 text-2xl mb-4" style={{ color: 'var(--text)' }}>
             All {macroRole} players ({similarList.length})
           </h2>
           <div className="space-y-3" role="list">
             {similarList.map((player, idx) => {
               const isSelected = idx === selectedIdx;
-              const flagUrl = getFlagUrl(player.team);
+              const flagUrl    = getFlagUrl(player.team);
               return (
                 <div
                   key={`${player.player}-${player.team}`}
@@ -611,10 +884,12 @@ export default function SimilarPlayers() {
                   onKeyDown={e => e.key === 'Enter' && setSelectedIdx(idx)}
                   aria-selected={isSelected}
                 >
-                  <span className="font-mono font-700 text-xl w-8 text-center" style={{ color: idx < 3 ? 'var(--accent)' : 'var(--text-dim)' }} aria-hidden>{idx + 1}</span>
+                  <span className="font-mono font-700 text-xl w-8 text-center" style={{ color: idx < 3 ? 'var(--accent)' : 'var(--text-dim)' }} aria-hidden>
+                    {idx + 1}
+                  </span>
                   {flagUrl
                     ? <img src={flagUrl} alt="" className="w-8 h-6 object-cover rounded shadow-sm shrink-0" aria-hidden />
-                    : <span className="text-xs font-mono font-700 rounded shrink-0" style={{ background: 'var(--surface2)', padding: '4px 8px', color: 'var(--text-muted)' }} aria-hidden>{player.team?.substring(0,3).toUpperCase()}</span>
+                    : <span className="text-xs font-mono font-700 rounded shrink-0" style={{ background: 'var(--surface2)', padding: '4px 8px', color: 'var(--text-muted)' }} aria-hidden>{player.team?.substring(0, 3).toUpperCase()}</span>
                   }
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
