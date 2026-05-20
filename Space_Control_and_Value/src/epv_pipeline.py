@@ -22,7 +22,10 @@ import pandas as pd
 from matplotlib.colors import LogNorm, PowerNorm
 from statsbombpy import sb
 
-from . import config
+try:
+    from . import config
+except ImportError:
+    import config
 
 warnings.filterwarnings('ignore')
 
@@ -224,6 +227,17 @@ def main():
     print(f"\nDONE. File saved at: {config.HULL_EVENTS_EPV}")
     return df_hull
 
+# =============================================================================
+# Wrapper Class for H3 Off-Ball-movement
+# =============================================================================
+class EPVPipeline:
+    def __init__(self):
+        """Load the EPV grid into memory during class initialization."""
+        self.grid = pd.read_csv(config.EPV_GRID_PATH, header=None).values.astype(float)
+
+    def epv_at(self, x_m, y_m):
+        """Return the interpolated EPV value for coordinates in meters."""
+        return _epv_at(self.grid, x_m, y_m)
 
 if __name__ == "__main__":
     main()
