@@ -51,8 +51,8 @@ OUTPUT_COLUMNS = [
     "player", "team", "primary_role", "macro_role", "minutes_played",
     "n_decisions",
     "DQ_index",                                   # the only percentile
-    "score", "score_sd", "value_impact", "value_impact_centered",
-    "delta_xepv_median", "avg_miss_cost",         # raw block
+    "score", "score_sd", "value_impact",
+    "avg_miss_cost",                              # raw block
     "elite_per90", "poor_per90",                  # per 90
     "accuracy_pct", "worst_choice_pct",           # percentages (mirror pair)
 ]
@@ -142,7 +142,6 @@ def aggregate_players(pe: pd.DataFrame,
                  score            =("score",       "mean"),
                  score_sd         =("score",       "std"),
                  value_impact     =("delta_xepv",  "mean"),
-                 delta_xepv_median=("delta_xepv",  "median"),
                  n_elite          =("is_elite",    "sum"),
                  n_poor           =("is_poor",     "sum"),
                  accuracy_pct     =("beat_all",    lambda s: 100 * s.mean()),
@@ -158,10 +157,6 @@ def aggregate_players(pe: pd.DataFrame,
     # the ONLY percentile: within-role rank of Score (Design K headline)
     dq["DQ_index"] = (dq.groupby("macro_role")["score"]
                         .rank(pct=True).mul(100).round(1))
-    # value_impact made role-comparable in raw units (no extra percentile)
-    dq["value_impact_centered"] = (
-        dq["value_impact"]
-        - dq.groupby("macro_role")["value_impact"].transform("mean"))
 
     dq = dq.sort_values("DQ_index", ascending=False).reset_index(drop=True)
     return dq[OUTPUT_COLUMNS]

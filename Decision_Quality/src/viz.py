@@ -21,9 +21,8 @@ pick_examples(merged_df, kind="...", k=6, player=None)
 plot_pass_example(event_id, merged_df)
 plot_pass_grid(event_ids, merged_df, ncols=2)
 plot_pass_alternatives(event_id, alternatives_df, merged_df)
-plot_dq_scatter(dq, role, highlight, label_extra=None, ax=None)   # §5 diagnostic only
-plot_dq_quadrant(dq, player, ax=None)             # single-player page graph
-plot_dq_h2h(dq, player_a, player_b, ax=None)      # two-player comparison graph
+plot_dq_radar(dq, player, ax=None)                    # single-player page graph
+plot_dq_radar_h2h(dq, player_a, player_b, ax=None)    # two-player comparison page graph
 
 `merged_df` is the table you get by joining the xPass-scored features with
 the corpus context (see `notebooks/H2-Contextual_Decision_Making.ipynb`,
@@ -40,6 +39,7 @@ import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import plotly.graph_objects as go
 
 from . import config as cfg
 
@@ -380,251 +380,214 @@ def plot_pass_alternatives(event_id: str,
 
 
 # ===========================================================================
-# Decision Quality — player page graph (quality vs value scatter)
+# Decision Quality — website page graphic (radar)
 # ===========================================================================
-_DQ_CAPTION = (
-    "X = Decision Quality Index: within-role percentile of Score, where "
-    "Score is the mean\nshare of in-frame alternatives whose xEPV is at or "
-    "below the chosen pass xEPV.\n"
-    "Y = Value Impact: mean of (chosen xEPV − mean xEPV of the "
-    "alternatives), shown × 100."
-)
-
-
-def plot_dq_scatter(dq, role, highlight, label_extra=None, ax=None,
-                    min_n=None, n_col="n_decisions"):
-    """The H2 player-page graph: Decision Quality vs Value Impact.
-
-    X = DQ_index (Score percentile within role), Y = value_impact (mean
-    delta xEPV vs alternatives, ×100). Every player of `role` is a point,
-    `highlight` is drawn large in red. Deliberately not a radar: the
-    geom_type decomposition inverts structurally on penetration.
-
-    `min_n` is a DISPLAY-ONLY filter: drop players with fewer than `min_n`
-    decisions so a handful of tiny-sample players do not distort the
-    picture. It does NOT change the index or the CSV (the pool stays the
-    full 272, no floor, by design).
-    """
-    r = dq[dq["macro_role"] == role].copy()
-    if min_n is not None and n_col in r.columns:
-        r = r[r[n_col] >= min_n]
-    if ax is None:
-        _, ax = plt.subplots(figsize=(8.4, 6.4))
-
-    ax.scatter(r["DQ_index"], r["value_impact"] * 100, s=46,
-               c="#9fb3c8", edgecolor="white", linewidth=0.6, zorder=2)
-    ax.axhline(0, color="#bbb", lw=0.8, zorder=1)
-    ax.axvline(50, color="#bbb", lw=0.8, ls="--", zorder=1)
-
-    for nm in (label_extra or []):
-        q = r[r["player"] == nm]
-        if len(q):
-            ax.annotate(nm.split()[-1],
-                        (q["DQ_index"].iloc[0], q["value_impact"].iloc[0] * 100),
-                        textcoords="offset points", xytext=(6, 5),
-                        fontsize=8.5, color="#33424f")
-
-    hp = r[r["player"] == highlight]
-    if len(hp):
-        ax.scatter(hp["DQ_index"], hp["value_impact"] * 100, s=210,
-                   c="#e8543f", edgecolor="black", linewidth=1.1, zorder=4)
-        ax.annotate(highlight,
-                    (hp["DQ_index"].iloc[0], hp["value_impact"].iloc[0] * 100),
-                    textcoords="offset points", xytext=(12, 8),
-                    fontsize=11, fontweight="bold", color="#e8543f")
-
-    ax.set_xlabel("Decision Quality Index  (Score percentile within role)")
-    ax.set_ylabel("Value Impact  (mean ΔxEPV vs alternatives × 100)")
-    sub = f"  ·  shown: players with ≥ {min_n} decisions" if min_n else ""
-    ax.set_title(f"Decision Quality vs Value Impact  ·  {role}{sub}", pad=8)
-    # two-line definition of the axes and how they are computed
-    ax.text(0.5, 0.985, _DQ_CAPTION, transform=ax.transAxes,
-            ha="center", va="top", fontsize=7.0, color="#5b6b79",
-            bbox=dict(facecolor="white", alpha=0.72, edgecolor="none",
-                      boxstyle="round,pad=0.3"))
-    ax.grid(alpha=0.18, zorder=0)
-    ax.set_xlim(-3, 103)
-    return ax
-
-
-# ===========================================================================
-# Decision Quality — website page graphics
-# ===========================================================================
-# Two graphics, two distinct jobs, NO radar (a radar implies a geometric
-# relationship between axes we measured to be partly false). On real data,
-# within-role Spearman (see src/validation.py, run in the notebook):
-#   accuracy_pct ↔ worst_choice_pct   ρ ≈ 0.12  (weak — distinct axes)
-#   DQ_index     ↔ value_impact       ρ ≈ 0.76  (strong — redundant)
-# so the quadrant (weakly-correlated pair, all four boxes populated in
-# every role) is the single-player page graph and the DQ↔Value scatter
-# above stays a §5 diagnostic, never a page graph.
+# One graphic, two contexts (single player / two-player overlay). The radar
+# mirrors the H1 family-card pattern: a headline INDEX (DQ_index) sits next
+# to a within-role percentile radar that decomposes the behavioural face of
+# that index. Like H1's Dangerousness (EPV Added headline + per-zone radar
+# components), H2's headline is the natural magnitude and the radar is the
+# *profile* behind it — H1 decomposes spatially, H2 decomposes behaviourally.
 #
-# The within-role *percentile* used here is a readability scale, not a
-# second index: a raw accuracy of ~15% reads like a bad grade, "85th
-# percentile among MIDs" reads as good. DQ_index stays the only headline
-# number; the raw / per-90 / % columns are shown as a table on the page.
+# Axes (4, all "outside = better"; the two "negative" raw metrics are
+# mirrored as 100 − percentile so the radar reads at-a-glance like H1):
+#   - Picks the best      <- accuracy_pct      (rate, in-frame)
+#   - Avoids the worst    <- 100 - pct(worst_choice_pct) (rate, in-frame)
+#   - Elite reads / 90    <- elite_per90       (volume, role benchmark)
+#   - Avoids poor / 90    <- 100 - pct(poor_per90)       (volume, role benchmark)
 #
-# PCT_METRICS: (plain-language label, csv col, flip?). flip=True means a
-# low raw value is good, so we use 100 − percentile and phrase it
-# positively ("Avoids …") — the axis is never inverted, only the wording
-# states the good direction. Plain-language labels only: no CSV column
-# names ever reach a chart.
-PCT_METRICS = [
-    ("Decision quality",          "DQ_index",         False),
-    ("Value added vs options",    "value_impact",     False),
-    ("Elite reads / 90",          "elite_per90",      False),
-    ("Avoids poor choices / 90",  "poor_per90",       True),
-    ("Picks the best option",     "accuracy_pct",     False),
-    ("Avoids the worst option",   "worst_choice_pct", True),
+# Excluded from the radar by design (kept in the page CORE STATS table):
+#   - value_impact     ρ ≈ 0.71 with DQ_index -> would echo the headline
+#   - avg_miss_cost    conditioned on non-optimal events -> NaN-prone, not
+#                      a first-grade scouting axis
+#
+# The within-role percentile is a readability scale, not a second index:
+# a raw "accuracy 14%" reads like a bad grade, "85th percentile among MIDs"
+# reads as good. DQ_index stays the only headline number; the raw / per-90
+# / % columns are shown in the page table.
+# Same Plotly/styling vocabulary as H1's `dashboard.py` so a player profile
+# page reads identically whether you are looking at H1's four family
+# cards or H2's Decision Quality card. The H2 family color (#1976d2,
+# blue) is distinct from the four H1 family colors (green/red/orange/
+# purple) so the new card is recognisable but the chrome is identical.
+RADAR_AXES = [
+    ("Picks the best",     "accuracy_pct",     False),
+    ("Avoids the worst",   "worst_choice_pct", True),
+    ("Elite reads / 90",   "elite_per90",      False),
+    ("Avoids poor / 90",   "poor_per90",       True),
 ]
-# the metrics drawn on the head-to-head dumbbell
-H2H_METRICS = PCT_METRICS[:5]
+DQ_COLOR        = "#1976d2"   # H2 family color (was unused by H1's four)
+DQ_COLOR_B      = "#d62728"   # second player in the H2H overlay (matches H1's C2)
 
 
-def _role_pct(dq, role):
-    """Within-role percentile (0-100) for every PCT_METRICS column.
+def _radar_percentiles(dq: pd.DataFrame, role: str) -> pd.DataFrame:
+    """Within-role percentile (0-100) for every RADAR_AXES column.
 
-    Adds a ``<col>__p`` column per metric, always oriented so higher = better
-    (flip=True metrics use 100 − percentile). Returns the role sub-frame.
+    Adds a ``<col>__p`` column per axis, always oriented so higher = better
+    (``flip=True`` metrics use 100 − percentile). Returns the role sub-frame.
     """
     sub = dq[dq["macro_role"] == role].copy()
-    for _, col, flip in PCT_METRICS:
+    for _, col, flip in RADAR_AXES:
         p = sub[col].rank(pct=True) * 100
         sub[col + "__p"] = (100 - p) if flip else p
     return sub
 
 
-def plot_dq_quadrant(dq, player, ax=None):
-    """Single-player page graph: decision-maker archetype quadrant.
+def _render_static(fig):
+    """Emit a static PNG copy of a Plotly figure into the notebook output.
 
-    X = "picks the best option" percentile within role.
-    Y = "avoids the worst option" percentile within role.
-    Both 0-100 and higher = better, so the ELITE corner is top-right and
-    nothing is inverted (the Y metric's good direction is stated by the
-    wording, not by flipping the axis). The two axes are only weakly
-    correlated within role (accuracy ↔ worst-choice ρ ≈ 0.12 on this
-    corpus) and all four quadrants are populated in every macro-role,
-    so the archetypes are real, not an artefact of a correlated pair.
+    Mirrors H1's dashboard helper. GitHub renders only embedded images in
+    .ipynb cells, not Plotly's interactive HTML, so the static copy keeps
+    the notebook viewable on github.com.
+    """
+    from IPython.display import Image, display
+    display(Image(fig.to_image(format="png", scale=2)))
+
+
+def _hover_for(row: pd.Series, role: str) -> list[str]:
+    """Hover text per axis: '<b>Label</b><br>Raw: X<br>Pct in ROLE: Y'.
+
+    Same template used by H1's `dashboard.player_profile`. ``raw`` is
+    pulled from the unflipped column so it always reads as the underlying
+    measurement, regardless of mirror.
+    """
+    hov = []
+    for lab, col, _flip in RADAR_AXES:
+        raw = row[col]
+        pct = row[col + "__p"]
+        hov.append(
+            f"<b>{lab}</b><br>Raw: {raw:.2f}<br>"
+            f"Pct in {role}: {pct:.0f}")
+    return hov
+
+
+def plot_dq_radar(dq: pd.DataFrame, player: str, show_static: bool = True):
+    """Single-player page graph: Decision Quality 4-axis radar (Plotly).
+
+    Same chrome as H1's `dashboard.player_profile` panels — line width
+    2.5, fill opacity 0.35, radial range [0, 100] with ticks at
+    [20, 40, 60, 80], hover with raw + within-role percentile. Returns
+    the Plotly Figure; when ``show_static`` is True (notebook context)
+    also emits a static PNG via `_render_static` so the .ipynb stays
+    viewable on github.com.
     """
     row = dq[dq["player"] == player]
     if row.empty:
         raise ValueError(f"player not found: {player}")
     row = row.iloc[0]
     role = row["macro_role"]
-    peers = dq[dq["macro_role"] == role].copy()
-    peers["x"] = peers["accuracy_pct"].rank(pct=True) * 100
-    peers["y"] = (1 - peers["worst_choice_pct"].rank(pct=True)) * 100
-    me = peers[peers["player"] == player].iloc[0]
+    sub = _radar_percentiles(dq, role)
+    me = sub[sub["player"] == player].iloc[0]
 
-    if ax is None:
-        _, ax = plt.subplots(figsize=(7.6, 7.4))
+    labels = [a[0] for a in RADAR_AXES]
+    vals = [0 if pd.isna(me[col + "__p"]) else me[col + "__p"]
+            for _, col, _ in RADAR_AXES]
+    hov = _hover_for(me, role)
+    # close the loop
+    labels_c = labels + [labels[0]]
+    vals_c = vals + [vals[0]]
+    hov_c = hov + [hov[0]]
 
-    ax.axhspan(50, 100, color="#e8f5e9", zorder=0)
-    ax.axhspan(0, 50, color="#fbe9e7", zorder=0)
-    ax.axvline(50, color="#9aa", lw=0.8, ls="--", zorder=1)
-    ax.axhline(50, color="#9aa", lw=0.8, ls="--", zorder=1)
-
-    ax.scatter(peers["x"], peers["y"], s=46, c="#b0bec5",
-               edgecolor="white", linewidth=0.6, zorder=2)
-    ax.scatter([me["x"]], [me["y"]], s=240, c="#e8543f",
-               edgecolor="black", linewidth=1.2, zorder=4)
-    ax.annotate(player, (me["x"], me["y"]),
-                textcoords="offset points", xytext=(11, 8),
-                fontsize=11, fontweight="bold", color="#e8543f")
-
-    box = dict(boxstyle="round,pad=0.32", facecolor="white",
-               edgecolor="#cfd8dc", alpha=0.9)
-    lab = dict(fontsize=9, fontweight="bold", color="#5b6b79", zorder=5)
-    ax.text(0.985, 0.985, "ELITE\nfinds best, avoids worst",
-            transform=ax.transAxes, ha="right", va="top", bbox=box, **lab)
-    ax.text(0.015, 0.985, "SAFE\nrarely worst, rarely best",
-            transform=ax.transAxes, ha="left", va="top", bbox=box, **lab)
-    ax.text(0.985, 0.015, "BRILLIANT\nbut erratic",
-            transform=ax.transAxes, ha="right", va="bottom", bbox=box, **lab)
-    ax.text(0.015, 0.015, "WEAK\nmisses best, picks worst",
-            transform=ax.transAxes, ha="left", va="bottom", bbox=box, **lab)
-
-    ax.set_xlim(-3, 103)
-    ax.set_ylim(-3, 103)
-    ax.set_xticks([0, 25, 50, 75, 100])
-    ax.set_yticks([0, 25, 50, 75, 100])
-    ax.set_xlabel(f"Picks the best option  —  percentile among {role}s")
-    ax.set_ylabel(f"Avoids the worst option  —  percentile among {role}s")
-    ax.set_title(f"{player}  —  decision-maker type among {role}s "
-                 f"(n={int(row['n_decisions'])} decisions)", pad=8)
-    ax.grid(alpha=0.12, zorder=0)
-    return ax
+    fig = go.Figure()
+    fig.add_trace(go.Scatterpolar(
+        r=vals_c, theta=labels_c, fill="toself",
+        hoverinfo="text", hovertext=hov_c,
+        line=dict(color=DQ_COLOR, width=2.5),
+        fillcolor=DQ_COLOR, opacity=0.35, showlegend=False,
+    ))
+    fig.update_layout(
+        title=(f"<b>DECISION QUALITY</b>  ·  idx {row['DQ_index']:.0f}/100"
+               f"<br><span style='font-size:12px;color:#666'>"
+               f"{player}  ·  {row['team']}  ·  "
+               f"{row['primary_role']} ({role})  ·  "
+               f"{int(row['minutes_played'])} min  ·  "
+               f"n = {int(row['n_decisions'])} decisions</span>"),
+        polar=dict(
+            radialaxis=dict(range=[0, 100], tickvals=[20, 40, 60, 80],
+                            gridcolor="#ddd", tickfont=dict(size=9)),
+            angularaxis=dict(gridcolor="#ddd", tickfont=dict(size=11)),
+        ),
+        height=600, width=720,
+        margin=dict(t=110, b=40, l=80, r=80),
+    )
+    if show_static:
+        _render_static(fig)
+        return None
+    return fig
 
 
-def plot_dq_h2h(dq, player_a, player_b, ax=None):
-    """Two-player comparison page graph: head-to-head dumbbell.
+def plot_dq_radar_h2h(dq: pd.DataFrame, player_a: str, player_b: str,
+                       show_static: bool = True):
+    """Two-player comparison page graph: overlaid DQ radars (Plotly).
 
-    SAME MACRO-ROLE ONLY (enforced; the site's comparison picker only
-    offers same-role players, so both are percentiled in one identical
-    role pool and the comparison is direct, with no "each vs own role"
-    caveat). For each of the five headline metrics: a faint full-width
-    band shows the whole role spread (0-100), a connector draws the gap,
-    the row winner's dot is enlarged and its raw value bolded. The right
-    shape for a duel — overlaid radars/bars get unreadable with two
-    players, and the raw / per-90 / % numbers live in the table below.
+    SAME MACRO-ROLE ONLY (enforced; the site's comparison picker restricts
+    cross-role comparisons). Both players are percentiled in one identical
+    role pool so the overlap reads as a direct duel, with no "each vs own
+    role" caveat. Same chrome as H1's `dashboard.head_to_head` panels.
+    Returns the Plotly Figure; also emits a static PNG when
+    ``show_static`` is True so the .ipynb stays viewable on github.com.
     """
-    ra = dq[dq["player"] == player_a].iloc[0]
-    rb = dq[dq["player"] == player_b].iloc[0]
+    ra = dq[dq["player"] == player_a]
+    rb = dq[dq["player"] == player_b]
+    if ra.empty:
+        raise ValueError(f"player not found: {player_a}")
+    if rb.empty:
+        raise ValueError(f"player not found: {player_b}")
+    ra, rb = ra.iloc[0], rb.iloc[0]
     if ra["macro_role"] != rb["macro_role"]:
         raise ValueError(
             f"same macro-role only: {player_a} is {ra['macro_role']}, "
             f"{player_b} is {rb['macro_role']}. The site restricts the "
             "comparison picker to same-role players.")
     role = ra["macro_role"]
-    sub = _role_pct(dq, role)
+    sub = _radar_percentiles(dq, role)
     A = sub[sub["player"] == player_a].iloc[0]
     B = sub[sub["player"] == player_b].iloc[0]
 
-    if ax is None:
-        _, ax = plt.subplots(figsize=(10.2, 5.4))
+    labels = [a[0] for a in RADAR_AXES]
+    vA = [0 if pd.isna(A[col + "__p"]) else A[col + "__p"]
+          for _, col, _ in RADAR_AXES]
+    vB = [0 if pd.isna(B[col + "__p"]) else B[col + "__p"]
+          for _, col, _ in RADAR_AXES]
+    hovA = _hover_for(A, role)
+    hovB = _hover_for(B, role)
+    labels_c = labels + [labels[0]]
+    vA_c = vA + [vA[0]]
+    vB_c = vB + [vB[0]]
+    hovA_c = hovA + [hovA[0]]
+    hovB_c = hovB + [hovB[0]]
 
-    labels = [m[0] for m in H2H_METRICS]
-    y = np.arange(len(H2H_METRICS))[::-1]
-    cA, cB = "#1e88e5", "#e8543f"
-
-    for yi, (label, col, flip) in zip(y, H2H_METRICS):
-        pa, pb = A[col + "__p"], B[col + "__p"]
-        rawa, rawb = A[col], B[col]
-
-        ax.barh(yi, 100, height=0.5, color="#eceff1", zorder=1)
-        ax.plot([pa, pb], [yi, yi], color="#b0bec5", lw=2.5, zorder=2)
-
-        a_wins = pa >= pb
-        sa = 230 if a_wins else 150
-        sb = 150 if a_wins else 230
-        ax.scatter([pa], [yi], s=sa, color=cA, zorder=4,
-                   edgecolor="black" if a_wins else "white",
-                   linewidth=1.4 if a_wins else 1.0)
-        ax.scatter([pb], [yi], s=sb, color=cB, zorder=4,
-                   edgecolor="black" if not a_wins else "white",
-                   linewidth=1.4 if not a_wins else 1.0)
-        ax.text(pa + (-3 if pa < pb else 3), yi + 0.30, f"{rawa:.2f}",
-                ha="right" if pa < pb else "left", fontsize=8,
-                color=cA, fontweight="bold" if a_wins else "normal")
-        ax.text(pb + (3 if pa < pb else -3), yi + 0.30, f"{rawb:.2f}",
-                ha="left" if pa < pb else "right", fontsize=8,
-                color=cB, fontweight="bold" if not a_wins else "normal")
-
-    ax.axvline(50, color="#90a4ae", lw=1.0, ls="--", zorder=1)
-    ax.set_yticks(y)
-    ax.set_yticklabels(labels, fontsize=10)
-    ax.set_xlim(-6, 112)
-    ax.set_xticks([0, 25, 50, 75, 100])
-    ax.set_xlabel(f"Percentile among {role}s  ·  longer toward 100 = better  "
-                  "·  bigger dot wins the row  ·  raw value shown")
-    ax.set_title(f"{player_a}   vs   {player_b}\nhead-to-head among {role}s "
-                 f"(n {int(ra['n_decisions'])} vs {int(rb['n_decisions'])})",
-                 pad=10)
-    ax.legend(handles=[
-        plt.Line2D([], [], marker="o", ls="", ms=10, color=cA, label=player_a),
-        plt.Line2D([], [], marker="o", ls="", ms=10, color=cB, label=player_b)],
-        loc="lower right", fontsize=9, frameon=False)
-    ax.grid(axis="x", alpha=0.12, zorder=0)
-    for s in ("top", "right", "left"):
-        ax.spines[s].set_visible(False)
-    return ax
+    fig = go.Figure()
+    fig.add_trace(go.Scatterpolar(
+        r=vA_c, theta=labels_c, fill="toself",
+        name=player_a, hoverinfo="text", hovertext=hovA_c,
+        line=dict(color=DQ_COLOR, width=2.8),
+        fillcolor=DQ_COLOR, opacity=0.30,
+    ))
+    fig.add_trace(go.Scatterpolar(
+        r=vB_c, theta=labels_c, fill="toself",
+        name=player_b, hoverinfo="text", hovertext=hovB_c,
+        line=dict(color=DQ_COLOR_B, width=2.8),
+        fillcolor=DQ_COLOR_B, opacity=0.30,
+    ))
+    fig.update_layout(
+        title=(f"<b>DECISION QUALITY · head-to-head</b><br>"
+               f"<span style='font-size:12px;color:#666'>"
+               f"{player_a} (idx {ra['DQ_index']:.0f})  vs  "
+               f"{player_b} (idx {rb['DQ_index']:.0f})  ·  "
+               f"{role}  ·  n {int(ra['n_decisions'])} vs "
+               f"{int(rb['n_decisions'])}</span>"),
+        polar=dict(
+            radialaxis=dict(range=[0, 100], tickvals=[20, 40, 60, 80],
+                            gridcolor="#ddd", tickfont=dict(size=9)),
+            angularaxis=dict(gridcolor="#ddd", tickfont=dict(size=11)),
+        ),
+        legend=dict(orientation="h", yanchor="bottom", y=-0.10,
+                    xanchor="center", x=0.5),
+        height=640, width=760,
+        margin=dict(t=110, b=80, l=80, r=80),
+    )
+    if show_static:
+        _render_static(fig)
+        return None
+    return fig
