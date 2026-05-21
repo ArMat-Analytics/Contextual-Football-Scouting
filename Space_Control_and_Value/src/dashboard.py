@@ -186,10 +186,17 @@ def player_profile(query: str, df: pd.DataFrame, pct: pd.DataFrame):
         margin=dict(t=110, b=40, l=60, r=60),
     )
     for pol in ["polar", "polar2", "polar3", "polar4"]:
+        # polar2 is the DANGEROUSNESS subplot (4 axes). With 4 categorical axes
+        # the default layout puts one axis exactly at 90° (top), which collides
+        # with the subplot title. Rotate the angular axis by 45° so the four
+        # axes sit on the diagonals (NE/NW/SW/SE), keeping the top clear.
+        angular = dict(gridcolor="#ddd", tickfont=dict(size=10))
+        if pol == "polar2":
+            angular["rotation"] = 45
         fig.update_layout({pol: dict(
             radialaxis=dict(range=[0, 100], tickvals=[20, 40, 60, 80],
                             gridcolor="#ddd", tickfont=dict(size=9)),
-            angularaxis=dict(gridcolor="#ddd", tickfont=dict(size=10)),
+            angularaxis=angular,
         )})
     fig.show()
     _render_static(fig)
@@ -261,10 +268,17 @@ def head_to_head(q1: str, q2: str, df: pd.DataFrame, pct: pd.DataFrame):
                     xanchor="center", x=0.5),
     )
     for pol in ["polar", "polar2", "polar3", "polar4"]:
+        # polar2 is the DANGEROUSNESS subplot (4 axes). With 4 categorical axes
+        # the default layout puts one axis exactly at 90° (top), which collides
+        # with the subplot title. Rotate the angular axis by 45° so the four
+        # axes sit on the diagonals (NE/NW/SW/SE), keeping the top clear.
+        angular = dict(gridcolor="#ddd", tickfont=dict(size=10))
+        if pol == "polar2":
+            angular["rotation"] = 45
         fig.update_layout({pol: dict(
             radialaxis=dict(range=[0, 100], tickvals=[20, 40, 60, 80],
                             gridcolor="#ddd", tickfont=dict(size=9)),
-            angularaxis=dict(gridcolor="#ddd", tickfont=dict(size=10)),
+            angularaxis=angular,
         )})
     fig.show()
     _render_static(fig)

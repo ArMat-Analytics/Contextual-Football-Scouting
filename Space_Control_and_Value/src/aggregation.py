@@ -114,6 +114,24 @@ def main():
              .reset_index())
     stats = stats.merge(ins, on=['player', 'team'], how='left')
 
+    exit_mask = df_lb['geom_type'] == 'Exit (in->out)'
+    exi = (df_lb[exit_mask]
+             .groupby(['player', 'team'])['epv_added']
+             .agg(epv_exit_mean='mean',
+                  epv_exit_sum='sum',
+                  exit_n='count')
+             .reset_index())
+    stats = stats.merge(exi, on=['player', 'team'], how='left')
+
+    out_mask = df_lb['geom_type'] == 'Outside circulation (out->out)'
+    out = (df_lb[out_mask]
+             .groupby(['player', 'team'])['epv_added']
+             .agg(epv_outside_circ_mean='mean',
+                  epv_outside_circ_sum='sum',
+                  outside_circ_n='count')
+             .reset_index())
+    stats = stats.merge(out, on=['player', 'team'], how='left')
+
     # --- 4) Bring minutes in for per-90 conversion ----------------------
     mins = df_agg[['player', 'team', 'minutes_played']].drop_duplicates()
     stats = stats.merge(mins, on=['player', 'team'], how='left')
@@ -125,8 +143,12 @@ def main():
         ('epv_added_sum',       'epv_added_per90'),
         ('epv_penetration_sum', 'epv_penetration_per90'),
         ('epv_inside_circ_sum', 'epv_inside_circ_per90'),
+        ('epv_exit_sum',        'epv_exit_per90'),
+        ('epv_outside_circ_sum','epv_outside_circ_per90'),
         ('penetration_n',       'penetration_per90'),
         ('inside_circ_n',       'inside_circ_per90'),
+        ('exit_n',              'exit_per90'),
+        ('outside_circ_n',      'outside_circ_per90'),
         # Hull volumes (open play)
         ('between_lines_n',     'between_lines_per90'),
         ('_succ_hull_exit_n',              'successful_hull_exits_per90'),

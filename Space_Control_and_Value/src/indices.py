@@ -1,11 +1,26 @@
-"""Composite-index design — 14 mother variables -> 4 indices.
+"""Composite-index design — 4 indices over within-role percentiles.
 
-Each index is the within-role percentile mean of its mother variables. All
-percentiles are computed inside the player's macro_role pool, so a CAM is
-benchmarked against other CAMs.
+PROGRESSION, RECEPTION and GRAVITY are stylistic composites: the headline
+value of each is the mean of its mother variables' within-role percentiles.
+They model a latent construct that manifests across multiple correlated
+indicators (a reflective model), so percentile averaging is the appropriate
+aggregation.
+
+DANGEROUSNESS is a magnitude, not a stylistic composite. EPV Added /90 is a
+direct measure of the total offensive value a player generates in possession,
+and is by construction the sum of four EPV by-geom_type components
+(Penetration, Inside Circulation, Exit, Outside Circulation). Its headline
+value is therefore the within-role percentile of epv_added_per90 itself, and
+its radar shows the four sub-components as a profile of where that value
+comes from:
+
+    DANGEROUSNESS headline  = within-role percentile of epv_added_per90.
+    DANGEROUSNESS radar     = the four EPV by-geom_type per-90 percentiles
+                              (Penetration, Inside Circ., Exit, Outside Circ.).
 
 Public API:
     RADAR_SPECS         - dict[index_name -> list of (label, csv_col, n_col)]
+                          (used by the radar / dashboard only)
     build_pct_table(df) - returns (df, pct) with __p columns and *_idx columns
 """
 import numpy as np
@@ -24,9 +39,10 @@ RADAR_SPECS = {
         ("Def. Bypassed Avg", "defenders_bypassed_mean",           "lb_geom"),
     ],
     "DANGEROUSNESS": [
-        ("EPV Added /90",     "epv_added_per90",                   "passes_op"),
-        ("EPV Penetr. /90",   "epv_penetration_per90",             "penetration_n"),
-        ("Circ. EPV /90",     "epv_inside_circ_per90",             "inside_circ_n"),
+        ("EPV Penetr. /90", "epv_penetration_per90",  "penetration_n"),
+        ("EPV In-Circ /90", "epv_inside_circ_per90",  "inside_circ_n"),
+        ("EPV Exit /90",    "epv_exit_per90",         "exit_n"),
+        ("EPV Out-Circ /90","epv_outside_circ_per90", "outside_circ_n"),
     ],
     "RECEPTION": [
         ("Between Lines %",   "between_lines_pct",                 "between_lines_n"),
@@ -39,6 +55,13 @@ RADAR_SPECS = {
         ("Def. Pull |m|",     "gravity_abs_m",                     "gravity_directional_n"),
     ],
 }
+
+
+# DANGEROUSNESS is a magnitude, not a stylistic composite. Its headline is the
+# single within-role percentile of epv_added_per90 (the total EPV /90); the
+# four geom_type sub-components above are shown in the radar as a profile,
+# not aggregated into the headline.
+DANGEROUSNESS_HEADLINE_VAR = "epv_added_per90"
 
 
 def load_player_table(min_minutes: int = 0) -> pd.DataFrame:
@@ -61,15 +84,22 @@ def build_pct_table(df: pd.DataFrame):
 
     Returns:
         (df, pct) where pct has one ``<var>__p`` column per radar variable
-        and one ``<theme>_idx`` column per composite.
+        plus the DANGEROUSNESS headline variable, and one ``<theme>_idx``
+        column per composite. DANGEROUSNESS_idx is the single within-role
+        percentile of epv_added_per90; the other three indices are the mean
+        of their radar variables' percentiles.
     """
-    all_vars = list({v for spec in RADAR_SPECS.values() for _, v, _ in spec})
+    all_vars = {v for spec in RADAR_SPECS.values() for _, v, _ in spec}
+    all_vars.add(DANGEROUSNESS_HEADLINE_VAR)
     pct = df[["player", "team", "primary_role", "macro_role", "minutes_played"]].copy()
     for v in all_vars:
         pct[f"{v}__p"] = df.groupby("macro_role")[v].rank(pct=True) * 100
     for theme, spec in RADAR_SPECS.items():
-        cols = [f"{v}__p" for _, v, _ in spec]
-        pct[f"{theme}_idx"] = pct[cols].mean(axis=1)
+        if theme == "DANGEROUSNESS":
+            pct[f"{theme}_idx"] = pct[f"{DANGEROUSNESS_HEADLINE_VAR}__p"]
+        else:
+            cols = [f"{v}__p" for _, v, _ in spec]
+            pct[f"{theme}_idx"] = pct[cols].mean(axis=1)
     return df, pct
 
 

@@ -79,6 +79,13 @@ def construct_validity(pct: pd.DataFrame):
         row.append(f"{np.mean(alphas):.2f}")
         print(f"  {row[0]:<14s} {row[1]:>7s} {row[2]:>7s} {row[3]:>7s} "
               f"{row[4]:>7s} {row[5]:>7s} {row[6]:>7s} {row[7]:>7s}")
+    print("-" * 86)
+    print("  Note on DANGEROUSNESS α: the four radar axes are additive EPV")
+    print("  by-geom_type components of epv_added_per90, not manifestations")
+    print("  of a latent style. DANGEROUSNESS is a magnitude index (single")
+    print("  within-role percentile of epv_added_per90) and is NOT a")
+    print("  reflective composite of those four axes - α is reported here")
+    print("  only as a diagnostic on the radar's sub-components.")
 
     print("\n" + "=" * 86)
     print("  CROSS-CORRELATION BETWEEN INDICES  (target: |r| < 0.6)")
@@ -111,9 +118,17 @@ def _role_pct(df: pd.DataFrame, col: str) -> pd.Series:
 
 # Canonical naive proxy for each composite index. Used by h1_summary and by
 # scouting_discoveries so the two consumers stay in sync.
+#
+# Note on the DANGEROUSNESS proxy: idx__DANGEROUSNESS is itself the within-role
+# percentile of epv_added_per90, so using epv_added_per90 as its naive proxy
+# would collapse the scatter onto the identity diagonal and force every Δ to
+# zero. The H1 question for DANGEROUSNESS is therefore framed against a truly
+# "naive" volume signal - passes /90 - so the comparison reads as: "do the
+# highest-EPV players just play more passes, or does the threat ranking
+# substantively re-order the leaderboard once EPV is accounted for?".
 INDEX_PROXIES = [
     ("PROGRESSION",   "passes_per90",          "passes /90"),
-    ("DANGEROUSNESS", "epv_added_per90",       "total EPV added /90"),
+    ("DANGEROUSNESS", "passes_per90",          "passes /90"),
     ("RECEPTION",     "between_lines_pct",     "between-lines %"),
     ("GRAVITY",       "gravity_proximity_pct", "gravity proximity %"),
 ]
@@ -220,9 +235,9 @@ def naive_vs_contextual(df: pd.DataFrame, pct: pd.DataFrame,
          "successful_hull_penetrations_per90", "epv_penetration_per90",
          "Naive: # penetrations /90",
          "Contextual: EPV on penetrations /90"),
-        ("Total EPV vs DANGEROUSNESS index",
-         "epv_added_per90",                    "DANGEROUSNESS_idx",
-         "Naive: total EPV /90",
+        ("Pass volume vs DANGEROUSNESS",
+         "passes_per90",                       "DANGEROUSNESS_idx",
+         "Naive: passes /90 (volume)",
          "Contextual: DANGEROUSNESS index"),
     ]
 
@@ -462,7 +477,15 @@ def export_indices_csv(df: pd.DataFrame, pct: pd.DataFrame,
     # Composite indices and within-role percentiles, rounded to 2 decimals.
     for theme in RADAR_SPECS:
         out[f"idx__{theme}"] = pct[f"{theme}_idx"].round(2)
-    for _, var, _ in [item for spec in RADAR_SPECS.values() for item in spec]:
+    radar_vars = [var for spec in RADAR_SPECS.values() for _, var, _ in spec]
+    # Add the DANGEROUSNESS headline variable explicitly: it is the variable
+    # that *forms* idx__DANGEROUSNESS but is not on the radar, so the loop
+    # above would otherwise drop it from the export, making the CSV
+    # insufficient to reconstruct the index downstream.
+    from .indices import DANGEROUSNESS_HEADLINE_VAR
+    if DANGEROUSNESS_HEADLINE_VAR not in radar_vars:
+        radar_vars.append(DANGEROUSNESS_HEADLINE_VAR)
+    for var in radar_vars:
         out[f"pct__{var}"] = pct[f"{var}__p"].round(2)
 
     idx_cols = [f"idx__{t}" for t in RADAR_SPECS]
@@ -471,6 +494,7 @@ def export_indices_csv(df: pd.DataFrame, pct: pd.DataFrame,
               .drop(columns=["_sortkey"]))
 
     out.to_csv(out_path, index=False)
+    n_pct = len(radar_vars)
     print(f"✔ Saved {out_path}  -  {len(out)} rows × {len(out.columns)} columns")
-    print(f"  Identity: 9   Indices: 4   Percentiles: 14")
+    print(f"  Identity: 9   Indices: 4   Percentiles: {n_pct}")
     return out
