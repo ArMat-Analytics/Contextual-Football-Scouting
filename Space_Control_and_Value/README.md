@@ -8,7 +8,9 @@ Built on **StatsBomb 360 open data** for UEFA Euro 2024 (`competition_id=55`, `s
 
 ## The four indices
 
-Each index is the **mean of within-role percentile ranks** of its mother variables (a CB is benchmarked against other CBs, a CAM against other CAMs). Within-role percentiles are the heart of the approach: a centre-back ranked 90th on PROGRESSION is among the best 10% of *centre-backs* at progressing the ball, not the best 10% of the whole tournament.
+Three of the four (PROGRESSION, RECEPTION, GRAVITY) are **stylistic composites**: their headline is the mean of within-role percentile ranks of their mother variables. The fourth (DANGEROUSNESS) is a **magnitude**: a single within-role percentile of `EPV Added /90`, with the four EPV by-geom_type components used only for the radar profile. The distinction matters because EPV creation is by construction additive (the four components *sum* to `EPV Added /90`), while progression style, reception style and gravity style are not.
+
+Within-role percentiles are the heart of the approach in every case: a centre-back ranked 90th on PROGRESSION is among the best 10% of *centre-backs* at progressing the ball, not the best 10% of the whole tournament.
 
 Quick glossary: **convex hull** = polygon enclosing the visible opponents in the 360 frame; **line-breaker** = successful pass that bypasses ≥ 3 opponents inside a 5 m corridor along the pass line; **EPV** = probability of scoring in the next actions given the ball location.
 
@@ -20,13 +22,13 @@ How often, and how cleanly, a player moves the ball through opponent lines. Moth
 
 The first three count line-breakers under three lenses (geometric corridor, EPV threshold, the intersection of the two). `Hull Penetr. /90` is the volume of successful passes that *enter* the opposing block. `Def. Bypassed Avg` is the mean number of opponents removed from play per progressive pass. A player can score high here in two ways: by being a high-volume metronome (Kroos, Modrić) or by being a vertical specialist on lower volume (Alexander-Arnold).
 
-### DANGEROUSNESS, threat creation in the final third
+### DANGEROUSNESS, the magnitude of EPV creation
 
-How much expected value a player generates in the 18 m around goal, on a per-90 basis. Mother variables (3):
+The total expected possession value a player generates per 90 minutes. Unlike the other three, DANGEROUSNESS is **not** a stylistic composite. The headline is the **within-role percentile of `EPV Added /90`** alone, a direct magnitude. The radar that decomposes it shows the **four additive EPV by-geom_type per-90 components** (they sum to `EPV Added /90`, by construction):
 
-`EPV Added /90` + `EPV Penetr. /90` + `Circ. EPV /90`
+`EPV Penetr. /90` + `EPV In-Circ /90` + `EPV Exit /90` + `EPV Out-Circ /90`
 
-`EPV Added /90` is the per-90 sum of `epv_end − epv_start` on completed passes. `EPV Penetr. /90` isolates the same quantity on hull-penetrating passes only. `Circ. EPV /90` captures the EPV produced inside the 18 m circle around goal, the "danger zone" of every shot map. The signal here is closer to the public expected-assists narrative, by construction, so the H1 contextual vs naive gap is the smallest of the four.
+`EPV Penetr. /90` is the value added on passes that *enter* the opposing block. `EPV In-Circ /90` is the value circulated *inside* the block. `EPV Exit /90` is the value of clean ball-exits from inside the block back out. `EPV Out-Circ /90` is the value circulated outside the block. Reading the four together explains *where* a player's EPV comes from: a centre-back will produce value mostly through `Out-Circ` and `Penetr.`, a between-the-lines CAM mostly through `In-Circ` and `Exit`, a winger drifting inside through `Penetr.` and `In-Circ`. The single magnitude (`EPV Added /90`) keeps the headline honest, the four sub-components keep the profile interpretable.
 
 ### RECEPTION, between-the-lines play and tight-space technique
 
@@ -76,13 +78,13 @@ StatsBomb events + 360 frames
   Validation                  Cronbach's α + H1 evidence + scouting discoveries
 ```
 
-## Website graphic: the 4-axis radar
+## Website graphic: the family radar
 
-The card on the site renders one **filled polygon per player**, one axis per index, all four oriented so outside is better. PROGRESSION, DANGEROUSNESS, RECEPTION and GRAVITY are already within-role percentiles, so no mirroring is needed. The two-player comparison page overlays two polygons (same macro-role only, the picker prevents cross-role duels upstream).
+The single-player card renders **four small radars side by side**, one per index. PROGRESSION, RECEPTION and GRAVITY each show the within-role percentiles of their mother variables (5, 3 and 3 axes respectively). DANGEROUSNESS shows its four additive EPV by-geom_type components (Penetr., In-Circ, Exit, Out-Circ): the polygon's area scales with the magnitude headline, the four directions tell you *where* the EPV is coming from. All axes are oriented so outside is better.
 
-The reading of the shape is direct. A balanced polygon is a balanced player (Kroos on MIDs has a near-regular quadrilateral). A spike on DANGEROUSNESS with a low GRAVITY is a finisher who does not pull defenders (a poacher). A spike on RECEPTION with low PROGRESSION is a between-the-lines receiver who does not progress the ball himself (a classic 10 in a possession side). A spike on PROGRESSION with low DANGEROUSNESS is a deep-lying playmaker. The same logic applies in every role.
+The two-player comparison page overlays two polygons per radar (same macro-role only, the picker prevents cross-role duels upstream). Reading the shapes is direct. A balanced PROGRESSION polygon is a balanced progressor (Kroos on MIDs). A DANGEROUSNESS polygon stretched on Penetr. + In-Circ with a thin Out-Circ is a final-third finisher; a polygon stretched on Out-Circ with thin Penetr. is a deep distributor whose EPV comes from build-up volume, not penetration. A RECEPTION spike with low PROGRESSION is a between-the-lines receiver who does not progress the ball himself (a classic 10 in a possession side).
 
-A **CORE STATS table** under the radar exposes the 14 within-role percentiles that *feed* the four axes, plus minutes, role, and the two annotations carried in the CSV (`gravity_composite_pct`, `gravity_directional_m`). The radar is the headline, the table is the diagnostic.
+A **CORE STATS table** under the radars exposes the within-role percentiles that *feed* the axes, plus minutes, role, and the two annotations carried in the CSV (`gravity_composite_pct`, `gravity_directional_m`). The radars are the headline, the table is the diagnostic.
 
 ## Key findings
 
@@ -96,17 +98,21 @@ A scout-first read of the Euro 2024 leaderboards on the four indices, with the m
 - **Alessandro Bastoni** (Italy, CB) and **Joachim Andersen** (Denmark, CB) at 94th and 92nd among CBs, two ball-playing centre-backs whose `LB EPV /90` is comparable to that of central midfielders.
 - **Bruno Fernandes** (Portugal, MID, n=379) at 90th, lower than the public reputation on his "passing" because the volume of safe passes deflates `LB Quality /90`.
 
-### DANGEROUSNESS, where naive and contextual agree the most
+### DANGEROUSNESS, where the volume view fails the hardest
 
-This is the index closest to the public expected-assists narrative, so the top is full of recognised names. **Arda Güler** (Turkey, FW, n=369), **Bruno Fernandes** (Portugal, MID), **Antonio Rüdiger** (Germany, CB, n=488 minutes) and **Joachim Andersen** (Denmark, CB) all sit at 98–100 inside their role. Rüdiger at the top of the CB role on this index is the kind of finding the naive view never produces, the role pool puts his per-90 EPV contribution on a level no other CB matches.
+This is the index where the contextual approach moves the leaderboard *most*. The headline is the within-role percentile of EPV Added /90, the naive proxy is `passes /90`. The two disagree by more than 20 percentile points on **54%** of the pool, the largest disagreement of all four indices. The reading is direct: ball volume is a very poor predictor of *value created*.
 
-A counter-intuitive read in this group is **Phil Foden** (England, WIDE), 11th on DANGEROUSNESS. His EPV contribution per 90 is genuinely modest in the Euro 2024 sample, the naive view ranks him much higher because of touches and shot volume, not value-added.
+- **Arda Güler** (Turkey, FW, n=369), **Bruno Fernandes** (Portugal, MID, n=379), **Antonio Rüdiger** (Germany, CB, n=488) and **Joachim Andersen** (Denmark, CB) all sit at 98–100 inside their role. Rüdiger and Andersen sitting at the top of the CB pool on EPV /90 *and* in the top tier on raw passing volume is the kind of read the naive view *partially* surfaces, but the radar profile (Out-Circ at 100, Penetr. at 84) clarifies that they are not just high-volume distributors, they are also actively penetrating from the back.
+- **Tomáš Souček** (Czech Rep, MID, +80 Δ), **Heorhii Tsitaishvili** (Ukraine, FB, +75 Δ) and **Ivan Perišić** (Croatia, FB, +74 Δ) are role-level discoveries with the largest naive-to-contextual shifts in the pool. Souček in particular is the headline of this group: 3rd percentile by `passes /90` among MIDs, 83rd by EPV /90. A player whose passing volume is genuinely low but whose every involvement moves the value needle (his radar peaks on Exit at 100, In-Circ at 72: the box-arriving CDM who breaks out of pressed phases).
+- A counter-intuitive read here is **Phil Foden** (England, WIDE), 11th percentile on DANGEROUSNESS (bottom of the WIDE role pool). His EPV contribution per 90 is genuinely modest in the Euro 2024 sample, the naive view ranks him higher because of touches and shot volume, not value-added.
+
+The radar (the four EPV by-geom_type sub-components) reads as a profile under the headline. Rüdiger's EPV is concentrated on Out-Circ and Penetr. (the centre-back fingerprint, value built in the build-up *and* into the block). Güler peaks on Penetr. and Out-Circ at the same time (the receiver-finisher who also gets EPV from his deep starts when drifting back to receive).
 
 ### RECEPTION, the between-the-lines fingerprint
 
 - **Pedri** (Spain, CAM, n=185') at 98th. The clearest "between-the-lines" CAM of the tournament, with the highest `Between Lines %` of any CAM and very strong `Press. Resist %`.
 - **Florian Wirtz** (Germany, WIDE) at 90th, the highest of the WIDE pool. Wide attackers normally score low here because they receive on the touchline, Wirtz is the exception because he comes inside.
-- **Riccardo Calafiori** (Italy, CB), **Mykola Matvienko** (Ukraine, CB), **Ladislav Krejčí** (Czech Rep, CB), **Willi Orban** (Hungary, CB), **Nacho Fernández** (Spain, CB), a cluster of ball-playing centre-backs at 88–93 on a role pool that traditionally scores low. The signal is `Press. Resist %`, these CBs survive 2 m pressure at midfielder-level rates.
+- **Riccardo Calafiori** (Italy, CB), **Mykola Matvienko** (Ukraine, CB), **Ladislav Krejčí** (Czech Rep, CB), **Willi Orban** (Hungary, CB), **Nacho Fernández** (Spain, CB), a cluster of ball-playing centre-backs at 88–93 inside the CB pool. CBs typically take very few touches inside the opposing block in raw terms (the role median `Between Lines %` is about 4%, against 52% for CAMs), so the within-role pool surfaces the *ball-playing* CBs cleanly: a CB at 90th here is genuinely the kind who steps into the half-space to receive, not just the median back-line passer.
 - **Breel Embolo** (Switzerland, FW) at 89th, a centre-forward whose between-the-lines reception rate beats most CAMs. Reads as the modern "drop nine" profile.
 
 ### GRAVITY, the names volume never surfaces
@@ -127,7 +133,7 @@ A separate finding sits in the famous-names column. **Joshua Kimmich** (Germany,
 | Index | Mean α | Reading |
 |---|---:|---|
 | PROGRESSION | **0.77** | tight construct, the 5 variables measure the same dimension |
-| DANGEROUSNESS | **0.54** | acceptable for a multi-faceted index |
+| DANGEROUSNESS | **0.32** | diagnostic only, the four radar axes are *additive* EPV components of `EPV Added /90`, not a reflective composite. The headline is a single percentile, α is reported just to read the sub-profile |
 | RECEPTION | **0.41** | composite, high on CB and CAM, low on FW (small sample) |
 | GRAVITY | **−0.03** | **multi-directional** construct, the three variables capture different phenomena (expected, not a flaw) |
 
@@ -137,12 +143,14 @@ The four composites are **weakly correlated with each other** (|r| ≤ 0.56 acro
 
 | Index | Naive proxy | Spearman ρ | mean \|Δ\| | % \|Δ\| > 20 |
 |---|---|---:|---:|---:|
-| PROGRESSION | passes /90 | **0.47** | 21.7 | **47%** |
-| DANGEROUSNESS | total EPV /90 | 0.84 | 12.7 | 21% |
+| PROGRESSION | passes /90 | 0.47 | 21.7 | 47% |
+| DANGEROUSNESS | passes /90 | **0.28** | **27.8** | **54%** |
 | RECEPTION | between-lines % | 0.75 | 14.9 | 29% |
 | GRAVITY | gravity proximity % | 0.60 | 18.5 | 39% |
 
-Reading: PROGRESSION is where the gap hits hardest. Almost one player in two shifts by more than 20 percentile points moving from the naive ranking to the contextual one. For MIDs, the naive top-15 (passes/90) and the contextual top-15 (PROGRESSION) overlap on only 10/15. **Five new names** enter (Trent Alexander-Arnold, Mateo Kovačić, Robert Andrich and two others) and as many drop out.
+Reading: **DANGEROUSNESS** is where the gap hits hardest. More than one player in two shifts by more than 20 percentile points moving from the naive ranking (ball volume) to the contextual one (EPV magnitude). The DANGEROUSNESS proxy is `passes /90` and not `EPV /90` by design: the index headline is itself the within-role percentile of `EPV /90`, so comparing it to `EPV /90` would be tautological. The honest naive baseline is "do the high-EPV players just play more passes?", and the answer here is a clear no.
+
+A second illustration of the same gap, on PROGRESSION. For MIDs, the naive top-15 by `passes /90` and the contextual top-15 by PROGRESSION overlap on only 10/15: **five new names** enter (Trent Alexander-Arnold, Mateo Kovačić, Robert Andrich, Fabián Ruiz, Youri Tielemans) and as many drop out (Brozović, Hjulmand, Cristante, Veerman, Rodri).
 
 ### Scouting discoveries, players surfaced only by context
 
