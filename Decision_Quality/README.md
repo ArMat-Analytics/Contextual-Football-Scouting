@@ -36,6 +36,8 @@ A within-event rank cancels the pitch-zone value level and does not punish playe
 
 **Companion:** **Value Impact** = mean `xEPV(chosen) − mean(xEPV alternatives)`, the value-weighted view of the same signal (the role `epv_added` plays in H1).
 
+H2's metrics are built to sit next to H1's four families on the same player card. The natural pairing on the card is with DANGEROUSNESS (whose headline is `EPV Added /90`), because H2 measures how well a player chose the passes that built that EPV.
+
 ### Website graphic: the 4-axis radar
 
 The card on the site mirrors the H1 family-card pattern: a magnitude headline next to a within-role percentile radar that decomposes the *profile* behind it. H1's Dangerousness uses `EPV Added /90` as headline and decomposes it spatially (per pitch zone); H2 uses `DQ_index` as headline and decomposes it **behaviourally** along four axes (each `100 − percentile` for the two "negative" raw metrics, so outside is always better):
@@ -86,49 +88,45 @@ The split is deliberate: **xPass** is a supervised model (training, CV, calibrat
 
 ## Key findings
 
-**Robustness.** The player ordering is refit under every arbitrary knob and compared to the shipped index by rank Spearman.
+A scout-first read of the Euro 2024 leaderboard on `DQ_index` and the four radar axes. Numbers below are read on the display pool (`n_decisions ≥ 40`), so a small-sample player who appears as 100th is meaningful but his volume context is still in the table.
 
-| Knob moved | Range tested | Rank Spearman vs shipped |
-|---|---|---:|
-| `XEPV_FAILURE_SCALE` (turnover weight) | 0.5 → 1.25 | **≥ 0.95** (min 0.957) |
-| Minutes floor | 135 → 300 | **≥ 0.97** |
-| `MIN_ALTERNATIVES` | 2 → 4 | **≥ 0.95** (min 0.956) |
+### Confirmations — recognised passers land where football expects
 
-Each knob moves the *level* of the index, not the *ranking*. The 1:1 turnover weight is a modelling choice, not a ranking choice. `DQ_index` ↔ `n_decisions` ρ ≈ −0.02 (n.s.): the index is **not** an involvement-volume proxy.
+- **Pedrí** (Spain, CAM) — DQ 95th. The clearest "pure selector" of the tournament: not the loudest passer, but the one who consistently picks the best option his frame offers.
+- **Toni Kroos** (Germany, MID, n=379) — DQ 88th. On the largest sample of any midfielder, with 10.6 elite reads / 90 and only 4 worst-choice events out of every 100.
+- **Kevin De Bruyne** (Belgium, CAM, n=136) — DQ 85th. Highest `Picks the best %` of the watchlist at 17.6%.
+- **Mateo Kovačić** (Croatia, MID) — DQ 82nd. Reads above his reputation in this metric.
+- **İlkay Gündoğan** (Germany, CAM) — DQ 70th.
+- **Phil Foden** (England, WIDE) and **Rodri** (Spain, MID) — both upper-mid in their role at 68th and 65th.
 
-**Construct validity** (within-role Spearman, mean across the 6 macro-role pools, n = 272)
+### Surprises — names the volume view never surfaces
 
-| Pair | mean ρ | Reading |
-|---|---:|---|
-| `DQ_index` ↔ Value Impact | **0.68** | strong → Value is the value-weighted companion, not an independent axis |
-| Picks the best % ↔ Worst-choice % | **−0.06** | negligible → finding the top option and avoiding the bottom one are distinct skills; both live on the radar as separate axes |
-| Picks the best % ↔ Elite reads / 90 | 0.52 | moderate (rate vs volume of "elite picks" — share a behavioural component but live at different scales) |
-| Worst-choice % ↔ Poor reads / 90 | 0.33 | moderate (rate vs volume of "poor picks") |
+Lesser-known players with `DQ_index ≥ 90` on a meaningful sample (`n ≥ 40`). The radar at this level reads as "consistently picks the best option in-frame given the role pool", not "loudest passer".
 
-The radar's 4 axes are **not orthogonal**: the rate-vs-volume mirrors (picks-best ↔ elite/90; worst-choice ↔ poor/90) share a behavioural component by construction. They stay as separate axes because they carry **different scaling information** (in-frame rate vs role-benchmarked volume per 90'). All four archetype quadrants on the picks-best × avoids-worst plane are populated in every macro-role.
+- **Răzvan Marin** (Romania, MID, n=68) — DQ 98th, `Picks the best %` 27.9% and `Avoids the worst` 7.4%. Both very high in his role.
+- **Nacho Fernández** (Spain, CB, n=86) — DQ 98th, n large enough to take seriously. The Spain back-line is one of the discoveries of the tournament on this metric.
+- **Marin Pongračić** (Croatia, CB), **Jack Hendry** (Scotland, CB), **Jakub Kiwior** (Poland, CB), **Jan Bednarek** (Poland, CB) — a cluster of central defenders sitting at the very top of their role pool on selection quality.
+- **Mario Mitaj** (Albania, FB), **Andrei Rațiu** (Romania, FB), **Otar Kakabadze** (Georgia, FB), **Anthony Ralston** (Scotland, FB) — four full-backs at DQ ≥ 93 on small but real samples. Otar Kakabadze in particular shows the highest `Picks the best %` of the surprises group (30%).
+- **Cody Gakpo** (Netherlands, WIDE, n=83) — DQ 95th, `Picks the best %` 30.1%. A familiar name but the radar reads higher than the volume metrics suggest.
+- **Piotr Zieliński** (Poland, MID), **Joey Veerman** (Netherlands, MID), **Giorgi Kochorashvili** (Georgia, MID) — three midfielders at DQ 94–97 on samples of n ≥ 97, the most solid surprises of the MID pool.
 
-**Face validity.** Recognised passers land high-to-upper-mid in their role (Kroos ≈ 88th percentile, De Bruyne ≈ 85th, Gündoğan ≈ 70th, Foden ≈ 68th, Rodri ≈ 65th). Tempo controllers (Modrić, Xhaka, Barella, Kimmich) sit lower. This is a **declared scope limit**, not a defect: xEPV is a per-pass quantity with no game state, so deliberate tempo control reads as "safe" by selection style. Read the top percentiles together with `n_decisions`.
+### Big names that don't measure up
 
-**Scouting reads.** Putting `DQ_index` next to H1's `EPV Added /90` splits Euro 2024 in two groups that the volume view alone would never separate.
+Famous passers whose `DQ_index` is lower than the public reputation. Two distinct reasons in the data; the README is honest about both.
 
-### Hidden decision-makers — players surfaced by selection quality
+- **Joshua Kimmich** (Germany, FB, n=256) — DQ 10th. The lowest of the famous watchlist by a margin. High `Worst-choice %` 7.4 and high `Poor reads / 90` 5.2 on a very large sample.
+- **Nicolò Barella** (Italy, MID, n=193) — DQ 12th, `Picks the best %` only 7.3.
+- **Granit Xhaka** (Switzerland, MID, n=296) — DQ 40th. Reads as mid-pack, with `Poor reads / 90` 7.0 weighing down the index.
+- **Luka Modrić** (Croatia, MID, n=169) — DQ 45th. The most counter-intuitive low of the four.
+- **Declan Rice** (England), **Jude Bellingham** (England), **Bernardo Silva** (Portugal) — all upper-mid (50–55), not low but below the public expectation.
 
-Low value-generation volume for the role (deep position, few minutes, defensive job), but in-frame selection among the best of their position.
+Kimmich and Modrić in particular look harsh and need the Face validity caveat below: Kimmich, Modrić, Xhaka and Barella all play with deliberate tempo control, and `xEPV` is a per-pass quantity with no game state, so deliberate tempo reads as "safe" by selection style. The metric does not see that. The gap is the lens, not necessarily the player.
 
-- **Pedrí** (Spain, CAM). DQ 95th, role-EPV 35th. Not the loudest passer of the tournament, but the one who most consistently picks the best option his frame is showing him.
-- **Marin Pongračić** (Croatia, CB) and **Nacho Fernández** (Spain, CB). Top of their role for selection (DQ ≥ 98th) and bottom for EPV volume (≤ 15th). Centre-backs whose in-frame choice quality is invisible to a metric that rewards final-third progressors.
-- **Manuel Akanji** (Switzerland, CB, n=218). Same pattern but on a much larger sample: DQ 75th, EPV 21st.
-- **Mario Mitaj** (Albania, FB), **Andrei Rațiu** (Romania, FB). Small-nation full-backs whose role-level selection quality the volume metrics had never surfaced.
+### Face validity
 
-### Volume overrated — players inflated by EPV volume
+The five recognised passers — Kroos, De Bruyne, Gündoğan, Foden, Rodri — land 65th–88th, with no surprises in their direction. The known tempo controllers (Kimmich, Barella, Xhaka, Modrić) sit below the role median: a **declared scope limit**, not a defect. Always read the top percentiles together with `n_decisions`: a 100th at n = 44 (Ralston) is a different claim than 88th at n = 379 (Kroos).
 
-Top-of-role value generation per 90, but in-frame selection below the role median.
-
-- **Joshua Kimmich** (Germany, FB). Role-EPV 96th, DQ 10th (n=256). The cleanest case in the data: his volume comes from being permanently on the ball in advanced areas, while his per-event selection sits at the bottom of full-backs. Read together with the Face validity caveat above (xEPV does not credit tempo control).
-- **Trent Alexander-Arnold** (England, MID). Role-EPV 100th, DQ 20th (n=60). The interesting one across hypotheses: H1 surfaced him as a top progressor thanks to context (a lot of EPV generated from deep), H2 says his per-event in-frame selections still sit below the MID median when measured by pure value-optimality.
-- **Antonio Rüdiger** (Germany, CB). Role-EPV 100th, DQ 16th (n=269). High volume, but not from picking the best option in front of him.
-
-DQ_index and EPV-Added rank tell different stories about the same player. Read together they are the H1 + H2 product: one number for how much value the player generated, one for how well he chose to generate it. The card on the site shows both at once on purpose; the two notebooks walk the full path from the xPass model and its calibration to the radar on every player of the pool and the validation tables.
+The numerical machinery behind the index — rank robustness across the arbitrary knobs (`XEPV_FAILURE_SCALE`, minutes floor, `MIN_ALTERNATIVES`) and the within-role correlation matrix of the radar axes — is in [`src/validation.py`](src/validation.py), reproduced in the second notebook. The H2 pool stays the full 272 players from H1; the `n_decisions ≥ 40` filter is display-only.
 
 ## Folder structure
 
