@@ -82,10 +82,13 @@ def _player_minutes(matches: pd.DataFrame) -> pd.DataFrame:
             lineups = sb.lineups(match_id=m["match_id"])
             for team, lu in lineups.items():
                 for _, player in lu.iterrows():
-                    mins = sum(
-                        max(0, pos.get("to_period", 90) - pos.get("from_period", 0))
-                        for pos in player.get("positions", [])
-                    )
+                    def _pos_minutes(pos: dict) -> int:
+                        fp = pos.get("from_period") or 1
+                        tp = pos.get("to_period")   or fp   # None = until end of match
+                        return max(0, tp - fp + 1) * 45     # StatsBomb periods are 45 mins each
+
+                    mins = sum(_pos_minutes(pos) for pos in player.get("positions", []))
+
                     rows.append({
                         "player"        : player["player_name"],
                         "team"          : team,
@@ -305,7 +308,7 @@ def show_uncapitalised_runs(player: str, n: int = 4) -> None:
         )
 
     fig.suptitle(f"Top-{n} uncapitalised runs — {player}", fontsize=13)
-    fig.patch.set_facecolor("#1a1a2e")
+    fig.patch.set_facecolor("white")
     plt.tight_layout()
     plt.show()
 
@@ -326,10 +329,13 @@ def _player_minutes_from_lineups(matches: pd.DataFrame) -> pd.DataFrame:
             lineups = sb.lineups(match_id=m["match_id"])
             for team, lu in lineups.items():
                 for _, player in lu.iterrows():
-                    mins = sum(
-                        max(0, pos.get("to_period", 90) - pos.get("from_period", 0))
-                        for pos in player.get("positions", [])
-                    )
+                    def _pos_minutes(pos: dict) -> int:
+                        fp = pos.get("from_period") or 1
+                        tp = pos.get("to_period")   or fp   # None = until end of match
+                        return max(0, tp - fp + 1) * 45     # StatsBomb periods are 45 mins each
+
+                    mins = sum(_pos_minutes(pos) for pos in player.get("positions", []))
+
                     rows.append({
                         "player"        : player["player_name"],
                         "team"          : team,
