@@ -23,6 +23,15 @@ The decision-quality face is read as three distinct angles:
 - `avg_miss_cost` — mean xEPV left on the table ON the events that were
   not optimal (severity of the mistake, not its frequency)
 
+Radar axes
+----------
+The four-axis Decision Quality radar is shipped pre-computed as the
+`pct__*` columns: within macro-role percentiles of accuracy_pct,
+elite_per90, worst_choice_pct and poor_per90. accuracy / elite are used
+directly; worst_choice / poor are mirrored (100 - percentile) so that on
+every axis "further out = better". The site plots `pct__*` as-is and never
+ranks anything itself — same contract as H1's indices CSV.
+
 Pool
 ----
 H1's 135-minute pool, one authoritative role per player from
@@ -50,11 +59,16 @@ MIN_ALTERNATIVES = 2     # need >=2 alternatives for a meaningful rank
 OUTPUT_COLUMNS = [
     "player", "team", "primary_role", "macro_role", "minutes_played",
     "n_decisions",
-    "DQ_index",                                   # the only percentile
+    "DQ_index",                                   # headline percentile
     "score", "score_sd", "value_impact",
     "avg_miss_cost",                              # raw block
     "elite_per90", "poor_per90",                  # per 90
     "accuracy_pct", "worst_choice_pct",           # percentages (mirror pair)
+    # Radar axes — within-role percentiles ready to plot (0-100).
+    # The two "avoids" axes are already mirrored (100 - percentile) so that
+    # on every axis "further out = better"; the site plots them directly.
+    "pct__accuracy", "pct__worst_choice",
+    "pct__elite_per90", "pct__poor_per90",
 ]
 
 
@@ -154,9 +168,22 @@ def aggregate_players(pe: pd.DataFrame,
     dq["elite_per90"] = dq["n_elite"] / dq["minutes_played"] * 90
     dq["poor_per90"]  = dq["n_poor"]  / dq["minutes_played"] * 90
 
-    # the ONLY percentile: within-role rank of Score (Design K headline)
+    # headline percentile: within-role rank of Score (Design K headline)
     dq["DQ_index"] = (dq.groupby("macro_role")["score"]
                         .rank(pct=True).mul(100).round(1))
+
+    # Radar axes: within-role percentiles of the four raw signals, ready to
+    # plot. accuracy / elite are "higher is better" so the percentile is used
+    # directly; worst_choice / poor are "lower is better" so the axis is
+    # mirrored (100 - percentile) — this keeps "further out = better" on every
+    # axis. Computed here so the site never has to rank anything itself.
+    def _pctl(col: str) -> pd.Series:
+        return dq.groupby("macro_role")[col].rank(pct=True).mul(100)
+
+    dq["pct__accuracy"]     = _pctl("accuracy_pct").round(1)
+    dq["pct__elite_per90"]  = _pctl("elite_per90").round(1)
+    dq["pct__worst_choice"] = (100 - _pctl("worst_choice_pct")).round(1)
+    dq["pct__poor_per90"]   = (100 - _pctl("poor_per90")).round(1)
 
     dq = dq.sort_values("DQ_index", ascending=False).reset_index(drop=True)
     return dq[OUTPUT_COLUMNS]

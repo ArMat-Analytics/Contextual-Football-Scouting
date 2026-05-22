@@ -410,26 +410,31 @@ def plot_pass_alternatives(event_id: str,
 # cards or H2's Decision Quality card. The H2 family color (#1976d2,
 # blue) is distinct from the four H1 family colors (green/red/orange/
 # purple) so the new card is recognisable but the chrome is identical.
+# (label, raw column for the hover, pre-computed percentile column).
+# The pct__* columns already carry the within-role percentile, mirrored
+# where needed (decision_quality.aggregate_players) — single source of
+# truth, so the radar plots exactly what the website CSV ships.
 RADAR_AXES = [
-    ("Picks the best",     "accuracy_pct",     False),
-    ("Avoids the worst",   "worst_choice_pct", True),
-    ("Elite reads / 90",   "elite_per90",      False),
-    ("Avoids poor / 90",   "poor_per90",       True),
+    ("Picks the best",     "accuracy_pct",     "pct__accuracy"),
+    ("Avoids the worst",   "worst_choice_pct", "pct__worst_choice"),
+    ("Elite reads / 90",   "elite_per90",      "pct__elite_per90"),
+    ("Avoids poor / 90",   "poor_per90",       "pct__poor_per90"),
 ]
 DQ_COLOR        = "#1976d2"   # H2 family color (was unused by H1's four)
 DQ_COLOR_B      = "#d62728"   # second player in the H2H overlay (matches H1's C2)
 
 
 def _radar_percentiles(dq: pd.DataFrame, role: str) -> pd.DataFrame:
-    """Within-role percentile (0-100) for every RADAR_AXES column.
+    """Role sub-frame with a ``<raw_col>__p`` column per radar axis.
 
-    Adds a ``<col>__p`` column per axis, always oriented so higher = better
-    (``flip=True`` metrics use 100 − percentile). Returns the role sub-frame.
+    The percentile is read straight from the pre-computed ``pct__*`` column
+    in the CSV (already within-role and already mirrored where needed), so
+    the notebook radar and the website radar share one single source of
+    truth. Returns the role sub-frame.
     """
     sub = dq[dq["macro_role"] == role].copy()
-    for _, col, flip in RADAR_AXES:
-        p = sub[col].rank(pct=True) * 100
-        sub[col + "__p"] = (100 - p) if flip else p
+    for _, raw_col, pct_col in RADAR_AXES:
+        sub[raw_col + "__p"] = sub[pct_col]
     return sub
 
 
@@ -452,7 +457,7 @@ def _hover_for(row: pd.Series, role: str) -> list[str]:
     measurement, regardless of mirror.
     """
     hov = []
-    for lab, col, _flip in RADAR_AXES:
+    for lab, col, _pct_col in RADAR_AXES:
         raw = row[col]
         pct = row[col + "__p"]
         hov.append(
