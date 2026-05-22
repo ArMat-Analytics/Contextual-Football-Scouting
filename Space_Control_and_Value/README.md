@@ -73,7 +73,7 @@ StatsBomb events + 360 frames
         │
         ▼
   Indices + Dashboard    ──►  player_space_control_indices.csv
-        │                     (radar + leaderboard + archetype scatter + top line-breakers)
+        │                     (single radar + head-to-head radar + leaderboard + archetype scatter)
         ▼
   Validation                  Cronbach's α + H1 evidence + scouting discoveries
 ```
@@ -184,7 +184,7 @@ Space_Control_and_Value/
 │   ├── hull_metrics_aggregated.csv
 │   ├── hull_zone_baselines.csv
 │   ├── player_space_control_aggregated.csv
-│   ├── player_space_control_indices.csv        # final output (4 indices + 14 percentiles)
+│   ├── player_space_control_indices.csv        # final output (4 indices + 16 percentiles)
 │   └── cache/                                   # StatsBomb 360-frame cache (gitignored)
 │
 └── src/
@@ -197,7 +197,7 @@ Space_Control_and_Value/
     ├── line_breaker.py          # → hull_events_lb.csv
     ├── aggregation.py           # → player_space_control_aggregated.csv
     ├── indices.py               # 4 composites + within-role percentiles
-    ├── dashboard.py             # 4 prototype views (radar / leaderboard / archetypes / top LB)
+    ├── dashboard.py             # 4 prototype views (single radar / h2h radar / leaderboard / archetypes)
     └── validation.py            # Cronbach's α + H1 evidence + final export
 ```
 
@@ -223,7 +223,7 @@ python -m src.line_breaker
 python -m src.aggregation
 ```
 
-The intermediate CSVs are committed for the *analysis-only* path: you can jump straight to the index design / validation / dashboard cells without re-running the heavy pipelines.
+The aggregated CSVs (`hull_metrics_aggregated.csv`, `hull_zone_baselines.csv`, `player_space_control_aggregated.csv`, `player_space_control_indices.csv`) are committed for the *analysis-only* path: you can jump straight to the index design / validation / dashboard cells without re-running the heavy pipelines. The `hull_events_*.csv` event tables are gitignored and regenerable from the stages above.
 
 ## Conventions
 
@@ -231,7 +231,7 @@ The intermediate CSVs are committed for the *analysis-only* path: you can jump s
 - **Open play**: the EPV step filters out corners, free kicks, throw-ins and kick-offs. Downstream rates use the open-play subset (`passes_op`).
 - **Leave-one-out gravity**: each player's gravity is measured against a baseline that **excludes** their own passes.
 - **Within-role percentiles**: every axis of every index is the player's percentile rank inside their macro-role (CB / FB / MID / CAM / WIDE / FW).
-- **Min minutes**: 90 to enter the pool, 135 (= 1.5 matches) for the validation tables.
+- **Min minutes**: the index pool is filtered at 135' (= 1.5 matches). Every table and leaderboard in this README is read on that 272-player pool.
 
 ---
 
