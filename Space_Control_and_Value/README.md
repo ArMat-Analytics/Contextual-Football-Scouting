@@ -88,39 +88,39 @@ The two-player comparison page overlays two polygons per radar (same macro-role 
 
 A scout-first read of the Euro 2024 leaderboards on the four indices, with the minutes floor at 135' (≈ 1.5 matches). The interesting names show up not at the very top of "volume" stats but inside their own role pool, where the within-role percentile lives.
 
-### PROGRESSION, recognised and surprising
+### PROGRESSION
 
 - **Trent Alexander-Arnold** (England, MID, n=135') tops the index at 95th, on the smallest sample of the leaders. He played a hybrid inverted role at Euro 2024 and the metric reads exactly that: high LB EPV volume and high `Def. Bypassed Avg`, even on short minutes.
 - **Toni Kroos** (Germany, MID) at 93rd on 485 minutes is the metronome answer. Highest sample of any midfield leader on this index.
 - **Luka Modrić** (Croatia, MID) at 94th and **Mateo Kovačić** (Croatia, MID) at 92nd, both at the top of the role pool, the Croatian double pivot reads as a progression duo where the naive view tends to credit only Modrić.
 - **Alessandro Bastoni** (Italy, CB) and **Joachim Andersen** (Denmark, CB) at 94th and 92nd among CBs, two ball-playing centre-backs whose `LB EPV /90` is comparable to that of central midfielders.
-- **Bruno Fernandes** (Portugal, MID, n=379) at 90th, lower than the public reputation on his "passing" because the volume of safe passes deflates `LB Quality /90`.
+- **Bruno Fernandes** (Portugal, MID, n=379) at 90th, top of the MID pool on the line-breaking volume axes (`LB Geom /90` and `LB Quality /90` both above the 98th percentile). The index sits at 90th and not higher only because `Hull Penetr. /90` is more modest for him: he breaks lines often, but a smaller share of those passes actually land *inside* the opposing block.
 
-### DANGEROUSNESS, where the volume view fails the hardest
+### DANGEROUSNESS
 
 This is the index where the contextual approach moves the leaderboard *most*. The headline is the within-role percentile of EPV Added /90, the naive proxy is `passes /90`. The two disagree by more than 20 percentile points on **54%** of the pool, the largest disagreement of all four indices. The reading is direct: ball volume is a very poor predictor of *value created*.
 
 - **Arda Güler** (Turkey, FW, n=369), **Bruno Fernandes** (Portugal, MID, n=379), **Antonio Rüdiger** (Germany, CB, n=488) and **Joachim Andersen** (Denmark, CB) all sit at 98–100 inside their role. Rüdiger and Andersen sitting at the top of the CB pool on EPV /90 *and* in the top tier on raw passing volume is the kind of read the naive view *partially* surfaces, but the radar profile (Out-Circ at 100, Penetr. at 84) clarifies that they are not just high-volume distributors, they are also actively penetrating from the back.
 - **Tomáš Souček** (Czech Rep, MID, +80 Δ), **Heorhii Tsitaishvili** (Ukraine, FB, +75 Δ) and **Ivan Perišić** (Croatia, FB, +74 Δ) are role-level discoveries with the largest naive-to-contextual shifts in the pool. Souček in particular is the headline of this group: 3rd percentile by `passes /90` among MIDs, 83rd by EPV /90. A player whose passing volume is genuinely low but whose every involvement moves the value needle (his radar peaks on Exit at 100, In-Circ at 72: the box-arriving CDM who breaks out of pressed phases).
-- A counter-intuitive read here is **Phil Foden** (England, WIDE), 11th percentile on DANGEROUSNESS (bottom of the WIDE role pool). His EPV contribution per 90 is genuinely modest in the Euro 2024 sample, the naive view ranks him higher because of touches and shot volume, not value-added.
+- A counter-intuitive read here is **Phil Foden** (England, WIDE), 11th percentile on DANGEROUSNESS (bottom of the WIDE role pool). Foden is the cleanest single illustration of the volume-versus-value gap in the whole index: he sits at the 89th percentile of WIDE players on `passes /90`, but at the 11th on `EPV Added /90`. He is heavily involved in possession, his involvement just adds little expected value in the Euro 2024 sample.
 
 The radar (the four EPV by-geom_type sub-components) reads as a profile under the headline. Rüdiger's EPV is concentrated on Out-Circ and Penetr. (the centre-back fingerprint, value built in the build-up *and* into the block). Güler peaks on Penetr. and Out-Circ at the same time (the receiver-finisher who also gets EPV from his deep starts when drifting back to receive).
 
-### RECEPTION, the between-the-lines fingerprint
+### RECEPTION
 
 - **Pedri** (Spain, CAM, n=185') at 98th. The clearest "between-the-lines" CAM of the tournament, with the highest `Between Lines %` of any CAM and very strong `Press. Resist %`.
 - **Florian Wirtz** (Germany, WIDE) at 90th, the highest of the WIDE pool. Wide attackers normally score low here because they receive on the touchline, Wirtz is the exception because he comes inside.
 - **Riccardo Calafiori** (Italy, CB), **Mykola Matvienko** (Ukraine, CB), **Ladislav Krejčí** (Czech Rep, CB), **Willi Orban** (Hungary, CB), **Nacho Fernández** (Spain, CB), a cluster of ball-playing centre-backs at 88–93 inside the CB pool. CBs typically take very few touches inside the opposing block in raw terms (the role median `Between Lines %` is about 4%, against 52% for CAMs), so the within-role pool surfaces the *ball-playing* CBs cleanly: a CB at 90th here is genuinely the kind who steps into the half-space to receive, not just the median back-line passer.
 - **Breel Embolo** (Switzerland, FW) at 89th, a centre-forward whose between-the-lines reception rate beats most CAMs. Reads as the modern "drop nine" profile.
 
-### GRAVITY, the names volume never surfaces
+### GRAVITY
 
-This is the index where the H1 contextual approach is most distinct from anything in the public sphere. The top is dominated by players from smaller national teams, because gravity is about *the defenders' response*, not about ball volume.
+GRAVITY does not depend on how much a player touches the ball, it depends on how the opposing defenders react to them. Because of that the top is dominated by players from smaller national teams: a side built around one attacking reference produces a clear gravitational signal on that player.
 
-- **Jan Mlakar** (Slovenia, WIDE) at 95th. The leader of the gravity index. Slovenia's whole attack pivoted around him, the defensive centroid of opponents shifts toward Mlakar more than for any other Euro 2024 player on a meaningful sample.
-- **Giorgi Kochorashvili** (Georgia, MID) at 93rd, **Lukáš Provod** (Czech Rep, MID) at 92nd, **Salih Özcan** (Turkey, MID) at 92nd. A trio of midfielders from sides that played one-reference football, the metric reads the *team* structure through them.
-- **David Strelec** (Slovakia, FW) at 92nd, the only FW in the top of the index. Slovakia's centroid collapsed onto him whenever Slovakia broke into the final third.
-- **Kenan Yildiz** (Turkey, WIDE) at 84th, a more "household" name in this group.
+- **Jan Mlakar** (Slovenia, WIDE) at 95th, the leader of the index. He sits at the 100th percentile of WIDE players on the proximity component: when Mlakar is on the ball the nearest defenders close in more tightly than the leave-one-out baseline expects, and the defensive centroid shifts toward him.
+- **Giorgi Kochorashvili** (Georgia, MID) at 93rd, **Lukáš Provod** (Czech Rep, MID) at 92nd, **Salih Özcan** (Turkey, MID) at 92nd. Three midfielders from sides that funnel possession through one central player, so the defending team sets up to mark that player and the gravity signal picks it up.
+- **David Strelec** (Slovakia, FW) at 92nd, the only FW in the top of the index. He has the largest directional pull of this group: the opposing defensive centroid shifts about 12 m toward him on average, the highest signed displacement of the six players here.
+- **Kenan Yildiz** (Turkey, WIDE) at 84th, a more recognisable name in this group.
 
 A separate finding sits in the famous-names column. **Joshua Kimmich** (Germany, FB) at 83rd PROGRESSION, 96th DANGEROUSNESS, 72nd RECEPTION, 57th GRAVITY. A profile that confirms the public reading on the offensive side but suggests his gravitational pull is mid-pool inside the FB role.
 
@@ -150,17 +150,19 @@ Reading: **DANGEROUSNESS** is where the gap hits hardest. More than one player i
 
 A second illustration of the same gap, on PROGRESSION. For MIDs, the naive top-15 by `passes /90` and the contextual top-15 by PROGRESSION overlap on only 10/15: **five new names** enter (Trent Alexander-Arnold, Mateo Kovačić, Robert Andrich, Fabián Ruiz, Youri Tielemans) and as many drop out (Brozović, Hjulmand, Cristante, Veerman, Rodri).
 
-### Scouting discoveries, players surfaced only by context
+A note on the naive proxies. PROGRESSION and DANGEROUSNESS are tested against pure volume (`passes /90`), an external stat that is *not* part of the index. RECEPTION and GRAVITY are tested against one of their own raw mother variables (`between-lines %` and `gravity proximity %`): here the question is not "volume vs context" but "does the single most intuitive component reproduce the full index, or do the other components re-order it?". For GRAVITY the answer is partial, ρ = 0.60, the proximity signal alone agrees with the full index on the broad strokes but the hull and directional-pull components still move 39% of the pool by more than 20 percentile points.
+
+### Players the contextual view finds
 
 ![Scouting discoveries](docs/figures/scouting_discoveries.png)
 
 The chart shows, per index, the players whose contextual percentile is dramatically higher than their naive percentile. Read it role by role, not across the whole pitch.
 
-### Naive overrating, players inflated by team context
+### Players the naive view overrates
 
 ![Naive overrating](docs/figures/naive_overrating.png)
 
-The mirror chart. Players whose naive view sits well above their contextual ranking. Often passes-volume midfielders in possession sides whose 90 minutes of safe circulation inflate the naive ranking without adding line-breaking value.
+The mirror chart. Players whose naive ranking sits well above their contextual one, one panel per index. On PROGRESSION and DANGEROUSNESS these are typically high-volume passers whose ball circulation inflates the naive view without matching line-breaking or EPV output. Read it role by role, not across the whole pitch.
 
 ## Folder structure
 
