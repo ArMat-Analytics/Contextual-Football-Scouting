@@ -84,8 +84,6 @@ The single-player card renders **four small radars side by side**, one per index
 
 The two-player comparison page overlays two polygons per radar (same macro-role only, the picker prevents cross-role duels upstream). Reading the shapes is direct. A balanced PROGRESSION polygon is a balanced progressor (Kroos on MIDs). A DANGEROUSNESS polygon stretched on Penetr. + In-Circ with a thin Out-Circ is a final-third finisher; a polygon stretched on Out-Circ with thin Penetr. is a deep distributor whose EPV comes from build-up volume, not penetration. A RECEPTION spike with low PROGRESSION is a between-the-lines receiver who does not progress the ball himself (a classic 10 in a possession side).
 
-A **CORE STATS table** under the radars exposes the within-role percentiles that *feed* the axes, plus minutes, role, and the two annotations carried in the CSV (`gravity_composite_pct`, `gravity_directional_m`). The radars are the headline, the table is the diagnostic.
-
 ## Key findings
 
 A scout-first read of the Euro 2024 leaderboards on the four indices, with the minutes floor at 135' (≈ 1.5 matches). The interesting names show up not at the very top of "volume" stats but inside their own role pool, where the within-role percentile lives.
