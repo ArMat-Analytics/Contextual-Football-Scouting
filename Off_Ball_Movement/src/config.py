@@ -96,10 +96,7 @@ PC_MIN_FOR_OBSO = 0.5
 
 # ── URS ───────────────────────────────────────────────────────────────────────
 RECEIVED_WINDOW_S = 4.0
-MIN_MINUTES       = 270
-
-# ── Analysis filters ──────────────────────────────────────────────────────────
-ANALYSIS_MIN_MINUTES = 135
+MIN_MINUTES       = 135
 
 # ── Macro-role mapping (identical to H1 config.py) ────────────────────────────
 ROLE_MAP = {

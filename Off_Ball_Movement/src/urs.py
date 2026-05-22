@@ -252,13 +252,10 @@ def show_uncapitalised_runs(player: str, n: int = 4) -> None:
         prow = prow.iloc[0]
         fr   = frames[frames[event_col] == row["event_id"]]
 
-        ax.set_facecolor("#4a7c59")
-        ax.plot([0, PITCH_LENGTH, PITCH_LENGTH, 0, 0],
-                [0, 0, PITCH_WIDTH, PITCH_WIDTH, 0], color="white", lw=1.5)
         ax.set_xlim(-3, PITCH_LENGTH + 3)
         ax.set_ylim(-3, PITCH_WIDTH + 3)
         ax.set_aspect("equal")
-        ax.axis("off")
+        _draw_pitch(ax)
 
         opp_pts = np.array([
             [loc[0] * X_SCALE, loc[1] * Y_SCALE]
@@ -304,14 +301,48 @@ def show_uncapitalised_runs(player: str, n: int = 4) -> None:
             f"OBSO={row['obso']:.3f}  PC={row.get('pc_target', float('nan')):.2f}"
             f"  EPV={row.get('epv_target', float('nan')):.3f}\n"
             f"URS={row['urs']:.4f}  candidate: {player.split()[-1]}",
-            fontsize=9, color="white",
+            fontsize=9,
         )
 
-    fig.suptitle(f"Top-{n} uncapitalised runs — {player}", fontsize=13, color="white")
+    fig.suptitle(f"Top-{n} uncapitalised runs — {player}", fontsize=13)
     fig.patch.set_facecolor("#1a1a2e")
     plt.tight_layout()
     plt.show()
 
+
+def _player_minutes_from_lineups(matches: pd.DataFrame) -> pd.DataFrame:
+    """Compute minutes played from StatsBomb lineups for a given subset of matches.
+
+    Always uses the StatsBomb API — never the H1 CSV — so it works correctly
+    on any subset of matches (e.g. the first or second tournament half).
+    """
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        from statsbombpy import sb
+
+    rows = []
+    for _, m in matches.iterrows():
+        try:
+            lineups = sb.lineups(match_id=m["match_id"])
+            for team, lu in lineups.items():
+                for _, player in lu.iterrows():
+                    mins = sum(
+                        max(0, pos.get("to_period", 90) - pos.get("from_period", 0))
+                        for pos in player.get("positions", [])
+                    )
+                    rows.append({
+                        "player"        : player["player_name"],
+                        "team"          : team,
+                        "primary_role"  : (player.get("positions") or [{}])[0].get("position", ""),
+                        "minutes_played": mins,
+                    })
+        except Exception:
+            pass
+
+    return (pd.DataFrame(rows)
+              .groupby(["player", "team"], as_index=False)
+              .agg(primary_role=("primary_role", "first"),
+                   minutes_played=("minutes_played", "sum")))
 
 def split_half_reliability(min_minutes_per_half: int = 90) -> None:
     """Spearman rho between first-half and second-half URS_per90 rankings."""
@@ -332,7 +363,6 @@ def split_half_reliability(min_minutes_per_half: int = 90) -> None:
 
     first_ids  = set(matches["match_id"].iloc[:mid_pt].tolist())
     second_ids = set(matches["match_id"].iloc[mid_pt:].tolist())
-    mins_df    = _player_minutes(matches)
 
     if "urs" not in obso.columns:
         obso["urs"] = (obso["obso"]
@@ -343,7 +373,13 @@ def split_half_reliability(min_minutes_per_half: int = 90) -> None:
     for label, half_ids in [("first", first_ids), ("second", second_ids)]:
         sub = obso[obso["match_id"].isin(half_ids)]
         agg = sub.groupby("player").agg(urs_sum=("urs", "sum")).reset_index()
-        agg = agg.merge(mins_df, on="player", how="left")
+
+        # calculate minutes played in this half from lineups
+        half_matches = matches[matches["match_id"].isin(half_ids)]
+        half_mins    = _player_minutes_from_lineups(half_matches)
+        agg = agg.merge(half_mins[["player", "minutes_played"]], on="player", how="left")
+
+        # filter and normalize per 90 minutes; keep only players with enough minutes in this half
         agg = agg[agg["minutes_played"].notna() & (agg["minutes_played"] >= min_minutes_per_half)]
         agg["urs_per90"] = agg["urs_sum"] / agg["minutes_played"].replace(0, np.nan) * 90
         results[label] = agg.set_index("player")["urs_per90"].dropna()
@@ -381,3 +417,18 @@ def split_half_reliability(min_minutes_per_half: int = 90) -> None:
                  fontsize=12)
     plt.tight_layout()
     plt.show()
+
+def _draw_pitch(ax, color="black", lw=1.4):
+    """Consistent pitch style matching H1/H2."""
+    import matplotlib.patches as patches
+    L, W = PITCH_LENGTH, PITCH_WIDTH
+    ax.set_facecolor("#f5f5f5")
+    ax.add_patch(patches.Rectangle((0, 0), L, W, color="white", zorder=0))
+    ax.plot([0, L, L, 0, 0], [0, 0, W, W, 0], color=color, lw=lw)
+    ax.plot([L/2, L/2], [0, W], color=color, lw=lw)
+    ax.add_patch(patches.Circle((L/2, W/2), 9.15, fill=False, edgecolor=color, lw=lw))
+    ax.add_patch(patches.Rectangle((0, (W-40.32)/2), 16.5, 40.32, fill=False, edgecolor=color, lw=lw))
+    ax.add_patch(patches.Rectangle((L-16.5, (W-40.32)/2), 16.5, 40.32, fill=False, edgecolor=color, lw=lw))
+    ax.set_xlim(-2, L+2); ax.set_ylim(-2, W+2)
+    ax.set_aspect("equal")
+    ax.set_xticks([]); ax.set_yticks([])
