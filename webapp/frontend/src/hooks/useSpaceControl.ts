@@ -7,6 +7,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 export interface SpaceControlIndex {
   player: string; team: string; primary_role: string; macro_role: string;
   minutes_played: number; coverage_pct: number;
+  player_id?: number;
   idx__PROGRESSION: number; idx__DANGEROUSNESS: number;
   idx__RECEPTION: number; idx__GRAVITY: number;
   pct__lb_geom_per90: number; pct__lb_quality_per90: number;
@@ -31,9 +32,11 @@ export interface SpaceControlAggregated {
   penetration_completion_pct: number;
   epv_added_sum: number; epv_added_mean: number; epv_penetration_sum: number;
   epv_penetration_mean: number; epv_inside_circ_sum: number; epv_inside_circ_mean: number;
+  epv_exit_sum: number; epv_outside_circ_sum: number; epv_exit_mean: number; epv_outside_circ_mean: number;
   penetration_n: number; inside_circ_n: number;
   epv_added_per90: number; epv_penetration_per90: number; epv_inside_circ_per90: number;
-  penetration_per90: number; inside_circ_per90: number;
+  epv_exit_per90: number; epv_outside_circ_per90: number;
+  penetration_per90: number; inside_circ_per90: number; exit_per90: number; outside_circ_per90: number;
   between_lines_n: number; hull_exit_n: number; pressure_resistance_n: number;
   between_lines_per90: number; successful_hull_exits_per90: number;
   between_lines_pct: number; hull_exit_pct: number; pressure_resistance_pct: number;

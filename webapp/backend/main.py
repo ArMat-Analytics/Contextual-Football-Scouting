@@ -190,6 +190,20 @@ def get_player_stats(player_id: int, db: Session = Depends(database.get_db)):
         return {"error": "Stats not found"}
     return dict(result._mapping)
 
+@app.get("/players/{player_id}/decision-quality")
+def get_player_decision_quality(player_id: int, db: Session = Depends(database.get_db)):
+    """Return the decision-quality row for a single player, looked up by db_player_id."""
+    row = db.execute(text("""
+        SELECT dq.*
+        FROM player_decision_quality dq
+        JOIN player_profiles p ON p.player_name = dq.player
+        WHERE p.player_id = :pid
+        LIMIT 1
+    """), {"pid": player_id}).fetchone()
+
+    if not row:
+        return JSONResponse(status_code=404, content={"error": "Decision Quality data not found"})
+    return dict(row._mapping)
 
 @app.get("/players/{player_id}/space-control")
 def get_player_space_control(player_id: int, db: Session = Depends(database.get_db)):
@@ -229,6 +243,45 @@ def get_player_space_control(player_id: int, db: Session = Depends(database.get_
         "indices":    idx_row_final,
         "aggregated": dict(agg_row._mapping) if agg_row else None,
     }
+
+
+@app.get("/decision-quality/similar")
+def get_similar_dq(
+    macro_role: str,
+    exclude_player: Optional[str] = None,
+    db: Session = Depends(database.get_db),
+):
+    """Return all DQ rows for a given macro_role, excluding one player by name."""
+    try:
+        q = """
+            SELECT dq.*
+            FROM player_decision_quality dq
+            WHERE dq.macro_role = :macro_role
+        """
+        params: dict = {"macro_role": macro_role}
+
+        if exclude_player:
+            # exclude_player is the Transfermarkt display name — try to match
+            # via player_profiles to be safe, but also fall back to direct name match
+            q += """
+              AND dq.player NOT IN (
+                SELECT p2.player_name FROM player_profiles p2
+                WHERE p2.player_name ILIKE :excl
+                LIMIT 1
+              )
+              AND dq.player NOT ILIKE :excl
+            """
+            params["excl"] = exclude_player
+
+        q += " ORDER BY dq.player ASC"
+
+        rows = [dict(r._mapping) for r in db.execute(text(q), params)]
+        return rows
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e), "hint": "Run import_decision_quality.py to create player_decision_quality table"},
+        )
 
 
 @app.get("/space-control/similar")
@@ -334,9 +387,12 @@ def search_space_control(
                 END as fixed_db_player_id
             FROM sc_indices sc
         )
-        SELECT sc.*, COALESCE(p.player_name, sc.player) as player, p.player_id 
+        SELECT sc.*, COALESCE(p.player_name, sc.player) as player, p.player_id, dq."DQ_index"
         FROM CorrectedSC sc
         LEFT JOIN player_profiles p ON sc.fixed_db_player_id = p.player_id
+        LEFT JOIN player_decision_quality dq
+            ON (COALESCE(p.player_name, sc.player) = dq.player OR sc.player = dq.player)
+            AND sc.team = dq.team
         WHERE 1=1
     """
     params: dict = {}

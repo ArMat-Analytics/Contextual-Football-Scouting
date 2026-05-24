@@ -4,7 +4,15 @@ import {
   ResponsiveContainer, Legend, Tooltip,
 } from 'recharts';
 import type { SpaceControlIndex, SpaceControlAggregated } from '../hooks/useSpaceControl';
-import { VARIABLE_DESCRIPTIONS } from '../data/glossary';
+import { TOOLTIP_DESCRIPTIONS } from '../data/tooltip';
+
+// Axis tooltip state type used by multiple components
+interface AxisTooltipState {
+  label: string;
+  description: string;
+  x: number;
+  y: number;
+}
 
 // ── Stat view mode ────────────────────────────────────────────────────────────
 
@@ -64,9 +72,10 @@ const RADAR_DEFS = [
     key: 'DANGEROUSNESS' as const, label: 'Dangerousness',
     idxKey: 'idx__DANGEROUSNESS' as keyof SpaceControlIndex, color: '#ff4d6a',
     axes: [
-      { dataKey: 'pct__epv_added_per90'       as keyof SpaceControlIndex, label: 'EPV Added /90' },
       { dataKey: 'pct__epv_penetration_per90' as keyof SpaceControlIndex, label: 'EPV Penetr. /90' },
-      { dataKey: 'pct__epv_inside_circ_per90' as keyof SpaceControlIndex, label: 'Circ. EPV /90' },
+      { dataKey: 'pct__epv_inside_circ_per90' as keyof SpaceControlIndex, label: 'EPV In-Circ /90' },
+      { dataKey: 'pct__epv_exit_per90'        as keyof SpaceControlIndex, label: 'EPV Exit /90' },
+      { dataKey: 'pct__epv_outside_circ_per90' as keyof SpaceControlIndex, label: 'EPV Out-Circ /90' },
     ],
   },
   {
@@ -120,31 +129,34 @@ const MOTHER_STATS: Record<'PROGRESSION' | 'DANGEROUSNESS' | 'RECEPTION' | 'GRAV
   },
   DANGEROUSNESS: {
     raw: [
-      { col: 'epv_added_sum', label: 'EPV Added (sum)' },
       { col: 'epv_penetration_sum', label: 'EPV Penetr. (sum)' },
-      { col: 'epv_inside_circ_sum', label: 'Circ. EPV (sum)' },
-      { col: 'inside_circ_n', label: 'Inside Circ. (n)' },
+      { col: 'epv_inside_circ_sum',  label: 'EPV In-Circ (sum)' },
+      { col: 'epv_exit_sum',         label: 'EPV Exit (sum)' },
+      { col: 'epv_outside_circ_sum', label: 'EPV Out-Circ (sum)' },
     ],
     per90: [
-      { col: 'epv_added_per90', label: 'EPV Added /90' },
-      { col: 'epv_penetration_per90', label: 'EPV Penetr. /90' },
-      { col: 'epv_inside_circ_per90', label: 'Circ. EPV /90' },
-      { col: 'inside_circ_per90', label: 'Inside Circ. /90' },
+      { col: 'epv_added_per90',        label: 'EPV Added /90' },
+      { col: 'epv_penetration_per90',  label: 'EPV Penetr. /90' },
+      { col: 'epv_inside_circ_per90',  label: 'EPV In-Circ /90' },
+      { col: 'epv_exit_per90',         label: 'EPV Exit /90' },
+      { col: 'epv_outside_circ_per90', label: 'EPV Out-Circ /90' },
     ],
     percentages: [],
   },
   RECEPTION: {
     raw: [
-      { col: 'between_lines_n', label: 'Block Receipts (n)' },
+      { col: 'between_lines_n',       label: 'Block Receipts (n)' },
       { col: 'pressure_resistance_n', label: 'Press. Resist (n)' },
+      { col: 'inside_circ_n',         label: 'In-Circ (n)' },
     ],
     per90: [
-      { col: 'between_lines_per90', label: 'Between Lines /90' },
-      { col: 'successful_hull_exits_per90', label: 'Hull Exits /90' },
+      { col: 'between_lines_per90',          label: 'Between Lines /90' },
+      { col: 'successful_hull_exits_per90',  label: 'Hull Exits /90' },
+      { col: 'inside_circ_per90',            label: 'In-Circ /90' },
     ],
     percentages: [
-      { col: 'between_lines_pct', label: 'Between Lines %' },
-      { col: 'hull_exit_pct', label: 'Hull Exits %' },
+      { col: 'between_lines_pct',     label: 'Between Lines %' },
+      { col: 'hull_exit_pct',        label: 'Hull Exits %' },
       { col: 'pressure_resistance_pct', label: 'Press. Resist %' },
     ],
   },
@@ -192,9 +204,6 @@ function fmt(v: unknown): string {
 }
 
 // ── Mother stat row with inline "?" tooltip ───────────────────────────────────
-// Renders a single Core Stats row: label + optional "Experimental" badge on the
-// left, formatted value on the right, and a small "?" button that shows a
-// description tooltip on hover.
 
 function MotherStatRow({
   label,
@@ -205,14 +214,12 @@ function MotherStatRow({
   label: string;
   value: string;
   color: string;
-  /** When true renders the "Experimental" badge (used for GRAVITY stats) */
   showExperimental?: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
-  const description = VARIABLE_DESCRIPTIONS[label] ?? 'No description available.';
+  const description = TOOLTIP_DESCRIPTIONS[label] ?? 'No description available.';
 
   return (
-    // Outer row — `position: relative` so the tooltip is anchored here
     <div
       style={{
         position: 'relative',
@@ -262,13 +269,12 @@ function MotherStatRow({
           ?
         </button>
 
-        {/* Tooltip — shown on hover, positioned above the row */}
+        {/* Tooltip — shown on hover */}
         {hovered && (
           <div
             role="tooltip"
             style={{
               position: 'absolute',
-              // Sit above the row; shift left so it does not bleed outside the card
               bottom: 'calc(100% + 8px)',
               left: 0,
               maxWidth: '240px',
@@ -308,21 +314,7 @@ function MotherStatRow({
   );
 }
 
-// ── Axis tooltip types ────────────────────────────────────────────────────────
-
-interface AxisTooltipState {
-  label: string;
-  description: string;
-  /** Position relative to the card container's top-left corner */
-  x: number;
-  y: number;
-}
-
-// ── Custom PolarAngleAxis tick — hover on label text to show description ───────
-// Recharts passes x, y (label centre), cx, cy (chart centre), payload
-// (payload.value = axis label string), and textAnchor to custom tick components.
-// Hovering the label text fires callbacks so the parent RadarCard can display
-// a description tooltip overlay.  No "?" icon is rendered.
+// ── Custom PolarAngleAxis tick ────────────────────────────────────────────────
 
 interface CustomRadarTickProps {
   x?: number;
@@ -345,7 +337,7 @@ function CustomRadarTick({
   if (!payload) return null;
 
   const label       = payload.value;
-  const description = VARIABLE_DESCRIPTIONS[label] ?? 'No description available.';
+  const description = TOOLTIP_DESCRIPTIONS[label] ?? 'No description available.';
 
   const handleMouseEnter = (e: React.MouseEvent<SVGRectElement>) => {
     setHovered(true);
@@ -386,7 +378,7 @@ function CustomRadarTick({
         fontWeight={hovered ? 700 : 600}
         style={{
           transition: 'fill 0.12s',
-          pointerEvents: 'none',  /* hit area handled by the rect above */
+          pointerEvents: 'none',
         }}
       >
         {label}
@@ -466,7 +458,7 @@ function RadarCard({
     <div
       ref={containerRef}
       style={{
-        position: 'relative',       /* required for the axis tooltip overlay */
+        position: 'relative',
         background: 'var(--surface)',
         border: '1px solid var(--border)',
         borderTop: `3px solid ${def.color}`,
@@ -518,7 +510,7 @@ function RadarCard({
           aria-live="polite"
           style={{
             position: 'absolute',
-            left: Math.min(axisTooltip.x + 12, 260),   /* clamp so it stays inside card */
+            left: Math.min(axisTooltip.x + 12, 260),
             top: axisTooltip.y - 6,
             maxWidth: '220px',
             background: 'var(--surface2)',

@@ -11,6 +11,7 @@ const FILTER_OPTIONS: { key: GlossaryCategory | 'ALL'; label: string }[] = [
   { key: 'DANGEROUSNESS',label: 'Dangerousness' },
   { key: 'RECEPTION',    label: 'Reception' },
   { key: 'GRAVITY',      label: 'Gravity' },
+  { key: 'DECISION_QUALITY', label: 'Decision Quality' },
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -19,6 +20,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   DANGEROUSNESS:'#ff4d6a',
   RECEPTION:    '#4da6ff',
   GRAVITY:      '#ffc947',
+  DECISION_QUALITY: '#a0a0a0',
 };
 
 // ── Entry card ────────────────────────────────────────────────────────────────

@@ -49,6 +49,8 @@ CREATE TABLE IF NOT EXISTS sc_indices (
     pct__epv_added_per90                    NUMERIC,
     pct__epv_penetration_per90              NUMERIC,
     pct__epv_inside_circ_per90              NUMERIC,
+    pct__epv_exit_per90                     NUMERIC,
+    pct__epv_outside_circ_per90             NUMERIC, 
     pct__between_lines_pct                  NUMERIC,
     pct__successful_hull_exits_per90        NUMERIC,
     pct__pressure_resistance_pct            NUMERIC,
@@ -101,14 +103,24 @@ CREATE TABLE IF NOT EXISTS sc_aggregated (
     epv_inside_circ_mean                NUMERIC,
     epv_inside_circ_sum                 NUMERIC,
     inside_circ_n                       NUMERIC,
+    epv_exit_mean                       NUMERIC,
+    epv_exit_sum                        NUMERIC,
+    exit_n                              NUMERIC,
+    epv_outside_circ_mean               NUMERIC,
+    epv_outside_circ_sum                NUMERIC,
+    outside_circ_n                      NUMERIC,
     lb_geom_per90                       NUMERIC,
     lb_epv_per90                        NUMERIC,
     lb_quality_per90                    NUMERIC,
     epv_added_per90                     NUMERIC,
     epv_penetration_per90               NUMERIC,
     epv_inside_circ_per90               NUMERIC,
+    epv_exit_per90                      NUMERIC,
+    epv_outside_circ_per90              NUMERIC,
     penetration_per90                   NUMERIC,
     inside_circ_per90                   NUMERIC,
+    exit_per90                          NUMERIC,
+    outside_circ_per90                  NUMERIC,
     between_lines_per90                 NUMERIC,
     successful_hull_exits_per90         NUMERIC,
     successful_hull_penetrations_per90  NUMERIC,
@@ -200,6 +212,8 @@ def load_indices(cur) -> int:
                     pct__defenders_bypassed_mean,
                     pct__epv_added_per90, pct__epv_penetration_per90,
                     pct__epv_inside_circ_per90,
+                    pct__epv_exit_per90,
+                    pct__epv_outside_circ_per90,
                     pct__between_lines_pct, pct__successful_hull_exits_per90,
                     pct__pressure_resistance_pct,
                     pct__gravity_proximity_pct, pct__gravity_hull_pct,
@@ -217,6 +231,8 @@ def load_indices(cur) -> int:
                     %(pct__defenders_bypassed_mean)s,
                     %(pct__epv_added_per90)s, %(pct__epv_penetration_per90)s,
                     %(pct__epv_inside_circ_per90)s,
+                    %(pct__epv_exit_per90)s,
+                    %(pct__epv_outside_circ_per90)s,
                     %(pct__between_lines_pct)s, %(pct__successful_hull_exits_per90)s,
                     %(pct__pressure_resistance_pct)s,
                     %(pct__gravity_proximity_pct)s, %(pct__gravity_hull_pct)s,
@@ -230,7 +246,9 @@ def load_indices(cur) -> int:
                     "idx__PROGRESSION"   = EXCLUDED."idx__PROGRESSION",
                     "idx__DANGEROUSNESS" = EXCLUDED."idx__DANGEROUSNESS",
                     "idx__RECEPTION"     = EXCLUDED."idx__RECEPTION",
-                    "idx__GRAVITY"       = EXCLUDED."idx__GRAVITY"
+                    "idx__GRAVITY"       = EXCLUDED."idx__GRAVITY",
+                    pct__epv_exit_per90          = EXCLUDED.pct__epv_exit_per90,
+                    pct__epv_outside_circ_per90  = EXCLUDED.pct__epv_outside_circ_per90
             """, values)
             count += 1
     return count
@@ -243,7 +261,7 @@ def load_aggregated(cur) -> int:
         reader = csv.DictReader(f)
         for row in reader:
             values = {k: (_safe(v) if k in TEXT_COLS else (None if _safe(v) is None else float(v)))
-                      for k, v in row.items()}
+                    for k, v in row.items()}
             cur.execute("""
                 INSERT INTO sc_aggregated (
                     player, team, primary_role, macro_role, minutes_played,
@@ -258,9 +276,13 @@ def load_aggregated(cur) -> int:
                     pressure_resistance_pct,
                     epv_penetration_mean, epv_penetration_sum, penetration_n,
                     epv_inside_circ_mean, epv_inside_circ_sum, inside_circ_n,
+                    epv_exit_mean, epv_exit_sum, exit_n,
+                    epv_outside_circ_mean, epv_outside_circ_sum, outside_circ_n,
                     lb_geom_per90, lb_epv_per90, lb_quality_per90,
                     epv_added_per90, epv_penetration_per90, epv_inside_circ_per90,
+                    epv_exit_per90, epv_outside_circ_per90,
                     penetration_per90, inside_circ_per90, between_lines_per90,
+                    exit_per90, outside_circ_per90,
                     successful_hull_exits_per90, successful_hull_penetrations_per90
                 ) VALUES (
                     %(player)s, %(team)s, %(primary_role)s, %(macro_role)s,
@@ -283,18 +305,27 @@ def load_aggregated(cur) -> int:
                     %(penetration_n)s,
                     %(epv_inside_circ_mean)s, %(epv_inside_circ_sum)s,
                     %(inside_circ_n)s,
+                    %(epv_exit_mean)s, %(epv_exit_sum)s, %(exit_n)s,
+                    %(epv_outside_circ_mean)s, %(epv_outside_circ_sum)s,
+                    %(outside_circ_n)s,
                     %(lb_geom_per90)s, %(lb_epv_per90)s, %(lb_quality_per90)s,
                     %(epv_added_per90)s, %(epv_penetration_per90)s,
                     %(epv_inside_circ_per90)s,
+                    %(epv_exit_per90)s, %(epv_outside_circ_per90)s,
                     %(penetration_per90)s, %(inside_circ_per90)s,
                     %(between_lines_per90)s,
+                    %(exit_per90)s, %(outside_circ_per90)s,
                     %(successful_hull_exits_per90)s,
                     %(successful_hull_penetrations_per90)s
                 )
                 ON CONFLICT (player, team) DO UPDATE SET
-                    macro_role      = EXCLUDED.macro_role,
-                    minutes_played  = EXCLUDED.minutes_played,
-                    epv_added_per90 = EXCLUDED.epv_added_per90
+                    macro_role               = EXCLUDED.macro_role,
+                    minutes_played           = EXCLUDED.minutes_played,
+                    epv_added_per90          = EXCLUDED.epv_added_per90,
+                    epv_exit_sum             = EXCLUDED.epv_exit_sum,
+                    epv_exit_per90           = EXCLUDED.epv_exit_per90,
+                    epv_outside_circ_sum     = EXCLUDED.epv_outside_circ_sum,
+                    epv_outside_circ_per90   = EXCLUDED.epv_outside_circ_per90
             """, values)
             count += 1
     return count
@@ -355,6 +386,18 @@ def main() -> None:
                 cur.execute(CREATE_AGGREGATED)
                 # Ensure db_player_id exists even if table was created in an older run
                 cur.execute("ALTER TABLE sc_indices ADD COLUMN IF NOT EXISTS db_player_id BIGINT;")
+                cur.execute("ALTER TABLE sc_aggregated ADD COLUMN IF NOT EXISTS epv_exit_mean NUMERIC;")
+                cur.execute("ALTER TABLE sc_aggregated ADD COLUMN IF NOT EXISTS epv_exit_sum NUMERIC;")
+                cur.execute("ALTER TABLE sc_aggregated ADD COLUMN IF NOT EXISTS exit_n NUMERIC;")
+                cur.execute("ALTER TABLE sc_aggregated ADD COLUMN IF NOT EXISTS epv_outside_circ_mean NUMERIC;")
+                cur.execute("ALTER TABLE sc_aggregated ADD COLUMN IF NOT EXISTS epv_outside_circ_sum NUMERIC;")
+                cur.execute("ALTER TABLE sc_aggregated ADD COLUMN IF NOT EXISTS outside_circ_n NUMERIC;")
+                cur.execute("ALTER TABLE sc_aggregated ADD COLUMN IF NOT EXISTS epv_exit_per90 NUMERIC;")
+                cur.execute("ALTER TABLE sc_aggregated ADD COLUMN IF NOT EXISTS epv_outside_circ_per90 NUMERIC;")
+                cur.execute("ALTER TABLE sc_aggregated ADD COLUMN IF NOT EXISTS exit_per90 NUMERIC;")
+                cur.execute("ALTER TABLE sc_aggregated ADD COLUMN IF NOT EXISTS outside_circ_per90 NUMERIC;")
+                cur.execute("ALTER TABLE sc_indices ADD COLUMN IF NOT EXISTS pct__epv_exit_per90 NUMERIC;")
+                cur.execute("ALTER TABLE sc_indices ADD COLUMN IF NOT EXISTS pct__epv_outside_circ_per90 NUMERIC;")
 
                 print("Importing sc_indices…")
                 n = load_indices(cur)

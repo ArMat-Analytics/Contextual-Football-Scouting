@@ -10,7 +10,9 @@ import {
   type SpaceControlIndex, type SpaceControlAggregated,
 } from '../hooks/useSpaceControl';
 import { StatViewToggle, type StatViewMode } from '../components/SpaceControlSection';
-import { VARIABLE_DESCRIPTIONS } from '../data/glossary';
+import { TOOLTIP_DESCRIPTIONS } from '../data/tooltip';
+import { usePlayerDecisionQuality } from '../hooks/useDecisionQuality';
+import { DQCompareRadar } from '../components/DecisionQualitySection';
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 
@@ -33,9 +35,10 @@ const RADAR_DEFS = [
   {
     key: 'DANGEROUSNESS', label: 'Dangerousness', color: '#ff4d6a',
     axes: [
-      { k: 'pct__epv_added_per90'       as keyof SpaceControlIndex, label: 'EPV Added /90' },
       { k: 'pct__epv_penetration_per90' as keyof SpaceControlIndex, label: 'EPV Penetr. /90' },
-      { k: 'pct__epv_inside_circ_per90' as keyof SpaceControlIndex, label: 'Circ. EPV /90' },
+      { k: 'pct__epv_inside_circ_per90' as keyof SpaceControlIndex, label: 'EPV In-Circ /90' },
+      { k: 'pct__epv_exit_per90'        as keyof SpaceControlIndex, label: 'EPV Exit /90' },
+      { k: 'pct__epv_outside_circ_per90' as keyof SpaceControlIndex, label: 'EPV Out-Circ /90' },
     ],
   },
   {
@@ -47,7 +50,7 @@ const RADAR_DEFS = [
     ],
   },
   {
-    key: 'GRAVITY',       label: 'Gravity',       color: '#ffc947',
+    key: 'GRAVITY',       label: 'Gravity',       color: '#756f60',
     axes: [
       { k: 'pct__gravity_proximity_pct' as keyof SpaceControlIndex, label: 'Space Attraction %' },
       { k: 'pct__gravity_hull_pct'      as keyof SpaceControlIndex, label: 'Gravity Hull %' },
@@ -86,31 +89,34 @@ const MOTHER: Record<string, Record<StatViewMode, StatDef[]>> = {
   },
   DANGEROUSNESS: {
     raw: [
-      { col: 'epv_added_sum', label: 'EPV Added (sum)' },
       { col: 'epv_penetration_sum', label: 'EPV Penetr. (sum)' },
-      { col: 'epv_inside_circ_sum', label: 'Circ. EPV (sum)' },
-      { col: 'inside_circ_n', label: 'Inside Circ. (n)' },
+      { col: 'epv_inside_circ_sum',  label: 'EPV In-Circ (sum)' },
+      { col: 'epv_exit_sum',         label: 'EPV Exit (sum)' },
+      { col: 'epv_outside_circ_sum', label: 'EPV Out-Circ (sum)' },
     ],
     per90: [
-      { col: 'epv_added_per90', label: 'EPV Added /90' },
-      { col: 'epv_penetration_per90', label: 'EPV Penetr. /90' },
-      { col: 'epv_inside_circ_per90', label: 'Circ. EPV /90' },
-      { col: 'inside_circ_per90', label: 'Inside Circ. /90' },
+      { col: 'epv_added_per90',        label: 'EPV Added /90' },
+      { col: 'epv_penetration_per90',  label: 'EPV Penetr. /90' },
+      { col: 'epv_inside_circ_per90',  label: 'EPV In-Circ /90' },
+      { col: 'epv_exit_per90',         label: 'EPV Exit /90' },
+      { col: 'epv_outside_circ_per90', label: 'EPV Out-Circ /90' },
     ],
     percentages: [],
   },
   RECEPTION: {
     raw: [
-      { col: 'between_lines_n', label: 'Block Receipts (n)' },
+      { col: 'between_lines_n',       label: 'Block Receipts (n)' },
       { col: 'pressure_resistance_n', label: 'Press. Resist (n)' },
+      { col: 'inside_circ_n',         label: 'In-Circ (n)' },
     ],
     per90: [
-      { col: 'between_lines_per90', label: 'Between Lines /90' },
-      { col: 'successful_hull_exits_per90', label: 'Hull Exits /90' },
+      { col: 'between_lines_per90',          label: 'Between Lines /90' },
+      { col: 'successful_hull_exits_per90',  label: 'Hull Exits /90' },
+      { col: 'inside_circ_per90',            label: 'In-Circ /90' },
     ],
     percentages: [
-      { col: 'between_lines_pct', label: 'Between Lines %' },
-      { col: 'hull_exit_pct', label: 'Hull Exits %' },
+      { col: 'between_lines_pct',     label: 'Between Lines %' },
+      { col: 'hull_exit_pct',        label: 'Hull Exits %' },
       { col: 'pressure_resistance_pct', label: 'Press. Resist %' },
     ],
   },
@@ -194,7 +200,7 @@ function CustomRadarTick({
   if (!payload) return null;
 
   const label       = payload.value;
-  const description = VARIABLE_DESCRIPTIONS[label] ?? 'No description available.';
+  const description = TOOLTIP_DESCRIPTIONS[label] ?? 'No description available.';
 
   const handleMouseEnter = (e: React.MouseEvent<SVGRectElement>) => {
     setHovered(true);
@@ -235,7 +241,7 @@ function CustomRadarTick({
         fontWeight={hovered ? 700 : 600}
         style={{
           transition: 'fill 0.12s',
-          pointerEvents: 'none', /* hit area handled by the rect above */
+          pointerEvents: 'none',
         }}
       >
         {label}
@@ -260,13 +266,12 @@ function DualMotherStatRow({
   label: string;
   sourceValue: string;
   similarValue: string;
-  /** Numeric difference (similar − source); null when either value is missing */
   diff: number | null;
   color: string;
   showExperimental?: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
-  const description = VARIABLE_DESCRIPTIONS[label] ?? 'No description available.';
+  const description = TOOLTIP_DESCRIPTIONS[label] ?? 'No description available.';
 
   const better = diff != null && diff > 0;
   const worse  = diff != null && diff < 0;
@@ -450,7 +455,7 @@ function DualRadarCard({
     <div
       ref={containerRef}
       style={{
-        position: 'relative',  /* required for the axis tooltip overlay */
+        position: 'relative',
         background: 'var(--surface)',
         border: '1px solid var(--border)',
         borderTop: `3px solid ${def.color}`,
@@ -482,7 +487,7 @@ function DualRadarCard({
         </div>
       </div>
 
-      {/* Overlapping dual radar — axes trigger description tooltip on hover */}
+      {/* Overlapping dual radar */}
       <ResponsiveContainer width="100%" height={220}>
         <RadarChart data={radarData} margin={{ top: 8, right: 16, bottom: 8, left: 16 }}>
           <PolarGrid stroke="rgba(255,255,255,0.07)" />
@@ -601,8 +606,12 @@ export default function SimilarPlayers() {
   const { data: sourceScData, loading: sourceScLoading } = usePlayerSpaceControl(
     playerId ?? undefined,
   );
+  const { data: sourceDQ } = usePlayerDecisionQuality(playerId ?? undefined);
 
   const selectedPlayer = similarList[selectedIdx] ?? null;
+  const { data: compareDQ } = usePlayerDecisionQuality(
+    selectedPlayer?.player_id != null ? String(selectedPlayer.player_id) : undefined,
+  );
   const sourceIdx = sourceScData?.indices ?? null;
   const sourceAgg = sourceScData?.aggregated ?? null;
 
@@ -861,6 +870,18 @@ export default function SimilarPlayers() {
                 <p className="text-xs font-mono" style={{ color: 'var(--text-dim)' }}>
                   The source player's space control profile is not available. Make sure the SC tables have been imported.
                 </p>
+              </div>
+            )}
+
+            {/* Decision Quality comparison radar */}
+            {sourceDQ && compareDQ && (
+              <div style={{ marginTop: '24px' }}>
+                <DQCompareRadar
+                  sourceRow={sourceDQ}
+                  compareRow={compareDQ}
+                  sourceName={playerName}
+                  compareName={selectedPlayer?.player ?? 'Comparison player'}
+                />
               </div>
             )}
           </div>

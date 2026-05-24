@@ -3,6 +3,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getFlagUrl, ALL_STATS, CAT_ACCENT, type PlayerStats } from '../utils';
 import { usePlayerSpaceControl } from '../hooks/useSpaceControl';
 import SpaceControlSection, { type StatViewMode } from '../components/SpaceControlSection';
+import { usePlayerDecisionQuality } from '../hooks/useDecisionQuality';
+import DecisionQualitySection from '../components/DecisionQualitySection';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
@@ -56,8 +58,10 @@ export default function PlayerProfile() {
   const [stats, setStats] = useState<PlayerStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
   const [statMode, setStatMode] = useState<StatViewMode>('raw');
+  const [dqMode, setDqMode] = useState<StatViewMode>('raw');
 
   const { data: scData, loading: scLoading } = usePlayerSpaceControl(playerId);
+  const { data: dqData, loading: dqLoading } = usePlayerDecisionQuality(playerId);
 
   useEffect(() => {
     if (!playerId) return;
@@ -211,6 +215,31 @@ export default function PlayerProfile() {
           <div className="card p-6">
             <p className="font-mono text-xs" style={{ color: 'var(--text-dim)' }}>
               No Space Control data available for this player.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Decision Quality section */}
+      {dqLoading ? (
+        <div className="max-w-5xl mx-auto px-6 mb-12">
+          <div className="card p-8 text-center">
+            <p className="font-mono text-xs" style={{ color: 'var(--text-dim)' }}>Loading Decision Quality data…</p>
+          </div>
+        </div>
+      ) : dqData ? (
+        <DecisionQualitySection
+          playerName={stats.player_name}
+          teamName={stats.source_team_name}
+          row={dqData}
+          mode={dqMode}
+          onModeChange={setDqMode}
+        />
+      ) : (
+        <div className="max-w-5xl mx-auto px-6 mb-12">
+          <div className="card p-6">
+            <p className="font-mono text-xs" style={{ color: 'var(--text-dim)' }}>
+              No Decision Quality data available for this player.
             </p>
           </div>
         </div>

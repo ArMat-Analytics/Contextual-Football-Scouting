@@ -39,6 +39,7 @@ const INDICES = [
   { key: 'idx__DANGEROUSNESS', label: 'Dangerousness', color: '#ff4d6a',  short: 'DNGR' },
   { key: 'idx__RECEPTION',     label: 'Reception',     color: '#4da6ff',  short: 'RECEP' },
   { key: 'idx__GRAVITY',       label: 'Gravity',       color: '#ffc947',  short: 'GRAV' },
+  { key: 'DQ_index',           label: 'Decision Quality',  color: '#c084fc',  short: 'DQ' },
 ] as const;
 
 type IndexKey = typeof INDICES[number]['key'];
@@ -64,6 +65,7 @@ interface PlayerRow {
   idx__DANGEROUSNESS: number;
   idx__RECEPTION: number;
   idx__GRAVITY: number;
+  DQ_index: number;
 }
 
 // ── Shared UI Components ──────────────────────────────────────────────────────
@@ -365,6 +367,7 @@ const DEFAULT_RANGES: Record<IndexKey, IndexRange> = {
   idx__DANGEROUSNESS: { min: '', max: '' },
   idx__RECEPTION:     { min: '', max: '' },
   idx__GRAVITY:       { min: '', max: '' },
+  DQ_index:           { min: '', max: '' },
 };
 
 export default function SearchByAttribute() {
@@ -420,7 +423,7 @@ export default function SearchByAttribute() {
     for (const idx of INDICES) {
       const val = player[idx.key] ?? 0;
       const r = f.ranges[idx.key];
-      const min = r.min === '' ? 1 : Number(r.min);
+      const min = r.min === '' ? 0 : Number(r.min);
       const max = r.max === '' ? 100 : Number(r.max);
       
       if (val < min || val > max) return false;
