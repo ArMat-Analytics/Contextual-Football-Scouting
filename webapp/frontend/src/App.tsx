@@ -18,8 +18,9 @@ function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
   return (
     <Link
       to={to}
-      className="font-600 text-xs sm:text-sm uppercase tracking-wider transition-colors"
-      style={{ color: active ? 'var(--accent)' : 'var(--text-muted)' }}
+      className={`font-semibold text-xs sm:text-sm uppercase tracking-wider transition-colors ${
+        active ? 'text-[var(--accent)]' : 'text-[var(--text-muted)] hover:text-[var(--text)]'
+      }`}
     >
       {children}
     </Link>
@@ -28,31 +29,33 @@ function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
 
 function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex flex-col min-h-screen relative z-10">
+    <div className="flex flex-col min-h-screen bg-[var(--bg)]">
+      {/* Skip to content */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-[var(--accent)] focus:text-white focus:font-semibold focus:text-sm"
+      >
+        Skip to main content
+      </a>
+
       {/* Nav */}
       <header role="banner">
         <nav
           aria-label="Main navigation"
-          className="sticky top-0 z-50 flex items-center justify-between px-6 py-4 border-b"
-          style={{
-            background: 'rgba(13,15,20,0.92)',
-            backdropFilter: 'blur(16px)',
-            borderColor: 'var(--border)',
-          }}
+          className="sticky top-0 z-50 flex items-center justify-between px-6 py-4 border-b border-[var(--border)] bg-white/92 backdrop-blur-xl"
         >
           <Link
             to="/"
-            className="flex items-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--accent] rounded"
+            className="flex items-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded"
           >
             {/* Logo mark */}
             <span
               aria-hidden
-              className="w-8 h-8 rounded-lg flex items-center justify-center font-display font-900 text-sm"
-              style={{ background: 'var(--accent)', color: 'var(--bg)' }}
+              className="w-8 h-8 rounded-lg flex items-center justify-center font-display font-black text-sm bg-[var(--accent)] text-white"
             >
               AM
             </span>
-            <span className="font-display font-800 text-base tracking-tight text-[--text] hidden sm:block">
+            <span className="font-display font-extrabold text-base tracking-tight text-[var(--text)] hidden sm:block">
               ArMat Analytics
             </span>
           </Link>
@@ -72,15 +75,11 @@ function Layout({ children }: { children: React.ReactNode }) {
 
       <footer
         role="contentinfo"
-        className="border-t py-6 px-6 mt-auto"
-        style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+        className="border-t border-[var(--border)] py-6 px-6 mt-auto bg-[var(--surface)]"
       >
-        <div
-          className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2 text-xs font-mono"
-          style={{ color: 'var(--text-muted)' }}
-        >
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2 text-xs font-mono text-[var(--text-muted)]">
           <p>© 2026 ArMat Analytics — Contextual Football Scouting</p>
-          <p style={{ color: 'var(--text-dim)' }}>UEFA Euro 2024 · StatsBomb 360°</p>
+          <p className="text-[var(--text-dim)]">UEFA Euro 2024 · StatsBomb 360°</p>
         </div>
       </footer>
     </div>
@@ -99,26 +98,23 @@ function SearchByPlayer() {
   return (
     <div className="pb-12">
       {/* Hero strip */}
-      <div
-        className="border-b px-6 pt-10 pb-8"
-        style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
-      >
+      <div className="border-b border-[var(--border)] px-6 pt-10 pb-8 bg-[var(--surface)]">
         <div className="max-w-7xl mx-auto">
           {/* Breadcrumb */}
           <nav aria-label="Breadcrumb" className="mb-4">
-            <ol className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-muted)' }}>
-              <li><Link to="/" className="hover:text-[--accent] transition-colors font-600">Home</Link></li>
+            <ol className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
+              <li><Link to="/" className="hover:text-[var(--accent)] transition-colors font-semibold">Home</Link></li>
               <li aria-hidden>/</li>
-              <li className="font-600" style={{ color: 'var(--text)' }} aria-current="page">Search by Player</li>
+              <li className="font-semibold text-[var(--text)]" aria-current="page">Search by Player</li>
             </ol>
           </nav>
-          <p className="font-mono text-xs tracking-widest mb-2" style={{ color: 'var(--accent)' }}>
+          <p className="font-mono text-xs tracking-widest mb-2 text-[var(--accent)]">
             UEFA EURO 2024 · PLAYER DATABASE
           </p>
-          <h1 className="font-display font-900 text-5xl sm:text-6xl leading-none tracking-tight" style={{ color: 'var(--text)' }}>
+          <h1 className="font-display font-black text-5xl sm:text-6xl leading-none tracking-tight text-[var(--text)]">
             Search by Player
           </h1>
-          <p className="mt-3 text-base max-w-xl" style={{ color: 'var(--text-muted)' }}>
+          <p className="mt-3 text-base max-w-xl text-[var(--text-muted)]">
             272 players with full stats, market values, space-control indices, and value delta. Click any name to open the full profile.
           </p>
         </div>

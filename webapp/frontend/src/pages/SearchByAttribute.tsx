@@ -30,16 +30,16 @@ const ROLE_TO_MACRO: Record<string, string> = {
 };
 
 const MACRO_COLOR: Record<string, string> = {
-  CB: '#4da6ff', FB: '#39ff14', MID: '#ffc947',
-  CAM: '#ff9f1c', WIDE: '#ff4d6a', FW: '#c084fc',
+  CB: '#2563eb', FB: '#16a34a', MID: '#d97706',
+  CAM: '#ea580c', WIDE: '#dc2626', FW: '#7c3aed',
 };
 
 const INDICES = [
-  { key: 'idx__PROGRESSION',   label: 'Progression',   color: '#39ff14',  short: 'PROG' },
-  { key: 'idx__DANGEROUSNESS', label: 'Dangerousness', color: '#ff4d6a',  short: 'DNGR' },
-  { key: 'idx__RECEPTION',     label: 'Reception',     color: '#4da6ff',  short: 'RECEP' },
-  { key: 'idx__GRAVITY',       label: 'Gravity',       color: '#ffc947',  short: 'GRAV' },
-  { key: 'DQ_index',           label: 'Decision Quality',  color: '#c084fc',  short: 'DQ' },
+  { key: 'idx__PROGRESSION',   label: 'Progression',   color: '#16a34a',  short: 'PROG' },
+  { key: 'idx__DANGEROUSNESS', label: 'Dangerousness', color: '#dc2626',  short: 'DNGR' },
+  { key: 'idx__RECEPTION',     label: 'Reception',     color: '#2563eb',  short: 'RECEP' },
+  { key: 'idx__GRAVITY',       label: 'Gravity',       color: '#d97706',  short: 'GRAV' },
+  { key: 'DQ_index',           label: 'Decision Quality',  color: '#7c3aed',  short: 'DQ' },
 ] as const;
 
 type IndexKey = typeof INDICES[number]['key'];
@@ -100,36 +100,31 @@ function RangeFilter({
 
   return (
     <div
-      style={{
-        background: 'var(--surface2)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius)',
-        padding: '16px',
-        borderLeft: `3px solid ${color}`,
-      }}
+      className="bg-[var(--surface2)] border border-[var(--border)] rounded-[var(--radius)] p-4"
+      style={{ borderLeft: `3px solid ${color}` }}
     >
       {/* Label + current range */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 700, color }}>
+      <div className="flex justify-between items-center mb-3">
+        <span className="font-mono text-[10px] tracking-[0.12em] uppercase font-bold" style={{ color }}>
           {label}
         </span>
-        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>
+        <span className="font-mono text-[11px] font-bold text-[var(--text-muted)]">
           {range.min === '' ? '0' : range.min} – {range.max === '' ? '100' : range.max}
         </span>
       </div>
 
       {/* Visual track */}
-      <div style={{ position: 'relative', height: '4px', background: 'var(--surface)', borderRadius: '2px', marginBottom: '12px' }}>
-        <div style={{
-          position: 'absolute', height: '100%', borderRadius: '2px',
-          left: `${leftPct}%`, width: `${widthPct}%`, background: color, opacity: 0.7,
-        }} />
+      <div className="relative h-1 bg-[var(--surface)] rounded-sm mb-3">
+        <div
+          className="absolute h-full rounded-sm opacity-70"
+          style={{ left: `${leftPct}%`, width: `${widthPct}%`, background: color }}
+        />
       </div>
 
       {/* Number inputs */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+      <div className="grid grid-cols-2 gap-2">
         <div>
-          <label htmlFor={minId} style={{ display: 'block', fontSize: '10px', fontFamily: 'JetBrains Mono, monospace', color: 'var(--text-dim)', marginBottom: '4px' }}>MIN</label>
+          <label htmlFor={minId} className="block text-[10px] font-mono text-[var(--text-dim)] mb-1">MIN</label>
           <input
             id={minId}
             type="number"
@@ -147,12 +142,11 @@ function RangeFilter({
               }
               onChange({ ...range, min: val });
             }}
-            className="input"
-            style={{ padding: '6px 10px', fontSize: '13px', fontFamily: 'JetBrains Mono, monospace' }}
+            className="input py-1.5 px-2.5 text-[13px] font-mono"
           />
         </div>
         <div>
-          <label htmlFor={maxId} style={{ display: 'block', fontSize: '10px', fontFamily: 'JetBrains Mono, monospace', color: 'var(--text-dim)', marginBottom: '4px' }}>MAX</label>
+          <label htmlFor={maxId} className="block text-[10px] font-mono text-[var(--text-dim)] mb-1">MAX</label>
           <input
             id={maxId}
             type="number"
@@ -170,8 +164,7 @@ function RangeFilter({
               }
               onChange({ ...range, max: val });
             }}
-            className="input"
-            style={{ padding: '6px 10px', fontSize: '13px', fontFamily: 'JetBrains Mono, monospace' }}
+            className="input py-1.5 px-2.5 text-[13px] font-mono"
           />
         </div>
       </div>
@@ -183,11 +176,11 @@ function RangeFilter({
 
 function IndexBadge({ label, value, color }: { label: string; value: number | null; color: string }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '48px' }}>
-      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 900, fontSize: '16px', lineHeight: 1, color }}>
+    <div className="flex flex-col items-center min-w-[48px]">
+      <span className="font-mono font-black text-base leading-none" style={{ color }}>
         {value != null ? value.toFixed(0) : '—'}
       </span>
-      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '8px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-dim)', marginTop: '2px' }}>
+      <span className="font-mono text-[8px] tracking-[0.1em] uppercase text-[var(--text-dim)] mt-0.5">
         {label}
       </span>
     </div>
@@ -196,7 +189,7 @@ function IndexBadge({ label, value, color }: { label: string; value: number | nu
 
 // ── Player result row ─────────────────────────────────────────────────────────
 
-function PlayerRow({ player, rank }: { player: PlayerRow; rank: number }) {
+function PlayerResultRow({ player, rank }: { player: PlayerRow; rank: number }) {
   const flagUrl  = getFlagUrl(player.team);
   const macro    = player.macro_role;
   const macroColor = MACRO_COLOR[macro] ?? 'var(--text-muted)';
@@ -210,25 +203,21 @@ function PlayerRow({ player, rank }: { player: PlayerRow; rank: number }) {
 
   return (
     <div
-      className="card fade-up p-4 sm:p-5"
-      style={{ cursor: 'default' }}
+      className="card fade-up p-4 sm:p-5 cursor-default"
       role="listitem"
     >
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         
         {/* Top: Player Info */}
         <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
-          <span style={{
-            fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, fontSize: '13px',
-            color: rank <= 3 ? 'var(--accent)' : 'var(--text-dim)', minWidth: '24px', textAlign: 'right',
-          }}>
+          <span className={`font-mono font-bold text-[13px] min-w-[24px] text-right ${rank <= 3 ? 'text-[var(--accent)]' : 'text-[var(--text-dim)]'}`}>
             {rank}
           </span>
 
           {/* Flag */}
           {flagUrl
-            ? <img src={flagUrl} alt="" style={{ width: 28, height: 20, objectFit: 'cover', borderRadius: 2, flexShrink: 0 }} aria-hidden />
-            : <span style={{ width: 28, flexShrink: 0, fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', color: 'var(--text-dim)' }}>{player.team.substring(0, 3).toUpperCase()}</span>
+            ? <img src={flagUrl} alt="" className="w-7 h-5 object-cover rounded-sm shrink-0" aria-hidden />
+            : <span className="w-7 shrink-0 font-mono text-[9px] text-[var(--text-dim)]">{player.team.substring(0, 3).toUpperCase()}</span>
           }
 
           {/* Name + role */}
@@ -236,28 +225,27 @@ function PlayerRow({ player, rank }: { player: PlayerRow; rank: number }) {
             {player.player_id ? (
               <Link 
                 to={`/player/${player.player_id}`}
-                className="hover:text-[--accent] transition-colors focus-visible:outline-none focus-visible:underline"
-                style={{ display: 'block', textDecoration: 'none' }}
+                className="block no-underline hover:text-[var(--accent)] transition-colors focus-visible:outline-none focus-visible:underline"
               >
-                <p style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 900, fontSize: '18px', color: 'inherit', lineHeight: 1.1, marginBottom: '2px' }}>
+                <p className="font-display font-black text-lg text-inherit leading-none mb-0.5">
                   {player.player}
                 </p>
               </Link>
             ) : (
-              <p style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 900, fontSize: '18px', color: 'var(--text)', lineHeight: 1.1, marginBottom: '2px' }}>
+              <p className="font-display font-black text-lg text-[var(--text)] leading-none mb-0.5">
                 {player.player}
               </p>
             )}
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-              <span style={{ fontFamily: 'Barlow Condensed, sans-serif', fontSize: '10px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="font-display text-[10px] font-bold tracking-wide uppercase text-[var(--text-muted)]">
                 {player.team}
               </span>
-              <span style={{ color: 'var(--text-dim)', fontSize: '10px' }}>·</span>
-              <span style={{ fontFamily: 'Barlow Condensed, sans-serif', fontSize: '10px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+              <span className="text-[var(--text-dim)] text-[10px]">·</span>
+              <span className="font-display text-[10px] font-bold tracking-wide uppercase text-[var(--text-muted)]">
                 {player.primary_role}
               </span>
-              <span className="tag" style={{ background: `${macroColor}18`, color: macroColor, border: `1px solid ${macroColor}40`, fontSize: '9px' }}>
+              <span className="tag text-[9px]" style={{ background: `${macroColor}12`, color: macroColor, border: `1px solid ${macroColor}30` }}>
                 {macro}
               </span>
             </div>
@@ -265,14 +253,14 @@ function PlayerRow({ player, rank }: { player: PlayerRow; rank: number }) {
 
           {/* Minutes (Mobile) */}
           <div className="lg:hidden text-right whitespace-nowrap">
-            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '11px', color: 'var(--text-dim)' }}>
+            <span className="font-mono text-[11px] text-[var(--text-dim)]">
               {player.minutes_played}'
             </span>
           </div>
         </div>
 
         {/* Bottom: Indices and Statistics (go below on mobile, right on desktop) */}
-        <div className="flex items-center justify-between lg:justify-end gap-3 pt-3 lg:pt-0 border-t lg:border-t-0" style={{ borderColor: 'var(--border)' }}>
+        <div className="flex items-center justify-between lg:justify-end gap-3 pt-3 lg:pt-0 border-t lg:border-t-0 border-[var(--border)]">
           <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
             {INDICES.map(idx => (
               <IndexBadge
@@ -284,14 +272,11 @@ function PlayerRow({ player, rank }: { player: PlayerRow; rank: number }) {
             ))}
 
             {/* Average score */}
-            <div style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center',
-              background: 'var(--surface2)', borderRadius: '8px', padding: '6px 10px', minWidth: '52px',
-            }}>
-              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 900, fontSize: '18px', lineHeight: 1, color: 'var(--text)' }}>
+            <div className="flex flex-col items-center bg-[var(--surface2)] rounded-lg py-1.5 px-2.5 min-w-[52px]">
+              <span className="font-mono font-black text-lg leading-none text-[var(--text)]">
                 {avg.toFixed(0)}
               </span>
-              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '8px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-dim)', marginTop: '2px' }}>
+              <span className="font-mono text-[8px] tracking-[0.1em] uppercase text-[var(--text-dim)] mt-0.5">
                 AVG
               </span>
             </div>
@@ -299,7 +284,7 @@ function PlayerRow({ player, rank }: { player: PlayerRow; rank: number }) {
 
           {/* Minutes (Desktop) */}
           <div className="hidden lg:block text-right min-w-[48px]">
-            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '11px', color: 'var(--text-dim)' }}>
+            <span className="font-mono text-[11px] text-[var(--text-dim)]">
               {player.minutes_played}'
             </span>
           </div>
@@ -324,19 +309,18 @@ function ActiveFilterPills({ filters, onClear }: { filters: Filters; onClear: ()
   });
   if (pills.length === 0) return null;
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '10px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+    <div className="flex flex-wrap items-center gap-2 mb-4">
+      <span className="font-mono text-[10px] text-[var(--text-dim)] uppercase tracking-[0.1em]">
         Active filters:
       </span>
       {pills.map(p => (
-        <span key={p} className="tag" style={{ background: 'var(--accent-dim)', color: 'var(--accent)', border: '1px solid rgba(57,255,20,0.3)' }}>
+        <span key={p} className="tag bg-[var(--accent-dim)] text-[var(--accent)] border border-[rgba(37,99,235,0.2)]">
           {p}
         </span>
       ))}
       <button
         onClick={onClear}
-        className="btn btn-ghost"
-        style={{ fontSize: '11px', padding: '3px 12px' }}
+        className="btn btn-ghost text-[11px] py-0.5 px-3"
       >
         Clear all
       </button>
@@ -348,12 +332,12 @@ function ActiveFilterPills({ filters, onClear }: { filters: Filters; onClear: ()
 
 function EmptyState() {
   return (
-    <div style={{ textAlign: 'center', padding: '64px 24px' }}>
-      <p style={{ fontSize: '40px', marginBottom: '12px' }}>🔍</p>
-      <p style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: '20px', color: 'var(--text)', marginBottom: '8px' }}>
+    <div className="text-center py-16 px-6">
+      <p className="text-[40px] mb-3">🔍</p>
+      <p className="font-display font-bold text-xl text-[var(--text)] mb-2">
         No players match your filters
       </p>
-      <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
+      <p className="text-sm text-[var(--text-muted)]">
         Try widening the index ranges or clearing the role filter
       </p>
     </div>
@@ -456,45 +440,39 @@ export default function SearchByAttribute() {
   };
 
   return (
-    <div className="w-full pb-16 min-h-screen" style={{ background: 'var(--bg)' }}>
-      {/* Breadcrumb */}
-      <nav aria-label="Breadcrumb" className="max-w-7xl mx-auto px-6 pt-8 mb-6">
-        <ol className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-muted)' }}>
-          <li>
-            <Link to="/" className="hover:text-[--accent] transition-colors font-600">Dashboard</Link>
-          </li>
-          <li aria-hidden>/</li>
-          <li className="font-600" style={{ color: 'var(--text)' }} aria-current="page">
-            Search by Attribute
-          </li>
-        </ol>
-      </nav>
-
+    <div className="w-full pb-16 min-h-screen bg-[var(--bg)]">
       {/* Page header */}
-      <div className="border-b px-6 pb-8 mb-8" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+      <div className="border-b border-[var(--border)] px-6 pt-10 pb-8 bg-[var(--surface)]">
         <div className="max-w-7xl mx-auto">
-          <p className="font-mono text-xs tracking-widest mb-2" style={{ color: 'var(--accent)' }}>
+          {/* Breadcrumb */}
+          <nav aria-label="Breadcrumb" className="mb-4">
+            <ol className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
+              <li><Link to="/" className="hover:text-[var(--accent)] transition-colors font-semibold">Home</Link></li>
+              <li aria-hidden>/</li>
+              <li className="font-semibold text-[var(--text)]" aria-current="page">Search by Attribute</li>
+            </ol>
+          </nav>
+          <p className="font-mono text-xs tracking-widest mb-2 text-[var(--accent)]">
             SPACE CONTROL & VALUE · EURO 2024
           </p>
-          <h1 className="font-display font-900 leading-none tracking-tight mb-3" style={{ color: 'var(--text)', fontSize: 'clamp(36px, 6vw, 64px)' }}>
+          <h1 className="font-display font-black leading-none tracking-tight mb-3 text-[var(--text)]" style={{ fontSize: 'clamp(36px, 6vw, 64px)' }}>
             Search by Attribute
           </h1>
-          <p style={{ fontSize: '15px', color: 'var(--text-muted)', maxWidth: '560px' }}>
+          <p className="text-[15px] text-[var(--text-muted)] max-w-[560px]">
             Filter all 272 players by macro role, tactical role, and contextual space control index ranges.
             Rankings are sorted by average index score by default.
           </p>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto px-6 pt-8">
         <div className="flex flex-col lg:grid lg:grid-cols-[300px_1fr] gap-8 items-start">
 
           {/* Hamburger Trigger Button for Mobile */}
           <div className="lg:hidden w-full mb-2">
             <button
               onClick={() => setMobileFiltersOpen(true)}
-              className="w-full flex items-center justify-center gap-2 p-3 rounded font-bold transition-colors"
-              style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)' }}
+              className="w-full flex items-center justify-center gap-2 p-3 rounded-[var(--radius)] font-bold transition-colors bg-[var(--surface2)] border border-[var(--border)] text-[var(--text)]"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
@@ -511,42 +489,37 @@ export default function SearchByAttribute() {
             `}
             aria-label="Search filters"
           >
-            <div className="card" style={{ padding: '24px', position: 'relative' }}>
+            <div className="card p-6 relative">
               
               {/* Close Button X for Mobile */}
               <button
                 onClick={() => setMobileFiltersOpen(false)}
-                className="lg:hidden absolute top-4 right-4 text-xl font-bold p-2"
-                style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}
+                className="lg:hidden absolute top-4 right-4 text-xl font-bold p-2 text-[var(--text-muted)] bg-transparent border-none cursor-pointer"
                 aria-label="Close filters"
               >
                 ✕
               </button>
 
-              <h2
-                className="font-display font-900"
-                style={{ color: 'var(--text)', fontSize: '20px', marginBottom: '20px' }}
-              >
+              <h2 className="font-display font-black text-xl text-[var(--text)] mb-5">
                 Filters
               </h2>
 
               {/* Macro role */}
-              <div style={{ marginBottom: '20px' }}>
+              <div className="mb-5">
                 <label
                   htmlFor={macroRoleId}
-                  style={{ display: 'block', fontFamily: 'JetBrains Mono, monospace', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: '8px' }}
+                  className="block font-mono text-[10px] tracking-[0.12em] uppercase text-[var(--text-dim)] mb-2"
                 >
                   Macro Role
                 </label>
                 {/* Pill buttons for macro role */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                <div className="flex flex-wrap gap-1.5">
                   <button
                     onClick={() => setFilters(f => ({ ...f, macroRole: '', role: '' }))}
-                    className="tag"
+                    className="tag cursor-pointer border-none py-[5px] px-3"
                     style={{
-                      cursor: 'pointer', border: 'none', padding: '5px 12px',
                       background: filters.macroRole === '' ? 'var(--accent)' : 'var(--surface2)',
-                      color: filters.macroRole === '' ? '#000' : 'var(--text-muted)',
+                      color: filters.macroRole === '' ? '#fff' : 'var(--text-muted)',
                     }}
                   >
                     All
@@ -558,10 +531,10 @@ export default function SearchByAttribute() {
                       <button
                         key={m}
                         onClick={() => setFilters(f => ({ ...f, macroRole: active ? '' : m, role: '' }))}
-                        className="tag"
+                        className="tag cursor-pointer"
                         style={{
-                          cursor: 'pointer', border: `1px solid ${active ? col : 'var(--border)'}`,
-                          background: active ? `${col}22` : 'var(--surface2)',
+                          border: `1px solid ${active ? col : 'var(--border)'}`,
+                          background: active ? `${col}15` : 'var(--surface2)',
                           color: active ? col : 'var(--text-muted)',
                         }}
                       >
@@ -573,10 +546,10 @@ export default function SearchByAttribute() {
               </div>
 
               {/* Primary role */}
-              <div style={{ marginBottom: '24px' }}>
+              <div className="mb-6">
                 <label
                   htmlFor={roleId}
-                  style={{ display: 'block', fontFamily: 'JetBrains Mono, monospace', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: '8px' }}
+                  className="block font-mono text-[10px] tracking-[0.12em] uppercase text-[var(--text-dim)] mb-2"
                 >
                   Primary Role
                 </label>
@@ -584,8 +557,7 @@ export default function SearchByAttribute() {
                   id={roleId}
                   value={filters.role}
                   onChange={e => setFilters(f => ({ ...f, role: e.target.value }))}
-                  className="input select"
-                  style={{ fontSize: '13px' }}
+                  className="input text-[13px]"
                 >
                   <option value="">All roles</option>
                   {availableRoles.map(r => (
@@ -595,15 +567,13 @@ export default function SearchByAttribute() {
               </div>
 
               {/* Divider */}
-              <div style={{ height: '1px', background: 'var(--border)', marginBottom: '20px' }} />
+              <div className="h-px bg-[var(--border)] mb-5" />
 
               {/* Index ranges */}
-              <p
-                style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: '12px' }}
-              >
+              <p className="font-mono text-[10px] tracking-[0.12em] uppercase text-[var(--text-dim)] mb-3">
                 Index Ranges (0–100)
               </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
+              <div className="flex flex-col gap-3 mb-6">
                 {INDICES.map(idx => (
                   <RangeFilter
                     key={idx.key}
@@ -620,15 +590,14 @@ export default function SearchByAttribute() {
                 ))}
               </div>
 
-              <button onClick={clearFilters} className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center', marginTop: '8px' }}>
+              <button onClick={clearFilters} className="btn btn-ghost w-full justify-center mt-2">
                 Reset Filters
               </button>
 
               {/* Final Confirm Button for Mobile */}
               <button 
                 onClick={() => setMobileFiltersOpen(false)} 
-                className="btn lg:hidden w-full mt-4 flex items-center justify-center font-bold"
-                style={{ background: 'var(--accent)', color: '#000', padding: '12px', borderRadius: 'var(--radius)' }}
+                className="btn btn-primary lg:hidden w-full mt-4 flex items-center justify-center font-bold py-3"
               >
                 Apply Filters
               </button>
@@ -637,13 +606,13 @@ export default function SearchByAttribute() {
 
           {/* Right panel: results */}
           <section aria-label="Search results" className="w-full">
-            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '16px' }}>
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
               <div>
-                <span className="font-display font-900" style={{ fontSize: '22px', color: 'var(--text)', marginRight: '10px' }}>
+                <span className="font-display font-black text-[22px] text-[var(--text)] mr-2.5">
                   {loading ? '…' : sorted.length} players
                 </span>
                 {searched && !loading && (
-                  <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '11px', color: 'var(--text-dim)' }}>
+                  <span className="font-mono text-[11px] text-[var(--text-dim)]">
                     found
                   </span>
                 )}
@@ -655,31 +624,19 @@ export default function SearchByAttribute() {
             {/* Clickable Header sorting ticks (hidden on Mobile) */}
             {sorted.length > 0 && (
               <div
-                className="hidden lg:grid"
-                style={{
-                  gridTemplateColumns: '28px 28px 1fr repeat(5, 52px) 48px',
-                  gap: '16px',
-                  padding: '8px 20px',
-                  marginBottom: '6px',
-                  alignItems: 'center'
-                }}
+                className="hidden lg:grid items-center gap-4 py-2 px-5 mb-1.5"
+                style={{ gridTemplateColumns: '28px 28px 1fr repeat(5, 52px) 48px' }}
               >
                 <span />
                 <span />
-                <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', color: 'var(--text-dim)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Player</span>
+                <span className="font-mono text-[9px] text-[var(--text-dim)] tracking-[0.1em] uppercase">Player</span>
                 
                 {INDICES.map(idx => (
                   <button
                     key={idx.key}
                     onClick={() => handleSort(idx.key)}
-                    style={{
-                      background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-                      fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', 
-                      color: sortKey === idx.key ? idx.color : 'var(--text-dim)', 
-                      letterSpacing: '0.1em', textTransform: 'uppercase', textAlign: 'center',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      transition: 'color 0.2s'
-                    }}
+                    className="bg-transparent border-none cursor-pointer p-0 font-mono text-[9px] tracking-[0.1em] uppercase text-center flex items-center justify-center transition-colors"
+                    style={{ color: sortKey === idx.key ? idx.color : 'var(--text-dim)' }}
                   >
                     {idx.short} <SortIcon active={sortKey === idx.key} dir={sortOrder} />
                   </button>
@@ -687,27 +644,20 @@ export default function SearchByAttribute() {
                 
                 <button
                   onClick={() => handleSort('avg')}
-                  style={{
-                    background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-                    fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', 
-                    color: sortKey === 'avg' ? 'var(--text)' : 'var(--text-dim)', 
-                    letterSpacing: '0.1em', textTransform: 'uppercase', textAlign: 'center',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    transition: 'color 0.2s'
-                  }}
+                  className={`bg-transparent border-none cursor-pointer p-0 font-mono text-[9px] tracking-[0.1em] uppercase text-center flex items-center justify-center transition-colors ${sortKey === 'avg' ? 'text-[var(--text)]' : 'text-[var(--text-dim)]'}`}
                 >
                   AVG <SortIcon active={sortKey === 'avg'} dir={sortOrder} />
                 </button>
                 
-                <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', color: 'var(--text-dim)', letterSpacing: '0.1em', textTransform: 'uppercase', textAlign: 'right' }}>MIN</span>
+                <span className="font-mono text-[9px] text-[var(--text-dim)] tracking-[0.1em] uppercase text-right">MIN</span>
               </div>
             )}
 
             {/* Results list */}
             {loading ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div className="flex flex-col gap-2.5">
                 {Array.from({ length: 8 }).map((_, i) => (
-                  <div key={i} className="skeleton" style={{ height: '72px', borderRadius: '20px' }} />
+                  <div key={i} className="skeleton h-[72px] rounded-[20px]" />
                 ))}
               </div>
             ) : sorted.length === 0 && searched ? (
@@ -715,18 +665,15 @@ export default function SearchByAttribute() {
                 <EmptyState />
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }} role="list" aria-label="Player results">
+              <div className="flex flex-col gap-2" role="list" aria-label="Player results">
                 {sorted.map((player, i) => (
-                  <PlayerRow key={`${player.player}-${player.team}`} player={player} rank={i + 1} />
+                  <PlayerResultRow key={`${player.player}-${player.team}`} player={player} rank={i + 1} />
                 ))}
               </div>
             )}
           </section>
         </div>
       </div>
-
-      {/* Spin keyframe */}
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

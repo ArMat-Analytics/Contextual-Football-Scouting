@@ -9,12 +9,12 @@ import DecisionQualitySection from '../components/DecisionQualitySection';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
 function StatCard({ label, value, category }: { label: string; value: unknown; category: string }) {
-  const accent = CAT_ACCENT[category] ?? '#fff';
+  const accent = CAT_ACCENT[category] ?? '#64748b';
   return (
     <div className="card-inner p-4 flex flex-col gap-1 transition-all hover:scale-[1.02] cursor-default" style={{ borderLeft: `3px solid ${accent}` }}>
-      <span className="font-mono text-[10px] tracking-widest uppercase" style={{ color: accent, opacity: 0.7 }}>{category}</span>
-      <span className="font-display font-900 text-3xl leading-none" style={{ color: accent }}>{value != null ? String(value) : '—'}</span>
-      <span className="text-xs font-600 leading-tight" style={{ color: 'var(--text-muted)' }}>{label}</span>
+      <span className="font-mono text-[10px] tracking-widest uppercase opacity-70" style={{ color: accent }}>{category}</span>
+      <span className="font-display font-black text-3xl leading-none" style={{ color: accent }}>{value != null ? String(value) : '—'}</span>
+      <span className="text-xs font-semibold leading-tight text-[var(--text-muted)]">{label}</span>
     </div>
   );
 }
@@ -23,8 +23,8 @@ function InfoPill({ label, value }: { label: string; value?: string | number | n
   if (value == null || value === '') return null;
   return (
     <div className="card-inner flex flex-col items-center px-4 py-2.5 min-w-[88px]">
-      <span className="font-mono text-[10px] tracking-widest uppercase" style={{ color: 'var(--text-dim)' }}>{label}</span>
-      <span className="font-display font-800 text-base capitalize mt-0.5" style={{ color: 'var(--text)' }}>{value}</span>
+      <span className="font-mono text-[10px] tracking-widest uppercase text-[var(--text-dim)]">{label}</span>
+      <span className="font-display font-extrabold text-base capitalize mt-0.5 text-[var(--text)]">{value}</span>
     </div>
   );
 }
@@ -89,9 +89,9 @@ export default function PlayerProfile() {
       <div className="flex-1 flex items-center justify-center py-40 text-center">
         <div>
           <p className="text-5xl mb-4" aria-hidden>⚠️</p>
-          <p className="font-display font-700 text-xl" style={{ color: 'var(--text)' }}>Player not found</p>
-          <Link to="/" className="mt-6 inline-block text-sm font-600 hover:text-[--accent] transition-colors" style={{ color: 'var(--text-muted)' }}>
-            ← Back to Dashboard
+          <p className="font-display font-bold text-xl text-[var(--text)]">Player not found</p>
+          <Link to="/" className="mt-6 inline-block text-sm font-semibold text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors">
+            ← Back to Home
           </Link>
         </div>
       </div>
@@ -103,41 +103,31 @@ export default function PlayerProfile() {
   const passesAnalysed = (scData?.aggregated as any)?.passes_analysed as number | null | undefined;
 
   return (
-    <div className="w-full pb-16 min-h-screen" style={{ background: 'var(--bg)' }}>
+    <div className="w-full pb-16 min-h-screen bg-[var(--bg)]">
 
       {/* Breadcrumb */}
       <nav aria-label="Breadcrumb" className="max-w-5xl mx-auto px-6 pt-8 mb-6">
-        <ol className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-muted)' }}>
-          <li><Link to="/" className="hover:text-[--accent] transition-colors font-600">Dashboard</Link></li>
+        <ol className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
+          <li><Link to="/" className="hover:text-[var(--accent)] transition-colors font-semibold">Home</Link></li>
           <li aria-hidden>/</li>
-          <li className="font-600" style={{ color: 'var(--text)' }} aria-current="page">{stats.player_name}</li>
+          <li className="font-semibold text-[var(--text)]" aria-current="page">{stats.player_name}</li>
         </ol>
       </nav>
 
       {/* Hero */}
       <div className="max-w-5xl mx-auto px-6 mb-10">
 
-        <div className="card p-7 sm:p-8 fade-up" style={{ position: 'relative', overflow: 'hidden' }}>
+        <div className="card p-7 sm:p-8 fade-up relative overflow-hidden">
 
-          <div style={{
-            position: 'absolute', top: -60, right: -60,
-            width: 240, height: 240,
-            background: 'radial-gradient(circle, rgba(57,255,20,0.07) 0%, transparent 65%)',
-            pointerEvents: 'none',
-          }} />
+          <div className="absolute -top-15 -right-15 w-60 h-60 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(37,99,235,0.06) 0%, transparent 65%)' }} />
 
           <div className="flex flex-col sm:flex-row items-start gap-6">
 
             {/* Avatar */}
-            <div style={{ position: 'relative', flexShrink: 0 }}>
-              
-              <div style={{
-                position: 'absolute', inset: -2, borderRadius: 20,
-                background: 'linear-gradient(135deg, rgba(57,255,20,0.45) 0%, transparent 55%)',
-              }} />
+            <div className="relative shrink-0">
+              <div className="absolute -inset-0.5 rounded-[20px]" style={{ background: 'linear-gradient(135deg, rgba(37,99,235,0.25) 0%, transparent 55%)' }} />
               <div
-                className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex items-center justify-center font-display font-900 text-4xl select-none"
-                style={{ position: 'relative', background: 'var(--surface2)', color: 'var(--accent)' }}
+                className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex items-center justify-center font-display font-black text-4xl select-none relative bg-[var(--surface2)] text-[var(--accent)]"
                 aria-hidden
               >
                 {stats.player_name?.[0] ?? '?'}
@@ -147,20 +137,20 @@ export default function PlayerProfile() {
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2 mb-1">
                 {stats.primary_role && (
-                  <span className="tag" style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}>
+                  <span className="tag bg-[var(--accent-dim)] text-[var(--accent)]">
                     {stats.primary_role.replace(/_/g, ' ')}
                   </span>
                 )}
                 {scData?.indices?.macro_role && (
-                  <span className="tag" style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}>
+                  <span className="tag bg-[var(--accent-dim)] text-[var(--accent)]">
                     {scData.indices.macro_role}
                   </span>
                 )}
               </div>
-              <h1 className="font-display font-900 text-4xl sm:text-5xl leading-none tracking-tight mb-3" style={{ color: 'var(--text)' }}>
+              <h1 className="font-display font-black text-4xl sm:text-5xl leading-none tracking-tight mb-3 text-[var(--text)]">
                 {stats.player_name}
               </h1>
-              <p className="flex items-center gap-2.5 text-sm font-700 mb-5" style={{ color: 'var(--text-muted)' }}>
+              <p className="flex items-center gap-2.5 text-sm font-bold mb-5 text-[var(--text-muted)]">
                 {flagUrl && <img src={flagUrl} alt="" className="w-6 h-4 object-cover rounded-[2px] shadow-sm" aria-hidden />}
                 {stats.source_team_name}
               </p>
@@ -198,7 +188,7 @@ export default function PlayerProfile() {
       {scLoading ? (
         <div className="max-w-5xl mx-auto px-6 mb-12">
           <div className="card p-8 text-center">
-            <p className="font-mono text-xs" style={{ color: 'var(--text-dim)' }}>Loading Space Control data…</p>
+            <p className="font-mono text-xs text-[var(--text-dim)]">Loading Space Control data…</p>
           </div>
         </div>
       ) : scData?.indices ? (
@@ -213,7 +203,7 @@ export default function PlayerProfile() {
       ) : (
         <div className="max-w-5xl mx-auto px-6 mb-12">
           <div className="card p-6">
-            <p className="font-mono text-xs" style={{ color: 'var(--text-dim)' }}>
+            <p className="font-mono text-xs text-[var(--text-dim)]">
               No Space Control data available for this player.
             </p>
           </div>
@@ -224,7 +214,7 @@ export default function PlayerProfile() {
       {dqLoading ? (
         <div className="max-w-5xl mx-auto px-6 mb-12">
           <div className="card p-8 text-center">
-            <p className="font-mono text-xs" style={{ color: 'var(--text-dim)' }}>Loading Decision Quality data…</p>
+            <p className="font-mono text-xs text-[var(--text-dim)]">Loading Decision Quality data…</p>
           </div>
         </div>
       ) : dqData ? (
@@ -238,7 +228,7 @@ export default function PlayerProfile() {
       ) : (
         <div className="max-w-5xl mx-auto px-6 mb-12">
           <div className="card p-6">
-            <p className="font-mono text-xs" style={{ color: 'var(--text-dim)' }}>
+            <p className="font-mono text-xs text-[var(--text-dim)]">
               No Decision Quality data available for this player.
             </p>
           </div>

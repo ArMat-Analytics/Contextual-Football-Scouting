@@ -31,7 +31,7 @@ export function StatViewToggle({
     <div
       role="tablist"
       aria-label="Statistic view mode"
-      style={{ display: 'inline-flex', gap: '4px', background: 'var(--surface2)', borderRadius: '12px', padding: '4px' }}
+      className="inline-flex gap-1 bg-[var(--surface2)] rounded-xl p-1"
     >
       {MODES.map(m => (
         <button
@@ -39,13 +39,11 @@ export function StatViewToggle({
           role="tab"
           aria-selected={mode === m.key}
           onClick={() => onChange(m.key)}
-          style={{
-            padding: '6px 16px', borderRadius: '8px', fontSize: '11px', fontWeight: 700,
-            fontFamily: 'Barlow, sans-serif', letterSpacing: '0.03em', border: 'none',
-            cursor: 'pointer', transition: 'all 0.15s',
-            background: mode === m.key ? 'var(--accent)' : 'transparent',
-            color: mode === m.key ? '#000' : 'var(--text-muted)',
-          }}
+          className={`px-4 py-1.5 rounded-lg text-[11px] font-bold font-display tracking-wide border-none cursor-pointer transition-all ${
+            mode === m.key
+              ? 'bg-[var(--accent)] text-white'
+              : 'bg-transparent text-[var(--text-muted)] hover:text-[var(--text)]'
+          }`}
         >
           {m.label}
         </button>
@@ -59,7 +57,7 @@ export function StatViewToggle({
 const RADAR_DEFS = [
   {
     key: 'PROGRESSION' as const, label: 'Progression',
-    idxKey: 'idx__PROGRESSION' as keyof SpaceControlIndex, color: '#39ff14',
+    idxKey: 'idx__PROGRESSION' as keyof SpaceControlIndex, color: '#16a34a',
     axes: [
       { dataKey: 'pct__lb_geom_per90'                      as keyof SpaceControlIndex, label: 'LB Geom /90' },
       { dataKey: 'pct__lb_quality_per90'                   as keyof SpaceControlIndex, label: 'LB Quality /90' },
@@ -70,7 +68,7 @@ const RADAR_DEFS = [
   },
   {
     key: 'DANGEROUSNESS' as const, label: 'Dangerousness',
-    idxKey: 'idx__DANGEROUSNESS' as keyof SpaceControlIndex, color: '#ff4d6a',
+    idxKey: 'idx__DANGEROUSNESS' as keyof SpaceControlIndex, color: '#dc2626',
     axes: [
       { dataKey: 'pct__epv_penetration_per90' as keyof SpaceControlIndex, label: 'EPV Penetr. /90' },
       { dataKey: 'pct__epv_inside_circ_per90' as keyof SpaceControlIndex, label: 'EPV In-Circ /90' },
@@ -80,7 +78,7 @@ const RADAR_DEFS = [
   },
   {
     key: 'RECEPTION' as const, label: 'Reception',
-    idxKey: 'idx__RECEPTION' as keyof SpaceControlIndex, color: '#4da6ff',
+    idxKey: 'idx__RECEPTION' as keyof SpaceControlIndex, color: '#2563eb',
     axes: [
       { dataKey: 'pct__between_lines_pct'           as keyof SpaceControlIndex, label: 'Between Lines %' },
       { dataKey: 'pct__successful_hull_exits_per90'  as keyof SpaceControlIndex, label: 'Hull Exits /90' },
@@ -89,7 +87,7 @@ const RADAR_DEFS = [
   },
   {
     key: 'GRAVITY' as const, label: 'Gravity',
-    idxKey: 'idx__GRAVITY' as keyof SpaceControlIndex, color: '#ffc947',
+    idxKey: 'idx__GRAVITY' as keyof SpaceControlIndex, color: '#d97706',
     axes: [
       { dataKey: 'pct__gravity_proximity_pct' as keyof SpaceControlIndex, label: 'Space Attraction %' },
       { dataKey: 'pct__gravity_hull_pct'      as keyof SpaceControlIndex, label: 'Gravity Hull %' },
@@ -178,16 +176,13 @@ function RadarTooltip({ active, payload }: any) {
   if (!active || !payload?.length) return null;
   const item = payload[0];
   return (
-    <div style={{
-      background: 'var(--surface2)', border: '1px solid var(--border)',
-      borderRadius: '10px', padding: '10px 14px', fontSize: '12px',
-    }}>
-      <p style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, color: item.color ?? 'var(--text)' }}>
+    <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] px-3.5 py-2.5 text-xs shadow-lg">
+      <p className="font-mono font-bold" style={{ color: item.color ?? 'var(--text)' }}>
         {item.payload?.stat}
       </p>
-      <p style={{ fontFamily: 'JetBrains Mono, monospace', color: 'var(--text-muted)', marginTop: '2px' }}>
+      <p className="font-mono text-[var(--text-muted)] mt-0.5">
         Percentile:{' '}
-        <span style={{ color: item.color ?? 'var(--text)', fontWeight: 700 }}>
+        <span className="font-bold" style={{ color: item.color ?? 'var(--text)' }}>
           {typeof item.value === 'number' ? item.value.toFixed(1) : '—'}
         </span>
       </p>
@@ -220,28 +215,18 @@ function MotherStatRow({
   const description = TOOLTIP_DESCRIPTIONS[label] ?? 'No description available.';
 
   return (
-    <div
-      style={{
-        position: 'relative',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        gap: '8px',
-      }}
-    >
+    <div className="relative flex justify-between items-center gap-2">
       {/* Left side: label + badges */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-        <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>
+      <div className="flex items-center gap-2 min-w-0">
+        <span className="text-xs font-semibold text-[var(--text-muted)]">
           {label}
         </span>
 
         {showExperimental && (
-          <span style={{
-            fontSize: '9px', fontWeight: 700, textTransform: 'uppercase',
-            color, backgroundColor: `${color}22`,
-            padding: '2px 6px', borderRadius: '4px', letterSpacing: '0.02em',
-            flexShrink: 0,
-          }}>
+          <span
+            className="text-[9px] font-bold uppercase tracking-wide shrink-0 px-1.5 py-0.5 rounded"
+            style={{ color, backgroundColor: `${color}15` }}
+          >
             Experimental
           </span>
         )}
@@ -251,19 +236,11 @@ function MotherStatRow({
           aria-label={`Description for ${label}`}
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
+          className="shrink-0 w-[15px] h-[15px] rounded-full text-[8px] font-bold font-display cursor-help flex items-center justify-center transition-all p-0 leading-none border"
           style={{
-            flexShrink: 0,
-            width: 15, height: 15,
-            borderRadius: '50%',
-            border: `1px solid ${hovered ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.18)'}`,
-            background: hovered ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.04)',
-            color: hovered ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.35)',
-            fontSize: '8px', fontWeight: 700,
-            fontFamily: 'Barlow, sans-serif',
-            cursor: 'help',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            transition: 'all 0.12s',
-            padding: 0, lineHeight: 1,
+            borderColor: hovered ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.12)',
+            background: hovered ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.02)',
+            color: hovered ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.35)',
           }}
         >
           ?
@@ -273,29 +250,13 @@ function MotherStatRow({
         {hovered && (
           <div
             role="tooltip"
-            style={{
-              position: 'absolute',
-              bottom: 'calc(100% + 8px)',
-              left: 0,
-              maxWidth: '240px',
-              background: 'var(--surface)',
-              border: `1px solid ${color}44`,
-              borderLeft: `3px solid ${color}`,
-              borderRadius: '10px',
-              padding: '10px 14px',
-              zIndex: 60,
-              pointerEvents: 'none',
-              boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
-            }}
+            className="absolute bottom-[calc(100%+8px)] left-0 max-w-[240px] bg-[var(--surface)] rounded-[10px] px-3.5 py-2.5 z-[60] pointer-events-none"
+            style={{ border: `1px solid ${color}33`, borderLeft: `3px solid ${color}`, boxShadow: 'var(--shadow-lg)' }}
           >
-            <p style={{
-              fontFamily: 'JetBrains Mono, monospace',
-              fontSize: '10px', fontWeight: 700,
-              color, marginBottom: '6px', letterSpacing: '0.04em',
-            }}>
+            <p className="font-mono text-[10px] font-bold mb-1.5 tracking-wide" style={{ color }}>
               {label}
             </p>
-            <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.55 }}>
+            <p className="text-[11px] text-[var(--text-muted)] leading-[1.55]">
               {description}
             </p>
           </div>
@@ -303,11 +264,7 @@ function MotherStatRow({
       </div>
 
       {/* Right side: formatted value */}
-      <span style={{
-        fontFamily: 'JetBrains Mono, monospace',
-        fontWeight: 700, fontSize: '13px', color,
-        flexShrink: 0,
-      } as React.CSSProperties}>
+      <span className="font-mono font-bold text-[13px] shrink-0" style={{ color }}>
         {value}
       </span>
     </div>
@@ -366,15 +323,15 @@ function CustomRadarTick({
         onMouseLeave={handleMouseLeave}
       />
 
-      {/* Axis label text — brightens on hover to signal interactivity */}
+      {/* Axis label text — darkens on hover to signal interactivity */}
       <text
         x={x}
         y={y}
         textAnchor={textAnchor}
         dominantBaseline="middle"
-        fill={hovered ? '#ffffff' : 'var(--text-muted)'}
+        fill={hovered ? 'var(--text)' : 'var(--text-muted)'}
         fontSize={10}
-        fontFamily="Barlow, sans-serif"
+        fontFamily="Inter, sans-serif"
         fontWeight={hovered ? 700 : 600}
         style={{
           transition: 'fill 0.12s',
@@ -457,23 +414,17 @@ function RadarCard({
   return (
     <div
       ref={containerRef}
-      style={{
-        position: 'relative',
-        background: 'var(--surface)',
-        border: '1px solid var(--border)',
-        borderTop: `3px solid ${def.color}`,
-        borderRadius: 'var(--radius-lg)',
-        padding: '24px',
-      }}
+      className="relative bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] p-6 shadow-[var(--shadow)]"
+      style={{ borderTop: `3px solid ${def.color}` }}
     >
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 700, color: def.color }}>
+      <div className="flex justify-between items-start mb-2">
+        <span className="font-mono text-[10px] tracking-[0.12em] uppercase font-bold" style={{ color: def.color }}>
           {def.label}
         </span>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-dim)' }}>Index</div>
-          <div style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: '26px', lineHeight: 1, color: def.color }}>
+        <div className="text-right">
+          <div className="font-mono text-[9px] tracking-[0.1em] uppercase text-[var(--text-dim)]">Index</div>
+          <div className="font-display font-black text-[26px] leading-none" style={{ color: def.color }}>
             {idxValue != null ? idxValue.toFixed(1) : '—'}
           </div>
         </div>
@@ -482,7 +433,7 @@ function RadarCard({
       {/* Radar — percentile axes 0–100; hover "?" shows description */}
       <ResponsiveContainer width="100%" height={240}>
         <RadarChart data={radarData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
-          <PolarGrid stroke="rgba(255,255,255,0.08)" />
+          <PolarGrid stroke="rgba(0,0,0,0.08)" />
           <PolarAngleAxis
             dataKey="stat"
             tick={renderTick}
@@ -492,12 +443,12 @@ function RadarCard({
           <Radar
             name={lastName}
             dataKey="value"
-            stroke={def.color} fill={def.color} fillOpacity={0.2} strokeWidth={2}
+            stroke={def.color} fill={def.color} fillOpacity={0.15} strokeWidth={2}
             dot={{ fill: def.color, r: 3, strokeWidth: 0 }}
-            activeDot={{ r: 5, fill: def.color, stroke: '#000', strokeWidth: 1.5 }}
+            activeDot={{ r: 5, fill: def.color, stroke: '#fff', strokeWidth: 1.5 }}
           />
           <Legend
-            formatter={() => <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>Percentile rank (0–100)</span>}
+            formatter={() => <span className="text-[var(--text-muted)] text-[11px]">Percentile rank (0–100)</span>}
             wrapperStyle={{ paddingTop: 6 }}
           />
         </RadarChart>
@@ -508,57 +459,40 @@ function RadarCard({
         <div
           role="tooltip"
           aria-live="polite"
+          className="absolute max-w-[220px] bg-[var(--surface)] rounded-[10px] px-3.5 py-2.5 pointer-events-none z-50"
           style={{
-            position: 'absolute',
             left: Math.min(axisTooltip.x + 12, 260),
             top: axisTooltip.y - 6,
-            maxWidth: '220px',
-            background: 'var(--surface2)',
-            border: `1px solid ${def.color}44`,
+            border: `1px solid ${def.color}33`,
             borderLeft: `3px solid ${def.color}`,
-            borderRadius: '10px',
-            padding: '10px 14px',
-            pointerEvents: 'none',
-            zIndex: 50,
-            boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+            boxShadow: 'var(--shadow-lg)',
           }}
         >
-          <p style={{
-            fontFamily: 'JetBrains Mono, monospace',
-            fontSize: '10px',
-            fontWeight: 700,
-            color: def.color,
-            marginBottom: '6px',
-            letterSpacing: '0.04em',
-          }}>
+          <p className="font-mono text-[10px] font-bold mb-1.5 tracking-wide" style={{ color: def.color }}>
             {axisTooltip.label}
           </p>
-          <p style={{
-            fontSize: '11px',
-            color: 'var(--text-muted)',
-            lineHeight: 1.55,
-          }}>
+          <p className="text-[11px] text-[var(--text-muted)] leading-[1.55]">
             {axisTooltip.description}
           </p>
         </div>
       )}
 
       {/* Mother stats card */}
-      <div style={{ marginTop: '16px', background: 'var(--surface2)', borderRadius: '12px', padding: '16px' }}>
-        <p style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '9px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: '12px' }}>
+      <div className="mt-4 bg-[var(--surface2)] rounded-xl p-4">
+        <p className="font-mono text-[9px] tracking-[0.1em] uppercase text-[var(--text-dim)] mb-3">
           Core stats
         </p>
 
         {statList.length === 0 ? (
-          <div style={{ background: 'var(--bg)', padding: '12px 14px', borderRadius: '6px', border: '1px solid var(--border)' }}>
-            <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+          <div className="bg-[var(--bg)] p-3 rounded-md border border-[var(--border)]">
+            <p className="text-[11px] text-[var(--text-muted)] leading-[1.5]">
               {emptyMessage}
             </p>
           </div>
         ) : aggRow == null ? (
-          <p style={{ fontSize: '11px', color: 'var(--text-dim)' }}>Aggregated data not available</p>
+          <p className="text-[11px] text-[var(--text-dim)]">Aggregated data not available</p>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div className="flex flex-col gap-2">
             {statList.map(s => (
               <MotherStatRow
                 key={s.col}
@@ -588,20 +522,20 @@ export default function SpaceControlSection({
   onModeChange: (m: StatViewMode) => void;
 }) {
   return (
-    <section style={{ maxWidth: '80rem', margin: '0 auto', padding: '0 24px 48px' }}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '24px' }}>
+    <section className="max-w-7xl mx-auto px-6 pb-12">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
-          <h2 style={{ fontFamily: 'Barlow, sans-serif', fontWeight: 900, fontSize: '20px', color: 'var(--text)', marginBottom: '4px' }}>
+          <h2 className="font-display font-black text-xl text-[var(--text)] mb-1">
             Space Control &amp; Value
           </h2>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+          <p className="text-xs text-[var(--text-muted)]">
             Contextual passing metrics — {playerName}{teamName ? ` · ${teamName}` : ''}
           </p>
         </div>
         <StatViewToggle mode={mode} onChange={onModeChange} />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '24px' }}>
+      <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))' }}>
         {RADAR_DEFS.map(def => (
           <RadarCard
             key={def.key}

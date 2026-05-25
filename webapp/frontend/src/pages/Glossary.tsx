@@ -6,7 +6,6 @@ import { GLOSSARY_SECTIONS, type GlossaryCategory } from '../data/glossary';
 
 const FILTER_OPTIONS: { key: GlossaryCategory | 'ALL'; label: string }[] = [
   { key: 'ALL',          label: 'All' },
-  { key: 'INDEX',        label: 'Indices' },
   { key: 'PROGRESSION',  label: 'Progression' },
   { key: 'DANGEROUSNESS',label: 'Dangerousness' },
   { key: 'RECEPTION',    label: 'Reception' },
@@ -15,12 +14,11 @@ const FILTER_OPTIONS: { key: GlossaryCategory | 'ALL'; label: string }[] = [
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
-  INDEX:        '#ffffff',
-  PROGRESSION:  '#39ff14',
-  DANGEROUSNESS:'#ff4d6a',
-  RECEPTION:    '#4da6ff',
-  GRAVITY:      '#ffc947',
-  DECISION_QUALITY: '#a0a0a0',
+  PROGRESSION:  '#16a34a',
+  DANGEROUSNESS:'#dc2626',
+  RECEPTION:    '#2563eb',
+  GRAVITY:      '#d97706',
+  DECISION_QUALITY: '#7c3aed',
 };
 
 // ── Entry card ────────────────────────────────────────────────────────────────
@@ -32,15 +30,12 @@ function EntryCard({ label, description, color }: { label: string; description: 
       style={{ borderLeft: `3px solid ${color}` }}
     >
       <span
-        className="font-mono text-xs font-700 tracking-wide"
+        className="font-mono text-xs font-bold tracking-wide"
         style={{ color }}
       >
         {label}
       </span>
-      <p
-        className="text-xs leading-relaxed"
-        style={{ color: 'var(--text-muted)' }}
-      >
+      <p className="text-xs leading-relaxed text-[var(--text-muted)]">
         {description}
       </p>
     </div>
@@ -65,42 +60,30 @@ function SectionBlock({
       style={{ scrollMarginTop: '80px' }}
     >
       {/* Section header */}
-      <div
-        className="flex items-center gap-4 mb-5 pb-4 border-b"
-        style={{ borderColor: 'var(--border)' }}
-      >
+      <div className="flex items-center gap-4 mb-5 pb-4 border-b border-[var(--border)]">
         {/* Colour swatch */}
         <span
           aria-hidden
-          style={{
-            display: 'inline-block',
-            width: 12, height: 12,
-            borderRadius: 3,
-            background: color,
-            flexShrink: 0,
-          }}
+          className="inline-block w-3 h-3 rounded-sm shrink-0"
+          style={{ background: color }}
         />
         <h2
           id={`heading-${category}`}
-          className="font-display font-900 text-2xl tracking-tight"
-          style={{ color: 'var(--text)' }}
+          className="font-display font-black text-2xl tracking-tight text-[var(--text)]"
         >
           {title}
         </h2>
         {/* Variable count tag */}
         <span
           className="tag font-mono ml-auto"
-          style={{ background: `${color}18`, color }}
+          style={{ background: `${color}12`, color }}
         >
           {entries.length} {entries.length === 1 ? 'variable' : 'variables'}
         </span>
       </div>
 
       {/* Intro paragraph */}
-      <p
-        className="text-sm leading-relaxed mb-6 max-w-2xl"
-        style={{ color: 'var(--text-muted)' }}
-      >
+      <p className="text-sm leading-relaxed mb-6 max-w-2xl text-[var(--text-muted)]">
         {intro}
       </p>
 
@@ -138,46 +121,37 @@ export default function Glossary() {
   );
 
   return (
-    <div className="w-full pb-20 min-h-screen" style={{ background: 'var(--bg)' }}>
+    <div className="w-full pb-20 min-h-screen">
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <div
-        className="border-b px-6 pt-10 pb-10"
-        style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
-      >
+      <div className="border-b border-[var(--border)] px-6 pt-10 pb-10 bg-[var(--surface)]">
         <div className="max-w-5xl mx-auto">
 
           {/* Breadcrumb */}
           <nav aria-label="Breadcrumb" className="mb-5">
-            <ol className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-muted)' }}>
+            <ol className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
               <li>
-                <Link to="/" className="hover:text-[--accent] transition-colors font-600">
+                <Link to="/" className="hover:text-[var(--accent)] transition-colors font-semibold">
                   Home
                 </Link>
               </li>
               <li aria-hidden>/</li>
-              <li className="font-600" style={{ color: 'var(--text)' }} aria-current="page">
+              <li className="font-semibold text-[var(--text)]" aria-current="page">
                 Glossary
               </li>
             </ol>
           </nav>
 
-          <p
-            className="font-mono text-xs tracking-widest mb-3"
-            style={{ color: 'var(--accent)' }}
-          >
+          <p className="font-mono text-xs tracking-widest mb-3 text-[var(--accent)]">
             REFERENCE · {totalVariables} VARIABLES
           </p>
           <h1
-            className="font-display font-900 leading-none tracking-tight mb-4"
-            style={{ color: 'var(--text)', fontSize: 'clamp(36px, 6vw, 60px)' }}
+            className="font-display font-black leading-none tracking-tight mb-4 text-[var(--text)]"
+            style={{ fontSize: 'clamp(36px, 6vw, 60px)' }}
           >
             Glossary
           </h1>
-          <p
-            className="text-base max-w-xl"
-            style={{ color: 'var(--text-muted)', lineHeight: 1.7 }}
-          >
+          <p className="text-base max-w-xl text-[var(--text-muted)] leading-[1.7]">
             Complete reference for every metric and index used across the platform.
             Variables are grouped by their Space Control dimension.
           </p>
@@ -185,19 +159,9 @@ export default function Glossary() {
       </div>
 
       {/* ── Filter bar ─────────────────────────────────────────────── */}
-      <div
-        className="border-b z-40 px-6 py-3"
-        style={{
-          background: 'rgba(13,15,20,0.92)',
-          backdropFilter: 'blur(16px)',
-          borderColor: 'var(--border)',
-        }}
-      >
+      <div className="border-b border-[var(--border)] z-40 px-6 py-3 bg-white/92 backdrop-blur-xl">
         <div className="max-w-5xl mx-auto flex flex-wrap items-center gap-2">
-          <span
-            className="font-mono text-[10px] tracking-widest uppercase mr-2 hidden sm:inline"
-            style={{ color: 'var(--text-dim)' }}
-          >
+          <span className="font-mono text-[10px] tracking-widest uppercase mr-2 hidden sm:inline text-[var(--text-dim)]">
             Filter
           </span>
           {FILTER_OPTIONS.map(opt => {
@@ -208,11 +172,10 @@ export default function Glossary() {
                 key={opt.key}
                 onClick={() => setActiveFilter(opt.key)}
                 aria-pressed={active}
-                className="tag transition-all"
+                className="tag transition-all cursor-pointer"
                 style={{
-                  cursor: 'pointer',
                   border: `1px solid ${active ? color : 'var(--border)'}`,
-                  background: active ? `${color}22` : 'var(--surface2)',
+                  background: active ? `${color}11` : 'var(--surface)',
                   color: active ? color : 'var(--text-muted)',
                   fontWeight: active ? 700 : 600,
                 }}
@@ -241,8 +204,8 @@ export default function Glossary() {
 
         {/* Empty state when a filter yields nothing (defensive) */}
         {visibleSections.length === 0 && (
-          <div className="py-24 text-center" style={{ color: 'var(--text-dim)' }}>
-            <p className="font-display font-700 text-xl">No variables found.</p>
+          <div className="py-24 text-center text-[var(--text-dim)]">
+            <p className="font-display font-bold text-xl">No variables found.</p>
           </div>
         )}
       </div>

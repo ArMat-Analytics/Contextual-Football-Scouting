@@ -56,10 +56,10 @@ export type StatKey = typeof ALL_STATS[number]['key'];
 export const CATEGORIES = ['General', 'Attacking', 'Passing', 'Defending'] as const;
 
 export const CAT_ACCENT: Record<string, string> = {
-  General:   '#ffc947',
-  Attacking: '#ff4d6a',
-  Passing:   '#4da6ff',
-  Defending: '#39ff14',
+  General:   '#d97706',
+  Attacking: '#dc2626',
+  Passing:   '#2563eb',
+  Defending: '#16a34a',
 };
 
 // ── Player data types ────────────────────────────────────────────────────────
