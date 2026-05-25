@@ -43,6 +43,7 @@ const INDICES = [
 ] as const;
 
 type IndexKey = typeof INDICES[number]['key'];
+type SortKey = IndexKey | 'avg' | 'minutes_played';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -362,7 +363,7 @@ export default function SearchByAttribute() {
   const [allPlayers, setAllPlayers] = useState<PlayerRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [searched, setSearched] = useState(false);
-  const [sortKey, setSortKey] = useState<IndexKey | 'avg'>('avg');
+  const [sortKey, setSortKey] = useState<SortKey>('avg');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
@@ -424,13 +425,13 @@ export default function SearchByAttribute() {
       valA = ((a.idx__PROGRESSION ?? 0) + (a.idx__DANGEROUSNESS ?? 0) + (a.idx__RECEPTION ?? 0) + (a.idx__GRAVITY ?? 0)) / 4;
       valB = ((b.idx__PROGRESSION ?? 0) + (b.idx__DANGEROUSNESS ?? 0) + (b.idx__RECEPTION ?? 0) + (b.idx__GRAVITY ?? 0)) / 4;
     } else {
-      valA = (a[sortKey as keyof PlayerRow] as number) ?? 0;
-      valB = (b[sortKey as keyof PlayerRow] as number) ?? 0;
+      valA = a[sortKey] ?? 0;
+      valB = b[sortKey] ?? 0;
     }
     return sortOrder === 'asc' ? valA - valB : valB - valA;
   });
 
-  const handleSort = (key: IndexKey | 'avg') => {
+  const handleSort = (key: SortKey) => {
     if (sortKey === key) {
       setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
     } else {
@@ -625,7 +626,7 @@ export default function SearchByAttribute() {
             {sorted.length > 0 && (
               <div
                 className="hidden lg:grid items-center gap-4 py-2 px-5 mb-1.5"
-                style={{ gridTemplateColumns: '28px 28px 1fr repeat(5, 52px) 48px' }}
+                style={{ gridTemplateColumns: '28px 28px 1fr repeat(6, 52px) 48px' }}
               >
                 <span />
                 <span />
@@ -649,7 +650,12 @@ export default function SearchByAttribute() {
                   AVG <SortIcon active={sortKey === 'avg'} dir={sortOrder} />
                 </button>
                 
-                <span className="font-mono text-[9px] text-[var(--text-dim)] tracking-[0.1em] uppercase text-right">MIN</span>
+                <button
+                  onClick={() => handleSort('minutes_played')}
+                  className={`bg-transparent border-none cursor-pointer p-0 font-mono text-[9px] tracking-[0.1em] uppercase text-center flex items-center justify-center transition-colors ${sortKey === 'minutes_played' ? 'text-[var(--text)]' : 'text-[var(--text-dim)]'}`}
+                >
+                  MIN <SortIcon active={sortKey === 'minutes_played'} dir={sortOrder} />
+                </button>
               </div>
             )}
 
