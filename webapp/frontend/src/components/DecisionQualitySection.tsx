@@ -271,7 +271,9 @@ export default function DecisionQualitySection({
             <div className="flex flex-col gap-2">
               {statList.map(s => {
                 const raw = row[s.col];
-                const val = s.col === 'value_impact' && typeof raw === 'number' ? raw * 100 : raw;
+                const val = (s.col === 'value_impact' || s.col === 'avg_miss_cost') && typeof raw === 'number'
+                  ? raw * 100
+                  : raw;
                 return <StatRow key={s.col} label={s.label} value={fmt(val)} />;
               })}
             </div>
@@ -457,7 +459,7 @@ export function DQCompareRadar({
         ) : (
           <div className="flex flex-col gap-1.5">
             {statList.map(s => {
-              const scale = s.col === 'value_impact' ? 100 : 1;
+              const scale = (s.col === 'value_impact' || s.col === 'avg_miss_cost') ? 100 : 1;
               const sv = sourceRow[s.col];
               const cv = compareRow[s.col];
               return (
