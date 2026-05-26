@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   ResponsiveContainer, Legend, Tooltip,
@@ -116,23 +116,18 @@ function StatRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-// ── Custom radar axis tick with hover tooltip ─────────────────────────────────
+// ── Simple static radar axis tick (no hover) ──────────────────────────────────
 
-function CustomRadarTick(props: any) {
-  const { x, y, payload, onHover, onLeave } = props;
-  const label = payload.value as string;
-  const description = TOOLTIP_DESCRIPTIONS[label] ?? 'No description available.';
-
+function SimpleRadarTick({ x = 0, y = 0, payload }: any) {
+  if (!payload) return null;
   return (
     <text
       x={x} y={y}
       textAnchor="middle"
       dominantBaseline="central"
-      style={{ fontSize: 10, fontFamily: 'Inter, sans-serif', fontWeight: 600, fill: 'var(--text-muted)', cursor: 'help' }}
-      onMouseEnter={e => onHover(label, description, e.clientX, e.clientY)}
-      onMouseLeave={onLeave}
+      style={{ fontSize: 10, fontFamily: 'Inter, sans-serif', fontWeight: 600, fill: 'var(--text-muted)' }}
     >
-      {label}
+      {payload.value}
     </text>
   );
 }
@@ -140,7 +135,6 @@ function CustomRadarTick(props: any) {
 // ── Main exported component ───────────────────────────────────────────────────
 
 export interface DQCardProps {
-  /** The full name of the player (for aria labels and legend) */
   playerName: string;
   teamName?: string;
   row: DecisionQualityRow;
@@ -151,12 +145,8 @@ export interface DQCardProps {
 export default function DecisionQualitySection({
   playerName, teamName, row, mode, onModeChange,
 }: DQCardProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [axisTooltip, setAxisTooltip] = useState<{
-    label: string; description: string; x: number; y: number;
-  } | null>(null);
-
   const lastName = playerName.split(' ').at(-1) ?? playerName;
+  const [hoveredTitle, setHoveredTitle] = useState(false);
 
   // Build radar data
   const radarData = RADAR_AXES.map(ax => ({
@@ -166,15 +156,7 @@ export default function DecisionQualitySection({
 
   const statList = CORE_STATS[mode];
 
-  const handleAxisHover = (label: string, description: string, clientX: number, clientY: number) => {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    setAxisTooltip({ label, description, x: clientX - rect.left, y: clientY - rect.top });
-  };
-
-  const renderTick = (props: any) => (
-    <CustomRadarTick {...props} onHover={handleAxisHover} onLeave={() => setAxisTooltip(null)} />
-  );
+  const renderTick = (props: any) => <SimpleRadarTick {...props} />;
 
   return (
     <section className="max-w-7xl mx-auto px-6 pb-12">
@@ -194,16 +176,45 @@ export default function DecisionQualitySection({
 
       {/* Single card */}
       <div
-        ref={containerRef}
-        className="relative bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] p-6 max-w-[560px] shadow-[var(--shadow)]"
+        className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] p-6 max-w-[560px] shadow-[var(--shadow)]"
         style={{ borderTop: `3px solid ${DQ_COLOR}` }}
       >
         {/* Card header: label left, headline index right */}
         <div className="flex justify-between items-start mb-2">
-          <span className="font-mono text-[10px] tracking-[0.12em] uppercase font-bold" style={{ color: DQ_COLOR }}>
-            Decision Quality
-          </span>
-          {/* Headline + companion */}
+          <div className="relative flex items-center gap-2 min-w-0">
+            <span className="font-mono text-[10px] tracking-[0.12em] uppercase font-bold" style={{ color: DQ_COLOR }}>
+              Decision Quality
+            </span>
+
+            <button
+              aria-label="Description for Decision Quality"
+              onMouseEnter={() => setHoveredTitle(true)}
+              onMouseLeave={() => setHoveredTitle(false)}
+              className="shrink-0 w-[15px] h-[15px] rounded-full text-[8px] font-bold font-display cursor-help flex items-center justify-center transition-all p-0 leading-none border"
+              style={{
+                borderColor: hoveredTitle ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.12)',
+                background: hoveredTitle ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.02)',
+                color: hoveredTitle ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.35)',
+              }}
+            >
+              ?
+            </button>
+
+            {hoveredTitle && (
+              <div
+                role="tooltip"
+                className="absolute bottom-[calc(100%+8px)] left-0 max-w-[240px] bg-[var(--surface)] rounded-[10px] px-3.5 py-2.5 z-[60] pointer-events-none"
+                style={{ border: `1px solid ${DQ_COLOR}33`, borderLeft: `3px solid ${DQ_COLOR}`, boxShadow: 'var(--shadow-lg)' }}
+              >
+                <p className="font-mono text-[10px] font-bold mb-1.5 tracking-wide" style={{ color: DQ_COLOR }}>
+                  Decision Quality
+                </p>
+                <p className="text-[11px] text-[var(--text-muted)] leading-[1.55]">
+                  {TOOLTIP_DESCRIPTIONS['Decision Quality'] ?? 'No description available.'}
+                </p>
+              </div>
+            )}
+          </div>
           <div className="text-right">
             <div className="font-mono text-[9px] tracking-[0.1em] uppercase text-[var(--text-dim)]">Index</div>
             <div className="font-display font-black text-[26px] leading-none" style={{ color: DQ_COLOR }}>
@@ -233,30 +244,7 @@ export default function DecisionQualitySection({
           </RadarChart>
         </ResponsiveContainer>
 
-        {/* Axis tooltip overlay */}
-        {axisTooltip && (
-          <div
-            role="tooltip"
-            aria-live="polite"
-            className="absolute max-w-[220px] bg-[var(--surface)] rounded-[10px] px-3.5 py-2.5 pointer-events-none z-50"
-            style={{
-              left: Math.min(axisTooltip.x + 12, 280),
-              top: axisTooltip.y - 6,
-              border: `1px solid ${DQ_COLOR}33`,
-              borderLeft: `3px solid ${DQ_COLOR}`,
-              boxShadow: 'var(--shadow-lg)',
-            }}
-          >
-            <p className="font-mono text-[10px] font-bold mb-1.5 tracking-wide" style={{ color: DQ_COLOR }}>
-              {axisTooltip.label}
-            </p>
-            <p className="text-[11px] text-[var(--text-muted)] leading-[1.55]">
-              {axisTooltip.description}
-            </p>
-          </div>
-        )}
-
-        {/* Core stats card */}
+        {/* Core stats card — tooltips on "?" only */}
         <div className="mt-4 bg-[var(--surface2)] rounded-xl p-4">
           <p className="font-mono text-[9px] tracking-[0.1em] uppercase text-[var(--text-dim)] mb-3">
             Core stats
@@ -359,7 +347,7 @@ function DualStatRow({
   );
 }
 
-// ── DQ radar card for SimilarPlayers — radar + stats madre ────────────────────
+// ── DQ radar card for SimilarPlayers ─────────────────────────────────────────
 
 export function DQCompareRadar({
   sourceRow,
@@ -410,7 +398,7 @@ export function DQCompareRadar({
         </div>
       </div>
 
-      {/* Dual radar */}
+      {/* Dual radar — static axis labels */}
       <ResponsiveContainer width="100%" height={220}>
         <RadarChart data={radarData} margin={{ top: 8, right: 30, bottom: 8, left: 30 }}>
           <PolarGrid stroke="rgba(0,0,0,0.06)" />

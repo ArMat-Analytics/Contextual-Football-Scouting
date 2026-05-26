@@ -1,4 +1,4 @@
-import { useState, useRef, useId } from 'react';
+import { useState, useId } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
@@ -166,15 +166,6 @@ function RadarTooltip({ active, payload }: any) {
   );
 }
 
-// ── Axis tooltip state type ───────────────────────────────────────────────────
-
-interface AxisTooltipState {
-  label: string;
-  description: string;
-  x: number;
-  y: number;
-}
-
 // ── Custom PolarAngleAxis tick ─────────────────────────────────────────────────
 
 interface CustomRadarTickProps {
@@ -182,31 +173,15 @@ interface CustomRadarTickProps {
   y?: number;
   payload?: { value: string };
   textAnchor?: React.SVGAttributes<SVGTextElement>['textAnchor'];
-  onHover: (label: string, description: string, clientX: number, clientY: number) => void;
-  onLeave: () => void;
 }
 
 function CustomRadarTick({
   x = 0, y = 0,
   payload, textAnchor = 'middle',
-  onHover, onLeave,
 }: CustomRadarTickProps) {
-  const [hovered, setHovered] = useState(false);
-
   if (!payload) return null;
 
   const label       = payload.value;
-  const description = TOOLTIP_DESCRIPTIONS[label] ?? 'No description available.';
-
-  const handleMouseEnter = (e: React.MouseEvent<SVGRectElement>) => {
-    setHovered(true);
-    onHover(label, description, e.clientX, e.clientY);
-  };
-
-  const handleMouseLeave = () => {
-    setHovered(false);
-    onLeave();
-  };
 
   const halfW = label.length * 3.5;
 
@@ -218,20 +193,17 @@ function CustomRadarTick({
         width={halfW * 2}
         height={16}
         fill="transparent"
-        style={{ cursor: 'help' }}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
       />
       <text
         x={x}
         y={y}
         textAnchor={textAnchor}
         dominantBaseline="middle"
-        fill={hovered ? 'var(--text)' : 'var(--text-muted)'}
+        fill="var(--text-muted)"
         fontSize={10}
         fontFamily="Inter, sans-serif"
-        fontWeight={hovered ? 700 : 600}
-        style={{ transition: 'fill 0.12s', pointerEvents: 'none' }}
+        fontWeight={600}
+        style={{ pointerEvents: 'none' }}
       >
         {label}
       </text>
@@ -296,7 +268,7 @@ function DualMotherStatRow({
         {hovered && (
           <div
             role="tooltip"
-            className="absolute bottom-[calc(100%+8px)] left-0 max-w-[240px] bg-[var(--surface)] rounded-[10px] px-3.5 py-2.5 z-[60] pointer-events-none"
+            className="absolute bottom-[calc(100%+8px)] left-0 w-[240px] bg-[var(--surface)] rounded-[10px] px-3.5 py-2.5 z-[60] pointer-events-none"
             style={{ border: `1px solid ${color}33`, borderLeft: `3px solid ${color}`, boxShadow: 'var(--shadow-lg)' }}
           >
             <p className="font-mono text-[10px] font-bold mb-1.5 tracking-wide" style={{ color }}>
@@ -347,6 +319,9 @@ function DualRadarCard({
 }) {
   const sName = sourceName.trim().split(' ').pop() || sourceName;
   const mName = similarName.trim().split(' ').pop() || similarName;
+  const [hoveredTitle, setHoveredTitle] = useState(false);
+  const isGravity = def.key === 'GRAVITY';
+  const expDesc = TOOLTIP_DESCRIPTIONS['Experimental'];
 
   const radarData = def.axes.map(ax => ({
     stat: ax.label,
@@ -356,20 +331,7 @@ function DualRadarCard({
 
   const statList = MOTHER[def.key]?.[mode] ?? [];
 
-  const [axisTooltip, setAxisTooltip] = useState<AxisTooltipState | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const handleAxisHover = (label: string, description: string, clientX: number, clientY: number) => {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    setAxisTooltip({ label, description, x: clientX - rect.left, y: clientY - rect.top });
-  };
-
-  const handleAxisLeave = () => setAxisTooltip(null);
-
-  const renderTick = (props: any) => (
-    <CustomRadarTick {...props} onHover={handleAxisHover} onLeave={handleAxisLeave} />
-  );
+  const renderTick = (props: any) => <CustomRadarTick {...props} />;
 
   let emptyMessage =
     mode === 'per90'
@@ -386,15 +348,57 @@ function DualRadarCard({
 
   return (
     <div
-      ref={containerRef}
       className="relative bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] p-5 shadow-[var(--shadow)]"
       style={{ borderTop: `3px solid ${def.color}` }}
     >
       {/* Header */}
       <div className="flex justify-between items-center mb-1">
-        <span className="font-mono text-[10px] tracking-[0.12em] uppercase font-bold" style={{ color: def.color }}>
-          {def.label}
-        </span>
+        <div className="relative flex items-center gap-2 min-w-0">
+          <span className="font-mono text-[10px] tracking-[0.12em] uppercase font-bold" style={{ color: def.color }}>
+            {def.label}
+          </span>
+
+          <button
+            aria-label={`Description for ${def.label}`}
+            onMouseEnter={() => setHoveredTitle(true)}
+            onMouseLeave={() => setHoveredTitle(false)}
+            className="shrink-0 w-[15px] h-[15px] rounded-full text-[8px] font-bold font-display cursor-help flex items-center justify-center transition-all p-0 leading-none border"
+            style={{
+              borderColor: hoveredTitle ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.12)',
+              background: hoveredTitle ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.02)',
+              color: hoveredTitle ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.35)',
+            }}
+          >
+            ?
+          </button>
+
+          {hoveredTitle && (
+            <div
+              role="tooltip"
+              className="absolute bottom-[calc(100%+8px)] left-0 w-[240px] bg-[var(--surface)] rounded-[10px] px-3.5 py-2.5 z-[60] pointer-events-none"
+              style={{ border: `1px solid ${def.color}33`, borderLeft: `3px solid ${def.color}`, boxShadow: 'var(--shadow-lg)' }}
+            >
+              <p className="font-mono text-[10px] font-bold mb-1.5 tracking-wide" style={{ color: def.color }}>
+                {def.label}
+              </p>
+              <p className="text-[11px] text-[var(--text-muted)] leading-[1.55]">
+                {TOOLTIP_DESCRIPTIONS[def.label] ?? `${def.label} index — percentile rank within macro-role (0–100).`}
+              </p>
+              {isGravity && (
+                <>
+                  <div className="mt-2 mb-1">
+                    <span className="inline-flex items-center gap-1 rounded px-2 py-0.75 text-[9px] font-bold uppercase tracking-wide" style={{ color: def.color, backgroundColor: `${def.color}15` }}>
+                      Experimental
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[var(--text-muted)] leading-[1.55]">
+                    {expDesc}
+                  </p>
+                </>
+              )}
+            </div>
+          )}
+        </div>
         <div className="flex gap-3">
           {(['idx__PROGRESSION', 'idx__DANGEROUSNESS', 'idx__RECEPTION', 'idx__GRAVITY'] as (keyof SpaceControlIndex)[])
             .filter(k => k === `idx__${def.key}`)
@@ -437,29 +441,6 @@ function DualRadarCard({
           />
         </RadarChart>
       </ResponsiveContainer>
-
-      {/* Axis description tooltip overlay */}
-      {axisTooltip && (
-        <div
-          role="tooltip"
-          aria-live="polite"
-          className="absolute max-w-[220px] bg-[var(--surface)] rounded-[10px] px-3.5 py-2.5 pointer-events-none z-50"
-          style={{
-            left: Math.min(axisTooltip.x + 12, 260),
-            top: axisTooltip.y - 6,
-            border: `1px solid ${def.color}33`,
-            borderLeft: `3px solid ${def.color}`,
-            boxShadow: 'var(--shadow-lg)',
-          }}
-        >
-          <p className="font-mono text-[10px] font-bold mb-1.5 tracking-wide" style={{ color: def.color }}>
-            {axisTooltip.label}
-          </p>
-          <p className="text-[11px] text-[var(--text-muted)] leading-[1.55]">
-            {axisTooltip.description}
-          </p>
-        </div>
-      )}
 
       {/* Mother stats comparison */}
       <div className="mt-3 bg-[var(--surface2)] rounded-[10px] p-3">

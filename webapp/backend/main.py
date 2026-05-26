@@ -115,7 +115,7 @@ def get_players(
     params = {}
 
     if search:
-        query_str += " AND player_name ILIKE :search"
+        query_str += " AND unaccent(player_name) ILIKE unaccent(:search)"
         params["search"] = f"%{search}%"
 
     if teams:
@@ -196,8 +196,8 @@ def get_player_decision_quality(player_id: int, db: Session = Depends(database.g
     row = db.execute(text("""
         SELECT dq.*
         FROM player_decision_quality dq
-        JOIN player_profiles p ON p.player_name = dq.player
-        WHERE p.player_id = :pid
+        JOIN sc_indices sc ON sc.player = dq.player AND sc.team = dq.team
+        WHERE sc.db_player_id = :pid
         LIMIT 1
     """), {"pid": player_id}).fetchone()
 
@@ -264,11 +264,6 @@ def get_similar_dq(
             # exclude_player is the Transfermarkt display name — try to match
             # via player_profiles to be safe, but also fall back to direct name match
             q += """
-              AND dq.player NOT IN (
-                SELECT p2.player_name FROM player_profiles p2
-                WHERE p2.player_name ILIKE :excl
-                LIMIT 1
-              )
               AND dq.player NOT ILIKE :excl
             """
             params["excl"] = exclude_player
@@ -391,8 +386,7 @@ def search_space_control(
         FROM CorrectedSC sc
         LEFT JOIN player_profiles p ON sc.fixed_db_player_id = p.player_id
         LEFT JOIN player_decision_quality dq
-            ON (COALESCE(p.player_name, sc.player) = dq.player OR sc.player = dq.player)
-            AND sc.team = dq.team
+            ON sc.player = dq.player AND sc.team = dq.team
         WHERE 1=1
     """
     params: dict = {}

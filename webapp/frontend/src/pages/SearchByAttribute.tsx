@@ -35,15 +35,15 @@ const MACRO_COLOR: Record<string, string> = {
 };
 
 const INDICES = [
-  { key: 'idx__PROGRESSION',   label: 'Progression',   color: '#16a34a',  short: 'PROG' },
-  { key: 'idx__DANGEROUSNESS', label: 'Dangerousness', color: '#dc2626',  short: 'DNGR' },
-  { key: 'idx__RECEPTION',     label: 'Reception',     color: '#2563eb',  short: 'RECEP' },
-  { key: 'idx__GRAVITY',       label: 'Gravity',       color: '#d97706',  short: 'GRAV' },
-  { key: 'DQ_index',           label: 'Decision Quality',  color: '#7c3aed',  short: 'DQ' },
+  { key: 'idx__PROGRESSION',   label: 'Progression',      color: '#16a34a', short: 'PROG' },
+  { key: 'idx__DANGEROUSNESS', label: 'Dangerousness',    color: '#dc2626', short: 'DNGR' },
+  { key: 'idx__RECEPTION',     label: 'Reception',        color: '#2563eb', short: 'RECEP' },
+  { key: 'idx__GRAVITY',       label: 'Gravity',          color: '#d97706', short: 'GRAV' },
+  { key: 'DQ_index',           label: 'Decision Quality', color: '#7c3aed', short: 'DQ' },
 ] as const;
 
 type IndexKey = typeof INDICES[number]['key'];
-type SortKey = IndexKey | 'avg' | 'minutes_played';
+type SortKey  = IndexKey | 'avg' | 'minutes_played';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -66,10 +66,10 @@ interface PlayerRow {
   idx__DANGEROUSNESS: number;
   idx__RECEPTION: number;
   idx__GRAVITY: number;
-  DQ_index: number;
+  DQ_index: number | null;
 }
 
-// ── Shared UI Components ──────────────────────────────────────────────────────
+// ── Shared UI ─────────────────────────────────────────────────────────────────
 
 function SortIcon({ active, dir }: { active: boolean; dir: 'asc' | 'desc' }) {
   if (!active) return <svg className="w-3 h-3 inline ml-1 opacity-30" aria-hidden viewBox="0 0 12 12" fill="currentColor"><path d="M6 2l3 4H3zM6 10L3 6h6z"/></svg>;
@@ -92,7 +92,7 @@ function RangeFilter({
   const minId = useId();
   const maxId = useId();
 
-  const minVal = range.min === '' ? 1   : Number(range.min);
+  const minVal = range.min === '' ? 0   : Number(range.min);
   const maxVal = range.max === '' ? 100 : Number(range.max);
 
   // Progress bar percentage
@@ -129,17 +129,17 @@ function RangeFilter({
           <input
             id={minId}
             type="number"
-            min={1}
+            min={0}
             max={100}
             step={1}
             value={range.min}
-            placeholder="1"
+            placeholder="0"
             onChange={e => {
               let val = e.target.value;
               if (val !== '') {
-                let num = parseInt(val, 10);
+                const num = parseInt(val, 10);
                 if (num > 100) val = '100';
-                if (num < 1) val = '1';
+                if (num < 0)   val = '0';
               }
               onChange({ ...range, min: val });
             }}
@@ -151,7 +151,7 @@ function RangeFilter({
           <input
             id={maxId}
             type="number"
-            min={1}
+            min={0}
             max={100}
             step={1}
             value={range.max}
@@ -159,9 +159,9 @@ function RangeFilter({
             onChange={e => {
               let val = e.target.value;
               if (val !== '') {
-                let num = parseInt(val, 10);
+                const num = parseInt(val, 10);
                 if (num > 100) val = '100';
-                if (num < 1) val = '1';
+                if (num < 0)   val = '0';
               }
               onChange({ ...range, max: val });
             }}
@@ -191,15 +191,15 @@ function IndexBadge({ label, value, color }: { label: string; value: number | nu
 // ── Player result row ─────────────────────────────────────────────────────────
 
 function PlayerResultRow({ player, rank }: { player: PlayerRow; rank: number }) {
-  const flagUrl  = getFlagUrl(player.team);
-  const macro    = player.macro_role;
+  const flagUrl    = getFlagUrl(player.team);
+  const macro      = player.macro_role;
   const macroColor = MACRO_COLOR[macro] ?? 'var(--text-muted)';
 
   const avg = (
-    ((player.idx__PROGRESSION ?? 0) +
-      (player.idx__DANGEROUSNESS ?? 0) +
-      (player.idx__RECEPTION ?? 0) +
-      (player.idx__GRAVITY ?? 0)) / 4
+    ((player.idx__PROGRESSION   ?? 0) +
+     (player.idx__DANGEROUSNESS ?? 0) +
+     (player.idx__RECEPTION     ?? 0) +
+     (player.idx__GRAVITY       ?? 0)) / 4
   );
 
   return (
@@ -208,8 +208,8 @@ function PlayerResultRow({ player, rank }: { player: PlayerRow; rank: number }) 
       role="listitem"
     >
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        
-        {/* Top: Player Info */}
+
+        {/* Player info */}
         <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
           <span className={`font-mono font-bold text-[13px] min-w-[24px] text-right ${rank <= 3 ? 'text-[var(--accent)]' : 'text-[var(--text-dim)]'}`}>
             {rank}
@@ -224,7 +224,7 @@ function PlayerResultRow({ player, rank }: { player: PlayerRow; rank: number }) 
           {/* Name + role */}
           <div className="flex-1 min-w-0">
             {player.player_id ? (
-              <Link 
+              <Link
                 to={`/player/${player.player_id}`}
                 className="block no-underline hover:text-[var(--accent)] transition-colors focus-visible:outline-none focus-visible:underline"
               >
@@ -237,15 +237,10 @@ function PlayerResultRow({ player, rank }: { player: PlayerRow; rank: number }) 
                 {player.player}
               </p>
             )}
-
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="font-display text-[10px] font-bold tracking-wide uppercase text-[var(--text-muted)]">
-                {player.team}
-              </span>
+              <span className="font-display text-[10px] font-bold tracking-wide uppercase text-[var(--text-muted)]">{player.team}</span>
               <span className="text-[var(--text-dim)] text-[10px]">·</span>
-              <span className="font-display text-[10px] font-bold tracking-wide uppercase text-[var(--text-muted)]">
-                {player.primary_role}
-              </span>
+              <span className="font-display text-[10px] font-bold tracking-wide uppercase text-[var(--text-muted)]">{player.primary_role}</span>
               <span className="tag text-[9px]" style={{ background: `${macroColor}12`, color: macroColor, border: `1px solid ${macroColor}30` }}>
                 {macro}
               </span>
@@ -254,9 +249,7 @@ function PlayerResultRow({ player, rank }: { player: PlayerRow; rank: number }) 
 
           {/* Minutes (Mobile) */}
           <div className="lg:hidden text-right whitespace-nowrap">
-            <span className="font-mono text-[11px] text-[var(--text-dim)]">
-              {player.minutes_played}'
-            </span>
+            <span className="font-mono text-[11px] text-[var(--text-dim)]">{player.minutes_played}'</span>
           </div>
         </div>
 
@@ -267,7 +260,7 @@ function PlayerResultRow({ player, rank }: { player: PlayerRow; rank: number }) 
               <IndexBadge
                 key={idx.key}
                 label={idx.short}
-                value={player[idx.key as keyof PlayerRow] as number}
+                value={(player as any)[idx.key] as number | null}
                 color={idx.color}
               />
             ))}
@@ -277,17 +270,13 @@ function PlayerResultRow({ player, rank }: { player: PlayerRow; rank: number }) 
               <span className="font-mono font-black text-lg leading-none text-[var(--text)]">
                 {avg.toFixed(0)}
               </span>
-              <span className="font-mono text-[8px] tracking-[0.1em] uppercase text-[var(--text-dim)] mt-0.5">
-                AVG
-              </span>
+              <span className="font-mono text-[8px] tracking-[0.1em] uppercase text-[var(--text-dim)] mt-0.5">AVG</span>
             </div>
           </div>
 
           {/* Minutes (Desktop) */}
           <div className="hidden lg:block text-right min-w-[48px]">
-            <span className="font-mono text-[11px] text-[var(--text-dim)]">
-              {player.minutes_played}'
-            </span>
+            <span className="font-mono text-[11px] text-[var(--text-dim)]">{player.minutes_played}'</span>
           </div>
         </div>
 
@@ -311,20 +300,11 @@ function ActiveFilterPills({ filters, onClear }: { filters: Filters; onClear: ()
   if (pills.length === 0) return null;
   return (
     <div className="flex flex-wrap items-center gap-2 mb-4">
-      <span className="font-mono text-[10px] text-[var(--text-dim)] uppercase tracking-[0.1em]">
-        Active filters:
-      </span>
+      <span className="font-mono text-[10px] text-[var(--text-dim)] uppercase tracking-[0.1em]">Active filters:</span>
       {pills.map(p => (
-        <span key={p} className="tag bg-[var(--accent-dim)] text-[var(--accent)] border border-[rgba(37,99,235,0.2)]">
-          {p}
-        </span>
+        <span key={p} className="tag bg-[var(--accent-dim)] text-[var(--accent)] border border-[rgba(37,99,235,0.2)]">{p}</span>
       ))}
-      <button
-        onClick={onClear}
-        className="btn btn-ghost text-[11px] py-0.5 px-3"
-      >
-        Clear all
-      </button>
+      <button onClick={onClear} className="btn btn-ghost text-[11px] py-0.5 px-3">Clear all</button>
     </div>
   );
 }
@@ -335,12 +315,8 @@ function EmptyState() {
   return (
     <div className="text-center py-16 px-6">
       <p className="text-[40px] mb-3">🔍</p>
-      <p className="font-display font-bold text-xl text-[var(--text)] mb-2">
-        No players match your filters
-      </p>
-      <p className="text-sm text-[var(--text-muted)]">
-        Try widening the index ranges or clearing the role filter
-      </p>
+      <p className="font-display font-bold text-xl text-[var(--text)] mb-2">No players match your filters</p>
+      <p className="text-sm text-[var(--text-muted)]">Try widening the index ranges or clearing the role filter</p>
     </div>
   );
 }
@@ -356,16 +332,13 @@ const DEFAULT_RANGES: Record<IndexKey, IndexRange> = {
 };
 
 export default function SearchByAttribute() {
-  const [filters, setFilters] = useState<Filters>({
-    macroRole: '', role: '', ranges: DEFAULT_RANGES,
-  });
-
-  const [allPlayers, setAllPlayers] = useState<PlayerRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searched, setSearched] = useState(false);
-  const [sortKey, setSortKey] = useState<SortKey>('avg');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [filters, setFilters]           = useState<Filters>({ macroRole: '', role: '', ranges: DEFAULT_RANGES });
+  const [allPlayers, setAllPlayers]     = useState<PlayerRow[]>([]);
+  const [loading, setLoading]           = useState(true);
+  const [searched, setSearched]         = useState(false);
+  const [sortKey, setSortKey]           = useState<SortKey>('avg');
+  const [sortOrder, setSortOrder]       = useState<'asc' | 'desc'>('desc');
+  const [mobileFiltersOpen, setMobile]  = useState(false);
 
   const macroRoleId = useId();
   const roleId      = useId();
@@ -377,7 +350,7 @@ export default function SearchByAttribute() {
 
   // Load all players on mount
   useEffect(() => {
-    const fetchAll = async () => {
+    (async () => {
       setLoading(true);
       try {
         const data: PlayerRow[] = await fetch(`${API_BASE_URL}/space-control/search`).then(r => r.json());
@@ -388,13 +361,10 @@ export default function SearchByAttribute() {
         setLoading(false);
         setSearched(true);
       }
-    };
-    fetchAll();
+    })();
   }, []);
 
-  const clearFilters = () => {
-    setFilters({ macroRole: '', role: '', ranges: DEFAULT_RANGES });
-  };
+  const clearFilters = () => setFilters({ macroRole: '', role: '', ranges: DEFAULT_RANGES });
 
   // Client-side filtering (since we fetch all players at once, we can do it here)
   const filtered = allPlayers.filter(player => {
@@ -406,38 +376,34 @@ export default function SearchByAttribute() {
 
     // Numerical filters: check if player indices fall within selected ranges
     for (const idx of INDICES) {
-      const val = player[idx.key] ?? 0;
-      const r = f.ranges[idx.key];
-      const min = r.min === '' ? 0 : Number(r.min);
+      const raw = (player as any)[idx.key] as number | null | undefined;
+      // DQ_index may be null — skip when the range is at default (no filter set)
+      if (idx.key === 'DQ_index' && raw == null) continue;
+      const val = raw == null ? 0 : Math.round(Number(raw));
+      const r   = f.ranges[idx.key];
+      const min = r.min === '' ? 0   : Number(r.min);
       const max = r.max === '' ? 100 : Number(r.max);
-      
       if (val < min || val > max) return false;
     }
 
     return true;
   });
 
-  // Client side sorting (for now, since we fetch all players at once)
-  const sorted = filtered.sort((a, b) => {
-    let valA = 0;
-    let valB = 0;
+  const sorted = [...filtered].sort((a, b) => {
+    let valA = 0, valB = 0;
     if (sortKey === 'avg') {
       valA = ((a.idx__PROGRESSION ?? 0) + (a.idx__DANGEROUSNESS ?? 0) + (a.idx__RECEPTION ?? 0) + (a.idx__GRAVITY ?? 0)) / 4;
       valB = ((b.idx__PROGRESSION ?? 0) + (b.idx__DANGEROUSNESS ?? 0) + (b.idx__RECEPTION ?? 0) + (b.idx__GRAVITY ?? 0)) / 4;
     } else {
-      valA = a[sortKey] ?? 0;
-      valB = b[sortKey] ?? 0;
+      valA = ((a as any)[sortKey] ?? 0) as number;
+      valB = ((b as any)[sortKey] ?? 0) as number;
     }
     return sortOrder === 'asc' ? valA - valB : valB - valA;
   });
 
   const handleSort = (key: SortKey) => {
-    if (sortKey === key) {
-      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortKey(key);
-      setSortOrder('desc');
-    }
+    if (sortKey === key) setSortOrder(p => p === 'asc' ? 'desc' : 'asc');
+    else { setSortKey(key); setSortOrder('desc'); }
   };
 
   return (
@@ -453,9 +419,7 @@ export default function SearchByAttribute() {
               <li className="font-semibold text-[var(--text)]" aria-current="page">Search by Attribute</li>
             </ol>
           </nav>
-          <p className="font-mono text-xs tracking-widest mb-2 text-[var(--accent)]">
-            SPACE CONTROL & VALUE · EURO 2024
-          </p>
+          <p className="font-mono text-xs tracking-widest mb-2 text-[var(--accent)]">SPACE CONTROL & VALUE · EURO 2024</p>
           <h1 className="font-display font-black leading-none tracking-tight mb-3 text-[var(--text)]" style={{ fontSize: 'clamp(36px, 6vw, 64px)' }}>
             Search by Attribute
           </h1>
@@ -472,7 +436,7 @@ export default function SearchByAttribute() {
           {/* Hamburger Trigger Button for Mobile */}
           <div className="lg:hidden w-full mb-2">
             <button
-              onClick={() => setMobileFiltersOpen(true)}
+              onClick={() => setMobile(true)}
               className="w-full flex items-center justify-center gap-2 p-3 rounded-[var(--radius)] font-bold transition-colors bg-[var(--surface2)] border border-[var(--border)] text-[var(--text)]"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -494,23 +458,16 @@ export default function SearchByAttribute() {
               
               {/* Close Button X for Mobile */}
               <button
-                onClick={() => setMobileFiltersOpen(false)}
+                onClick={() => setMobile(false)}
                 className="lg:hidden absolute top-4 right-4 text-xl font-bold p-2 text-[var(--text-muted)] bg-transparent border-none cursor-pointer"
                 aria-label="Close filters"
-              >
-                ✕
-              </button>
+              >✕</button>
 
-              <h2 className="font-display font-black text-xl text-[var(--text)] mb-5">
-                Filters
-              </h2>
+              <h2 className="font-display font-black text-xl text-[var(--text)] mb-5">Filters</h2>
 
               {/* Macro role */}
               <div className="mb-5">
-                <label
-                  htmlFor={macroRoleId}
-                  className="block font-mono text-[10px] tracking-[0.12em] uppercase text-[var(--text-dim)] mb-2"
-                >
+                <label htmlFor={macroRoleId} className="block font-mono text-[10px] tracking-[0.12em] uppercase text-[var(--text-dim)] mb-2">
                   Macro Role
                 </label>
                 {/* Pill buttons for macro role */}
@@ -518,13 +475,8 @@ export default function SearchByAttribute() {
                   <button
                     onClick={() => setFilters(f => ({ ...f, macroRole: '', role: '' }))}
                     className="tag cursor-pointer border-none py-[5px] px-3"
-                    style={{
-                      background: filters.macroRole === '' ? 'var(--accent)' : 'var(--surface2)',
-                      color: filters.macroRole === '' ? '#fff' : 'var(--text-muted)',
-                    }}
-                  >
-                    All
-                  </button>
+                    style={{ background: filters.macroRole === '' ? 'var(--accent)' : 'var(--surface2)', color: filters.macroRole === '' ? '#fff' : 'var(--text-muted)' }}
+                  >All</button>
                   {MACRO_ROLES.map(m => {
                     const active = filters.macroRole === m;
                     const col = MACRO_COLOR[m];
@@ -533,14 +485,8 @@ export default function SearchByAttribute() {
                         key={m}
                         onClick={() => setFilters(f => ({ ...f, macroRole: active ? '' : m, role: '' }))}
                         className="tag cursor-pointer"
-                        style={{
-                          border: `1px solid ${active ? col : 'var(--border)'}`,
-                          background: active ? `${col}15` : 'var(--surface2)',
-                          color: active ? col : 'var(--text-muted)',
-                        }}
-                      >
-                        {m}
-                      </button>
+                        style={{ border: `1px solid ${active ? col : 'var(--border)'}`, background: active ? `${col}15` : 'var(--surface2)', color: active ? col : 'var(--text-muted)' }}
+                      >{m}</button>
                     );
                   })}
                 </div>
@@ -548,10 +494,7 @@ export default function SearchByAttribute() {
 
               {/* Primary role */}
               <div className="mb-6">
-                <label
-                  htmlFor={roleId}
-                  className="block font-mono text-[10px] tracking-[0.12em] uppercase text-[var(--text-dim)] mb-2"
-                >
+                <label htmlFor={roleId} className="block font-mono text-[10px] tracking-[0.12em] uppercase text-[var(--text-dim)] mb-2">
                   Primary Role
                 </label>
                 <select
@@ -561,9 +504,7 @@ export default function SearchByAttribute() {
                   className="input text-[13px]"
                 >
                   <option value="">All roles</option>
-                  {availableRoles.map(r => (
-                    <option key={r} value={r}>{r}</option>
-                  ))}
+                  {availableRoles.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
               </div>
 
@@ -581,12 +522,7 @@ export default function SearchByAttribute() {
                     label={idx.label}
                     color={idx.color}
                     range={filters.ranges[idx.key]}
-                    onChange={r =>
-                      setFilters(f => ({
-                        ...f,
-                        ranges: { ...f.ranges, [idx.key]: r },
-                      }))
-                    }
+                    onChange={r => setFilters(f => ({ ...f, ranges: { ...f.ranges, [idx.key]: r } }))}
                   />
                 ))}
               </div>
@@ -594,18 +530,14 @@ export default function SearchByAttribute() {
               <button onClick={clearFilters} className="btn btn-ghost w-full justify-center mt-2">
                 Reset Filters
               </button>
-
-              {/* Final Confirm Button for Mobile */}
-              <button 
-                onClick={() => setMobileFiltersOpen(false)} 
+              <button
+                onClick={() => setMobile(false)}
                 className="btn btn-primary lg:hidden w-full mt-4 flex items-center justify-center font-bold py-3"
-              >
-                Apply Filters
-              </button>
+              >Apply Filters</button>
             </div>
           </aside>
 
-          {/* Right panel: results */}
+          {/* Results */}
           <section aria-label="Search results" className="w-full">
             <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
               <div>
@@ -613,9 +545,7 @@ export default function SearchByAttribute() {
                   {loading ? '…' : sorted.length} players
                 </span>
                 {searched && !loading && (
-                  <span className="font-mono text-[11px] text-[var(--text-dim)]">
-                    found
-                  </span>
+                  <span className="font-mono text-[11px] text-[var(--text-dim)]">found</span>
                 )}
               </div>
             </div>
@@ -628,10 +558,8 @@ export default function SearchByAttribute() {
                 className="hidden lg:grid items-center gap-4 py-2 px-5 mb-1.5"
                 style={{ gridTemplateColumns: '28px 28px 1fr repeat(6, 52px) 48px' }}
               >
-                <span />
-                <span />
+                <span /><span />
                 <span className="font-mono text-[9px] text-[var(--text-dim)] tracking-[0.1em] uppercase">Player</span>
-                
                 {INDICES.map(idx => (
                   <button
                     key={idx.key}
@@ -642,14 +570,12 @@ export default function SearchByAttribute() {
                     {idx.short} <SortIcon active={sortKey === idx.key} dir={sortOrder} />
                   </button>
                 ))}
-                
                 <button
                   onClick={() => handleSort('avg')}
                   className={`bg-transparent border-none cursor-pointer p-0 font-mono text-[9px] tracking-[0.1em] uppercase text-center flex items-center justify-center transition-colors ${sortKey === 'avg' ? 'text-[var(--text)]' : 'text-[var(--text-dim)]'}`}
                 >
                   AVG <SortIcon active={sortKey === 'avg'} dir={sortOrder} />
                 </button>
-                
                 <button
                   onClick={() => handleSort('minutes_played')}
                   className={`bg-transparent border-none cursor-pointer p-0 font-mono text-[9px] tracking-[0.1em] uppercase text-center flex items-center justify-center transition-colors ${sortKey === 'minutes_played' ? 'text-[var(--text)]' : 'text-[var(--text-dim)]'}`}
@@ -667,9 +593,7 @@ export default function SearchByAttribute() {
                 ))}
               </div>
             ) : sorted.length === 0 && searched ? (
-              <div className="card">
-                <EmptyState />
-              </div>
+              <div className="card"><EmptyState /></div>
             ) : (
               <div className="flex flex-col gap-2" role="list" aria-label="Player results">
                 {sorted.map((player, i) => (

@@ -18,9 +18,19 @@ interface FiltersProps {
 
 const MACRO_ROLES = ['CB', 'FB', 'MID', 'CAM', 'WIDE', 'FW'];
 
+const ROLE_TO_MACRO: Record<string, string> = {
+  'Center Back': 'CB', 'Left Center Back': 'CB', 'Right Center Back': 'CB',
+  'Left Back': 'FB', 'Right Back': 'FB', 'Left Wing Back': 'FB', 'Right Wing Back': 'FB',
+  'Center Defensive Midfield': 'MID', 'Left Defensive Midfield': 'MID', 'Right Defensive Midfield': 'MID',
+  'Left Center Midfield': 'MID', 'Right Center Midfield': 'MID', 'Left Midfield': 'MID', 'Right Midfield': 'MID',
+  'Center Attacking Midfield': 'CAM', 'Left Attacking Midfield': 'CAM', 'Right Attacking Midfield': 'CAM',
+  'Left Wing': 'WIDE', 'Right Wing': 'WIDE',
+  'Center Forward': 'FW', 'Left Center Forward': 'FW', 'Right Center Forward': 'FW',
+};
+
 export default function Filters({ filters, setFilters }: FiltersProps) {
   const [isOpen, setIsOpen]           = useState(false);
-  const [availableRoles, setRoles]    = useState<string[]>([]);
+  const [allRoles, setRoles]          = useState<string[]>([]);
   const panelRef                      = useRef<HTMLDivElement>(null);
   const btnRef                        = useRef<HTMLButtonElement>(null);
 
@@ -30,6 +40,16 @@ export default function Filters({ filters, setFilters }: FiltersProps) {
       .then(d => setRoles(d))
       .catch(() => {});
   }, []);
+
+  const availableRoles = filters.macroRole
+    ? allRoles.filter(role => ROLE_TO_MACRO[role] === filters.macroRole)
+    : allRoles;
+
+  useEffect(() => {
+    if (filters.role && !availableRoles.includes(filters.role)) {
+      setFilters({ ...filters, role: '' });
+    }
+  }, [availableRoles, filters, setFilters]);
 
   // Close on outside click
   useEffect(() => {

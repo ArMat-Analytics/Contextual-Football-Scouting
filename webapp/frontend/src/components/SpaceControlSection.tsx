@@ -1,18 +1,10 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   ResponsiveContainer, Legend, Tooltip,
 } from 'recharts';
 import type { SpaceControlIndex, SpaceControlAggregated } from '../hooks/useSpaceControl';
 import { TOOLTIP_DESCRIPTIONS } from '../data/tooltip';
-
-// Axis tooltip state type used by multiple components
-interface AxisTooltipState {
-  label: string;
-  description: string;
-  x: number;
-  y: number;
-}
 
 // ── Stat view mode ────────────────────────────────────────────────────────────
 
@@ -153,8 +145,8 @@ const MOTHER_STATS: Record<'PROGRESSION' | 'DANGEROUSNESS' | 'RECEPTION' | 'GRAV
       { col: 'inside_circ_per90',            label: 'In-Circ /90' },
     ],
     percentages: [
-      { col: 'between_lines_pct',     label: 'Between Lines %' },
-      { col: 'hull_exit_pct',        label: 'Hull Exits %' },
+      { col: 'between_lines_pct',       label: 'Between Lines %' },
+      { col: 'hull_exit_pct',           label: 'Hull Exits %' },
       { col: 'pressure_resistance_pct', label: 'Press. Resist %' },
     ],
   },
@@ -165,7 +157,7 @@ const MOTHER_STATS: Record<'PROGRESSION' | 'DANGEROUSNESS' | 'RECEPTION' | 'GRAV
     per90: [],
     percentages: [
       { col: 'gravity_proximity_pct', label: 'Space Attraction %' },
-      { col: 'gravity_hull_pct', label: 'Gravity Hull %' },
+      { col: 'gravity_hull_pct',      label: 'Gravity Hull %' },
     ],
   },
 };
@@ -198,7 +190,7 @@ function fmt(v: unknown): string {
   return String(v);
 }
 
-// ── Mother stat row with inline "?" tooltip ───────────────────────────────────
+// ── Mother stat row with "?" tooltip (core stats only) ───────────────────────
 
 function MotherStatRow({
   label,
@@ -271,76 +263,121 @@ function MotherStatRow({
   );
 }
 
-// ── Custom PolarAngleAxis tick ────────────────────────────────────────────────
+// ── Simple static radar axis tick (no hover) ──────────────────────────────────
 
-interface CustomRadarTickProps {
-  x?: number;
-  y?: number;
-  cx?: number;
-  cy?: number;
-  payload?: { value: string };
-  textAnchor?: React.SVGAttributes<SVGTextElement>['textAnchor'];
-  onHover: (label: string, description: string, clientX: number, clientY: number) => void;
-  onLeave: () => void;
-}
-
-function CustomRadarTick({
+function SimpleRadarTick({
   x = 0, y = 0,
   payload, textAnchor = 'middle',
-  onHover, onLeave,
-}: CustomRadarTickProps) {
+}: {
+  x?: number; y?: number;
+  payload?: { value: string };
+  textAnchor?: React.SVGAttributes<SVGTextElement>['textAnchor'];
+}) {
+  if (!payload) return null;
+  return (
+    <text
+      x={x} y={y}
+      textAnchor={textAnchor}
+      dominantBaseline="middle"
+      fill="var(--text-muted)"
+      fontSize={10}
+      fontFamily="Inter, sans-serif"
+      fontWeight={600}
+    >
+      {payload.value}
+    </text>
+  );
+}
+
+// ── Index label with "?" tooltip beside it ────────────────────────────────────
+
+function IndexLabelWithTooltip({ def }: { def: typeof RADAR_DEFS[number] }) {
   const [hovered, setHovered] = useState(false);
 
-  if (!payload) return null;
-
-  const label       = payload.value;
-  const description = TOOLTIP_DESCRIPTIONS[label] ?? 'No description available.';
-
-  const handleMouseEnter = (e: React.MouseEvent<SVGRectElement>) => {
-    setHovered(true);
-    onHover(label, description, e.clientX, e.clientY);
-  };
-
-  const handleMouseLeave = () => {
-    setHovered(false);
-    onLeave();
-  };
-
-  // Estimate text half-width for the invisible hit-area rect
-  const halfW = label.length * 3.5;
+  const isGravity = def.key === 'GRAVITY';
+  const baseDesc  = TOOLTIP_DESCRIPTIONS[def.label] ?? `${def.label} index — percentile rank within macro-role (0–100).`;
+  const expDesc   = TOOLTIP_DESCRIPTIONS['Experimental'];
 
   return (
-    <g>
-      {/* Invisible rect — wider hit area so hover is easy to trigger */}
-      <rect
-        x={x - halfW}
-        y={y - 8}
-        width={halfW * 2}
-        height={16}
-        fill="transparent"
-        style={{ cursor: 'help' }}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-      />
+    <div className="flex flex-col gap-1">
+      {/* Label row: text + "?" */}
+      <div className="flex items-center gap-1.5">
+        <span
+          className="font-mono text-[10px] tracking-[0.12em] uppercase font-bold"
+          style={{ color: def.color }}
+        >
+          {def.label}
+        </span>
 
-      {/* Axis label text — darkens on hover to signal interactivity */}
-      <text
-        x={x}
-        y={y}
-        textAnchor={textAnchor}
-        dominantBaseline="middle"
-        fill={hovered ? 'var(--text)' : 'var(--text-muted)'}
-        fontSize={10}
-        fontFamily="Inter, sans-serif"
-        fontWeight={hovered ? 700 : 600}
-        style={{
-          transition: 'fill 0.12s',
-          pointerEvents: 'none',
-        }}
-      >
-        {label}
-      </text>
-    </g>
+        <div className="relative">
+          <button
+            aria-label={`Description for ${def.label} index`}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            style={{
+              width: 14, height: 14, borderRadius: '50%',
+              border: `1px solid ${hovered ? def.color : 'rgba(0,0,0,0.15)'}`,
+              background: hovered ? `${def.color}18` : 'rgba(0,0,0,0.03)',
+              color: hovered ? def.color : 'rgba(0,0,0,0.35)',
+              fontSize: 8, fontWeight: 700, fontFamily: 'Barlow, sans-serif',
+              cursor: 'help', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'all 0.12s', padding: 0, lineHeight: 1, flexShrink: 0,
+            }}
+          >
+            ?
+          </button>
+
+          {hovered && (
+            <div
+              role="tooltip"
+              style={{
+                position: 'absolute', top: 'calc(100% + 6px)', left: 0,
+                minWidth: 220, maxWidth: 280, zIndex: 60,
+                background: 'var(--surface2)',
+                border: `1px solid ${def.color}44`,
+                borderLeft: `3px solid ${def.color}`,
+                borderRadius: 10, padding: '12px 14px',
+                pointerEvents: 'none',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+              }}
+            >
+              {/* Index name */}
+              <p style={{
+                fontFamily: 'JetBrains Mono, monospace', fontSize: 10,
+                fontWeight: 700, color: def.color, marginBottom: 6, letterSpacing: '0.04em',
+              }}>
+                {def.label}
+              </p>
+
+              {/* Base description */}
+              <p style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>
+                {baseDesc}
+              </p>
+
+              {/* Gravity only: Experimental badge + description */}
+              {isGravity && (
+                <>
+                  <div style={{ marginTop: 10, marginBottom: 6 }}>
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 4,
+                      fontSize: 9, fontWeight: 700, textTransform: 'uppercase',
+                      letterSpacing: '0.06em',
+                      color: def.color, background: `${def.color}20`,
+                      padding: '3px 8px', borderRadius: 5,
+                    }}>
+                      Experimental
+                    </span>
+                  </div>
+                  <p style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>
+                    {expDesc}
+                  </p>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -366,36 +403,7 @@ function RadarCard({
   const block    = MOTHER_STATS[def.key];
   const statList = block[mode] as StatDef[];
 
-  // Tooltip state — coordinates are relative to the card container
-  const [axisTooltip, setAxisTooltip] = useState<AxisTooltipState | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const handleAxisHover = (
-    label: string,
-    description: string,
-    clientX: number,
-    clientY: number,
-  ) => {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    setAxisTooltip({
-      label,
-      description,
-      x: clientX - rect.left,
-      y: clientY - rect.top,
-    });
-  };
-
-  const handleAxisLeave = () => setAxisTooltip(null);
-
-  // Build tick renderer once so it is stable across renders
-  const renderTick = (props: any) => (
-    <CustomRadarTick
-      {...props}
-      onHover={handleAxisHover}
-      onLeave={handleAxisLeave}
-    />
-  );
+  const renderTick = (props: any) => <SimpleRadarTick {...props} />;
 
   // Informative messages for empty mother-stat panels
   let emptyMessage =
@@ -413,15 +421,12 @@ function RadarCard({
 
   return (
     <div
-      ref={containerRef}
       className="relative bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] p-6 shadow-[var(--shadow)]"
       style={{ borderTop: `3px solid ${def.color}` }}
     >
-      {/* Header */}
+      {/* Header: label with "?" on left, index value on right */}
       <div className="flex justify-between items-start mb-2">
-        <span className="font-mono text-[10px] tracking-[0.12em] uppercase font-bold" style={{ color: def.color }}>
-          {def.label}
-        </span>
+        <IndexLabelWithTooltip def={def} />
         <div className="text-right">
           <div className="font-mono text-[9px] tracking-[0.1em] uppercase text-[var(--text-dim)]">Index</div>
           <div className="font-display font-black text-[26px] leading-none" style={{ color: def.color }}>
@@ -430,14 +435,11 @@ function RadarCard({
         </div>
       </div>
 
-      {/* Radar — percentile axes 0–100; hover "?" shows description */}
+      {/* Radar — static axis labels */}
       <ResponsiveContainer width="100%" height={240}>
         <RadarChart data={radarData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
           <PolarGrid stroke="rgba(0,0,0,0.08)" />
-          <PolarAngleAxis
-            dataKey="stat"
-            tick={renderTick}
-          />
+          <PolarAngleAxis dataKey="stat" tick={renderTick} />
           <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
           <Tooltip content={<RadarTooltip />} />
           <Radar
@@ -453,29 +455,6 @@ function RadarCard({
           />
         </RadarChart>
       </ResponsiveContainer>
-
-      {/* Axis variable description tooltip overlay */}
-      {axisTooltip && (
-        <div
-          role="tooltip"
-          aria-live="polite"
-          className="absolute max-w-[220px] bg-[var(--surface)] rounded-[10px] px-3.5 py-2.5 pointer-events-none z-50"
-          style={{
-            left: Math.min(axisTooltip.x + 12, 260),
-            top: axisTooltip.y - 6,
-            border: `1px solid ${def.color}33`,
-            borderLeft: `3px solid ${def.color}`,
-            boxShadow: 'var(--shadow-lg)',
-          }}
-        >
-          <p className="font-mono text-[10px] font-bold mb-1.5 tracking-wide" style={{ color: def.color }}>
-            {axisTooltip.label}
-          </p>
-          <p className="text-[11px] text-[var(--text-muted)] leading-[1.55]">
-            {axisTooltip.description}
-          </p>
-        </div>
-      )}
 
       {/* Mother stats card */}
       <div className="mt-4 bg-[var(--surface2)] rounded-xl p-4">
