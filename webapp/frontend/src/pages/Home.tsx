@@ -43,7 +43,7 @@ export default function Home() {
 
       {/* ── Hero ────────────────────────────────────────────────────────────── */}
       <div className="border-b border-[var(--border)] px-6 pt-16 pb-14 bg-[var(--surface)]">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-[1200px] mx-auto">
           <p className="font-mono text-xs tracking-widest mb-3 text-[var(--accent)]">
             UEFA EURO 2024 · STATSBOMB 360° · 272 PLAYERS
           </p>
@@ -100,11 +100,11 @@ export default function Home() {
 
       {/* ── Data scope & limitations ────────────────────────────────────────── */}
       <div className="px-6 pt-14 pb-4">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-[1200px] mx-auto">
 
           {/* Section header */}
-          <div className="mb-8 pb-6 border-b border-[var(--border)]">
-            <p className="font-mono text-xs tracking-[0.14em] mb-3 text-[var(--text-dim)]">
+          <div className="mb-10 pb-6 border-b border-[var(--border)]">
+            <p className="font-mono text-xs tracking-[0.14em] mb-3 text-[var(--text-dim)] uppercase">
               METHODOLOGY · TRANSPARENCY
             </p>
             <h2
@@ -119,30 +119,25 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Limitations grid */}
-          <div className="grid gap-px bg-[var(--border)] border border-[var(--border)] rounded-2xl overflow-hidden" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
+          {/* Limitations list */}
+          <ol className="flex flex-col divide-y divide-[var(--border)]" aria-label="Limitations">
             {LIMITATIONS.map((item, i) => (
-              <div
-                key={i}
-                className="bg-[var(--surface)] p-[22px_24px] relative"
-              >
-                {/* Index number */}
-                <span className="absolute top-[18px] right-5 font-mono text-[10px] font-bold text-[var(--text-dim)] tracking-wide opacity-50">
+              <li key={i} className="flex gap-5 sm:gap-8 py-5 items-baseline">
+                {/* Number */}
+                <span
+                  className="font-mono text-[11px] font-bold text-[var(--text-dim)] shrink-0 w-6 text-right select-none"
+                  aria-hidden
+                >
                   {String(i + 1).padStart(2, '0')}
                 </span>
-
-                {/* Accent line */}
-                <div className="w-5 h-0.5 bg-[var(--accent)] rounded-sm mb-3.5 opacity-60" />
-
-                <h3 className="font-display font-extrabold text-[13px] text-[var(--text)] mb-2 tracking-[0.01em] leading-[1.3] pr-7">
-                  {item.title}
-                </h3>
-                <p className="text-[12px] text-[var(--text-muted)] leading-[1.65] m-0">
+                {/* Content */}
+                <p className="text-[14px] text-[var(--text-muted)] leading-[1.7] m-0">
+                  <strong className="font-semibold text-[var(--text)] mr-2">{item.title}.</strong>
                   {item.body}
                 </p>
-              </div>
+              </li>
             ))}
-          </div>
+          </ol>
 
         </div>
       </div>

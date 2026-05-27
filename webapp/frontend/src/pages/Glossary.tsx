@@ -125,7 +125,7 @@ export default function Glossary() {
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
       <div className="border-b border-[var(--border)] px-6 pt-10 pb-10 bg-[var(--surface)]">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-[1200px] mx-auto">
 
           {/* Breadcrumb */}
           <nav aria-label="Breadcrumb" className="mb-5">
@@ -160,7 +160,7 @@ export default function Glossary() {
 
       {/* ── Filter bar ─────────────────────────────────────────────── */}
       <div className="border-b border-[var(--border)] z-40 px-6 py-3 bg-white/92 backdrop-blur-xl">
-        <div className="max-w-5xl mx-auto flex flex-wrap items-center gap-2">
+        <div className="max-w-[1200px] mx-auto flex flex-wrap items-center gap-2">
           <span className="font-mono text-[10px] tracking-widest uppercase mr-2 hidden sm:inline text-[var(--text-dim)]">
             Filter
           </span>
@@ -188,7 +188,7 @@ export default function Glossary() {
       </div>
 
       {/* ── Main content ──────────────────────────────────────────────────── */}
-      <div className="max-w-5xl mx-auto px-6 pt-10">
+      <div className="max-w-[1200px] mx-auto px-6 pt-10">
         <div className="flex flex-col gap-14">
           {visibleSections.map(section => (
             <SectionBlock

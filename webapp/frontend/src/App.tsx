@@ -77,7 +77,7 @@ function Layout({ children }: { children: React.ReactNode }) {
         role="contentinfo"
         className="border-t border-[var(--border)] py-6 px-6 mt-auto bg-[var(--surface)]"
       >
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2 text-xs font-mono text-[var(--text-muted)]">
+        <div className="max-w-[1200px] mx-auto flex flex-col sm:flex-row justify-between items-center gap-2 text-xs font-mono text-[var(--text-muted)]">
           <p>© 2026 ArMat Analytics — Contextual Football Scouting</p>
           <p className="text-[var(--text-dim)]">UEFA Euro 2024 · StatsBomb 360°</p>
         </div>
@@ -99,7 +99,7 @@ function SearchByPlayer() {
     <div className="pb-12">
       {/* Hero strip */}
       <div className="border-b border-[var(--border)] px-6 pt-10 pb-8 bg-[var(--surface)]">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-[1200px] mx-auto">
           {/* Breadcrumb */}
           <nav aria-label="Breadcrumb" className="mb-4">
             <ol className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
@@ -121,12 +121,12 @@ function SearchByPlayer() {
       </div>
 
       {/* Search + Filters */}
-      <div className="max-w-7xl mx-auto w-full px-6 pt-6 pb-4 flex flex-col sm:flex-row gap-3">
+      <div className="max-w-[1200px] mx-auto w-full px-6 pt-6 pb-4 flex flex-col sm:flex-row gap-3">
         <div className="flex-1"><SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} /></div>
         <Filters filters={filters} setFilters={setFilters} />
       </div>
 
-      <div className="max-w-7xl mx-auto w-full px-6" aria-label="Player list">
+      <div className="max-w-[1200px] mx-auto w-full px-6" aria-label="Player list">
         <PlayerList searchTerm={searchTerm} selectedTeams={selectedTeams} filters={filters} />
       </div>
 

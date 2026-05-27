@@ -120,12 +120,17 @@ function StatRow({ label, value }: { label: string; value: string }) {
 
 function SimpleRadarTick({ x = 0, y = 0, payload }: any) {
   if (!payload) return null;
+
   return (
     <text
-      x={x} y={y}
-      textAnchor="middle"
-      dominantBaseline="central"
-      style={{ fontSize: 10, fontFamily: 'Inter, sans-serif', fontWeight: 600, fill: 'var(--text-muted)' }}
+      x={x}
+      y={y}
+      textAnchor={x > 257 ? 'start' : x < 257 ? 'end' : 'middle'}
+      dominantBaseline="middle"
+      fill="var(--text-muted)"
+      fontSize={10}
+      fontFamily="Inter, sans-serif"
+      fontWeight={600}
     >
       {payload.value}
     </text>
@@ -159,7 +164,7 @@ export default function DecisionQualitySection({
   const renderTick = (props: any) => <SimpleRadarTick {...props} />;
 
   return (
-    <section className="max-w-7xl mx-auto px-6 pb-12">
+    <section className="max-w-[1200px] mx-auto px-6 pb-12">
 
       {/* Section header */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
@@ -174,46 +179,62 @@ export default function DecisionQualitySection({
         <StatViewToggle mode={mode} onChange={onModeChange} />
       </div>
 
-      {/* Single card */}
+      {/* Single card — sits in first cell of the 2-col grid */}
+      <div className="grid grid-cols-2 gap-6">
       <div
-        className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] p-6 max-w-[560px] shadow-[var(--shadow)]"
+        className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] p-6 shadow-[var(--shadow)]"
         style={{ borderTop: `3px solid ${DQ_COLOR}` }}
       >
-        {/* Card header: label left, headline index right */}
+        {/* Card header: label+tooltip left (matches SpaceControl IndexLabelWithTooltip), index right */}
         <div className="flex justify-between items-start mb-2">
-          <div className="relative flex items-center gap-2 min-w-0">
-            <span className="font-mono text-[10px] tracking-[0.12em] uppercase font-bold" style={{ color: DQ_COLOR }}>
-              Decision Quality
-            </span>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-1.5">
+              <span className="font-mono text-[10px] tracking-[0.12em] uppercase font-bold" style={{ color: DQ_COLOR }}>
+                Decision Quality
+              </span>
 
-            <button
-              aria-label="Description for Decision Quality"
-              onMouseEnter={() => setHoveredTitle(true)}
-              onMouseLeave={() => setHoveredTitle(false)}
-              className="shrink-0 w-[15px] h-[15px] rounded-full text-[8px] font-bold font-display cursor-help flex items-center justify-center transition-all p-0 leading-none border"
-              style={{
-                borderColor: hoveredTitle ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.12)',
-                background: hoveredTitle ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.02)',
-                color: hoveredTitle ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.35)',
-              }}
-            >
-              ?
-            </button>
+              <div className="relative">
+                <button
+                  aria-label="Description for Decision Quality"
+                  onMouseEnter={() => setHoveredTitle(true)}
+                  onMouseLeave={() => setHoveredTitle(false)}
+                  style={{
+                    width: 14, height: 14, borderRadius: '50%',
+                    border: `1px solid ${hoveredTitle ? DQ_COLOR : 'rgba(0,0,0,0.15)'}`,
+                    background: hoveredTitle ? `${DQ_COLOR}18` : 'rgba(0,0,0,0.03)',
+                    color: hoveredTitle ? DQ_COLOR : 'rgba(0,0,0,0.35)',
+                    fontSize: 8, fontWeight: 700, fontFamily: 'Barlow, sans-serif',
+                    cursor: 'help', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'all 0.12s', padding: 0, lineHeight: 1, flexShrink: 0,
+                  }}
+                >
+                  ?
+                </button>
 
-            {hoveredTitle && (
-              <div
-                role="tooltip"
-                className="absolute bottom-[calc(100%+8px)] left-0 max-w-[240px] bg-[var(--surface)] rounded-[10px] px-3.5 py-2.5 z-[60] pointer-events-none"
-                style={{ border: `1px solid ${DQ_COLOR}33`, borderLeft: `3px solid ${DQ_COLOR}`, boxShadow: 'var(--shadow-lg)' }}
-              >
-                <p className="font-mono text-[10px] font-bold mb-1.5 tracking-wide" style={{ color: DQ_COLOR }}>
-                  Decision Quality
-                </p>
-                <p className="text-[11px] text-[var(--text-muted)] leading-[1.55]">
-                  {TOOLTIP_DESCRIPTIONS['Decision Quality'] ?? 'No description available.'}
-                </p>
+                {hoveredTitle && (
+                  <div
+                    role="tooltip"
+                    style={{
+                      position: 'absolute', top: 'calc(100% + 6px)', left: 0,
+                      minWidth: 220, maxWidth: 280, zIndex: 60,
+                      background: 'var(--surface2)',
+                      border: `1px solid ${DQ_COLOR}44`,
+                      borderLeft: `3px solid ${DQ_COLOR}`,
+                      borderRadius: 10, padding: '12px 14px',
+                      pointerEvents: 'none',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+                    }}
+                  >
+                    <p style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, fontWeight: 700, color: DQ_COLOR, marginBottom: 6, letterSpacing: '0.04em' }}>
+                      Decision Quality
+                    </p>
+                    <p style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>
+                      {TOOLTIP_DESCRIPTIONS['Decision Quality'] ?? 'No description available.'}
+                    </p>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
           <div className="text-right">
             <div className="font-mono text-[9px] tracking-[0.1em] uppercase text-[var(--text-dim)]">Index</div>
@@ -224,8 +245,8 @@ export default function DecisionQualitySection({
         </div>
 
         {/* Radar — percentile axes 0–100 */}
-        <ResponsiveContainer width="100%" height={260}>
-          <RadarChart data={radarData} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
+        <ResponsiveContainer width="100%" height={240}>
+          <RadarChart data={radarData} margin={{ top: 28, right: 50, bottom: 28, left: 50 }}>
             <PolarGrid stroke="rgba(0,0,0,0.08)" />
             <PolarAngleAxis dataKey="stat" tick={renderTick} />
             <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
@@ -267,6 +288,7 @@ export default function DecisionQualitySection({
             </div>
           )}
         </div>
+      </div>
       </div>
     </section>
   );
@@ -354,13 +376,14 @@ export function DQCompareRadar({
   compareRow,
   sourceName,
   compareName,
+  mode = 'raw',
 }: {
   sourceRow: DecisionQualityRow;
   compareRow: DecisionQualityRow;
   sourceName: string;
   compareName: string;
+  mode?: StatViewMode;
 }) {
-  const [mode, setMode] = useState<StatViewMode>('raw');
 
   const sName = sourceName.trim().split(' ').pop() ?? sourceName;
   const cName = compareName.trim().split(' ').pop() ?? compareName;
@@ -375,32 +398,34 @@ export function DQCompareRadar({
 
   return (
     <div
-      className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] p-5 shadow-[var(--shadow)]"
+      className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] p-6 shadow-[var(--shadow)]"
       style={{ borderTop: `3px solid ${DQ_COLOR}` }}
     >
 
-      {/* Header: label + DQ indices */}
-      <div className="flex justify-between items-center mb-3">
-        <span className="font-mono text-[10px] tracking-[0.12em] uppercase font-bold" style={{ color: DQ_COLOR }}>
-          Decision Quality
-        </span>
+      {/* Header: label left, indices right */}
+      <div className="flex justify-between items-start mb-2">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-1.5">
+            <span className="font-mono text-[10px] tracking-[0.12em] uppercase font-bold" style={{ color: DQ_COLOR }}>
+              Decision Quality
+            </span>
+          </div>
+        </div>
         <div className="flex gap-3 items-baseline">
-          <span className="font-mono text-lg font-black" style={{ color: C_SOURCE }}>
-            {sourceRow.DQ_index?.toFixed(1) ?? '—'}
-          </span>
-          <span className="font-mono text-xs text-[var(--text-dim)]">vs</span>
-          <span className="font-mono text-lg font-black" style={{ color: C_COMPARE }}>
-            {compareRow.DQ_index?.toFixed(1) ?? '—'}
-          </span>
-          <span className="font-mono text-[8px] uppercase tracking-[0.1em] text-[var(--text-dim)]">
-            Index
-          </span>
+          <div className="text-right">
+            <div className="font-mono text-[9px] tracking-[0.1em] uppercase text-[var(--text-dim)]">Index</div>
+            <div className="font-mono text-lg font-black leading-none">
+              <span style={{ color: C_SOURCE }}>{sourceRow.DQ_index?.toFixed(1) ?? '—'}</span>
+              <span className="text-[var(--text-dim)] text-xs mx-1">vs</span>
+              <span style={{ color: C_COMPARE }}>{compareRow.DQ_index?.toFixed(1) ?? '—'}</span>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Dual radar — static axis labels */}
-      <ResponsiveContainer width="100%" height={220}>
-        <RadarChart data={radarData} margin={{ top: 8, right: 30, bottom: 8, left: 30 }}>
+      <ResponsiveContainer width="100%" height={240}>
+          <RadarChart data={radarData} margin={{ top: 28, right: 50, bottom: 28, left: 50 }}>
           <PolarGrid stroke="rgba(0,0,0,0.06)" />
           <PolarAngleAxis dataKey="stat" tick={{ fontSize: 9, fontFamily: 'Inter, sans-serif', fill: 'var(--text-muted)', fontWeight: 600 }} />
           <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
@@ -425,15 +450,7 @@ export function DQCompareRadar({
       </ResponsiveContainer>
 
       {/* Core stats comparison */}
-      <div className="mt-3 bg-[var(--surface2)] rounded-[10px] p-3">
-
-        {/* Tab toggle */}
-        <div className="flex justify-between items-center mb-2.5">
-          <p className="font-mono text-[8px] tracking-[0.1em] uppercase text-[var(--text-dim)]">
-            Core Stats
-          </p>
-          <StatViewToggle mode={mode} onChange={setMode} />
-        </div>
+      <div className="mt-4 bg-[var(--surface2)] rounded-xl p-4">
 
         {/* Column headers */}
         <div className="grid gap-2 pb-1.5 mb-1.5 border-b border-[var(--border)]" style={{ gridTemplateColumns: '1fr auto auto' }}>

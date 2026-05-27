@@ -410,7 +410,7 @@ export default function SearchByAttribute() {
     <div className="w-full pb-16 min-h-screen bg-[var(--bg)]">
       {/* Page header */}
       <div className="border-b border-[var(--border)] px-6 pt-10 pb-8 bg-[var(--surface)]">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-[1200px] mx-auto">
           {/* Breadcrumb */}
           <nav aria-label="Breadcrumb" className="mb-4">
             <ol className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
@@ -430,7 +430,7 @@ export default function SearchByAttribute() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 pt-8">
+      <div className="max-w-[1200px] mx-auto px-6 pt-8">
         <div className="flex flex-col lg:grid lg:grid-cols-[300px_1fr] gap-8 items-start">
 
           {/* Hamburger Trigger Button for Mobile */}

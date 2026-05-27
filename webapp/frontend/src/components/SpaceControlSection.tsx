@@ -53,7 +53,7 @@ const RADAR_DEFS = [
     axes: [
       { dataKey: 'pct__lb_geom_per90'                      as keyof SpaceControlIndex, label: 'LB Geom /90' },
       { dataKey: 'pct__lb_quality_per90'                   as keyof SpaceControlIndex, label: 'LB Quality /90' },
-      { dataKey: 'pct__lb_epv_per90'                       as keyof SpaceControlIndex, label: 'High Value Pass /90' },
+      { dataKey: 'pct__lb_epv_per90'                       as keyof SpaceControlIndex, label: 'LB EPV /90' },
       { dataKey: 'pct__successful_hull_penetrations_per90' as keyof SpaceControlIndex, label: 'Hull Penetr. /90' },
       { dataKey: 'pct__defenders_bypassed_mean'            as keyof SpaceControlIndex, label: 'Def. Bypassed Avg' },
     ],
@@ -106,14 +106,14 @@ const MOTHER_STATS: Record<'PROGRESSION' | 'DANGEROUSNESS' | 'RECEPTION' | 'GRAV
     per90: [
       { col: 'lb_geom_per90', label: 'LB Geom /90' },
       { col: 'lb_quality_per90', label: 'LB Quality /90' },
-      { col: 'lb_epv_per90', label: 'High Value Pass /90' },
+      { col: 'lb_epv_per90', label: 'LB EPV /90' },
       { col: 'penetration_per90', label: 'Penetration Attempts /90' },
       { col: 'successful_hull_penetrations_per90', label: 'Successful Penetrations /90' },
     ],
     percentages: [
       { col: 'lb_geom_pct', label: 'LB Geom %' },
       { col: 'lb_quality_pct', label: 'LB Quality %' },
-      { col: 'lb_epv_pct', label: 'High Value Pass %' },
+      { col: 'lb_epv_pct', label: 'LB EPV %' },
       { col: 'penetration_completion_pct', label: 'Penetration Completion %' },
     ],
   },
@@ -437,7 +437,7 @@ function RadarCard({
 
       {/* Radar — static axis labels */}
       <ResponsiveContainer width="100%" height={240}>
-        <RadarChart data={radarData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
+        <RadarChart data={radarData} margin={{ top: 28, right: 50, bottom: 28, left: 50 }}>
           <PolarGrid stroke="rgba(0,0,0,0.08)" />
           <PolarAngleAxis dataKey="stat" tick={renderTick} />
           <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
@@ -501,7 +501,7 @@ export default function SpaceControlSection({
   onModeChange: (m: StatViewMode) => void;
 }) {
   return (
-    <section className="max-w-7xl mx-auto px-6 pb-12">
+    <section className="max-w-[1200px] mx-auto px-6 pb-12">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
           <h2 className="font-display font-black text-xl text-[var(--text)] mb-1">
@@ -514,7 +514,7 @@ export default function SpaceControlSection({
         <StatViewToggle mode={mode} onChange={onModeChange} />
       </div>
 
-      <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))' }}>
+      <div className="grid grid-cols-2 gap-6">
         {RADAR_DEFS.map(def => (
           <RadarCard
             key={def.key}

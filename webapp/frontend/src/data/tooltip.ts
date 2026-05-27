@@ -11,7 +11,6 @@ export const TOOLTIP_DESCRIPTIONS: Record<string, string> = {
   'LB Geom /90': 'Geometric line-breakers per 90 minutes. Who breaks through opposing pressure most often per unit of time.',
   'LB Quality /90': 'Quality line-breakers per 90 minutes. The most selective progression metric.',
   'LB EPV /90': 'Top-quartile EPV passes per 90 minutes. How often the player produces a significant value-adding pass per unit of time.',
-  // 'High Value Pass /90': 'Lorem ',
   // 'Hull Penetr. /90': 'Lorem ',
   // 'Def. Bypassed Avg': 'Lorem ',
   'LB Geom': 'Count of passes that physically broke through the opposing pressure, bypassing 3+ opponents inside a 5 m corridor around the pass line.',
@@ -25,7 +24,6 @@ export const TOOLTIP_DESCRIPTIONS: Record<string, string> = {
   'LB Geom %': 'Share of the player\'s open play passes that are geometric line-breakers. A verticality marker.',
   'LB Quality %': 'Share of the player\'s open play passes that are quality line-breakers (bold and valuable).',
   'LB EPV %': 'Share of the player\'s open play passes that are top-quartile EPV passes.',
-  // 'High Value Pass %': 'Lorem ',
   'Penetration Completion %': 'When the player tries to break through the block, how often he succeeds. Pure execution quality, separated from how often he tries.',
 
   // Dangerousness Axes & Stats
@@ -36,7 +34,7 @@ export const TOOLTIP_DESCRIPTIONS: Record<string, string> = {
   'EPV Out-Circ (sum)': 'Total value generated with passes played outside the opposing block, ending outside as well (out→out), deep build-up and wide switches.',
   'EPV In-Circ /90': 'Per-90 rate at which the player generates value through passes that stay inside the block (in→in).',
   'EPV Exit /90': 'Per-90 rate at which the player generates value with passes that exit the opposing block (in→out).',
-  'EPV Out-Circ /90': 'Lorem ',
+  'EPV Out-Circ /90': 'Per-90 rate at which the player generates value with passes that stay outside the block (out→out), deep build-up and wide switches.',
   // 'Circ. EPV /90': 'Lorem ',
   // 'EPV Added (sum)': 'Lorem ',
   'EPV Penetr. (sum)': 'Total value generated with passes that physically penetrate the opposing block (out→in).',
@@ -52,13 +50,13 @@ export const TOOLTIP_DESCRIPTIONS: Record<string, string> = {
   'Press. Resist (n)': 'How many times the player played a ball with 2+ opponents within 2.5 m of him, the volume on which his composure under pressure is measured.',
   'Between Lines /90': 'How often per 90 minutes the player checks into a position between the opposing lines to receive. Frequency, not outcome.',
   'Hull Exits %': 'When the player receives between the lines, how often he turns the ball back out successfully. Shields-and-redistributes vs. gets-dispossessed.',
-  'In-Circ (n)': 'Lorem ',
-  'In-Circ /90': 'Lorem ',
+  'In-Circ (n)': 'How many passes started and ended inside the opposing block (in→in). Context for the Reception radar, not part of the Reception index. ',
+  'In-Circ /90': 'In→in passes per 90 minutes (all passes, not a success rate). Volume context for the Reception radar, not part of the Reception index.',
 
   // Gravity Axes & Stats
   'Space Attraction %': 'How much the defence tightens around the player when he has the ball, vs. how much it would tighten for anyone else in the same zone.',
   'Gravity Hull %': 'How much the area of the opposing block shrinks when the player has the ball, vs. the baseline. The deformation he forces on the defensive shape.',
-  'Def. Pull |m|': 'Lorem ',
+  // 'Def. Pull |m|': 'Lorem ',
   'Def. Pull (m)': 'How far, in metres, the player shifts the opposing defence. It is the size of the pull he forces on the opponent centroid, regardless of its direction.',
 
   // Decision Quality Axes & Stats
