@@ -8,9 +8,18 @@ import DecisionQualitySection from '../components/DecisionQualitySection';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
-function StatCard({ label, value, category }: { label: string; value: unknown; category: string }) {
+function StatCard({ label, value, category, statKey }: { label: string; value: unknown; category: string; statKey: string }) {
   const accent = CAT_ACCENT[category] ?? '#64748b';
-  const display = value != null ? String(value) : '—';
+  const display = value != null
+    ? (statKey === 'xg_total'
+        ? (() => {
+            const numericValue = typeof value === 'string'
+              ? Number(value.replace(',', '.'))
+              : Number(value);
+            return Number.isFinite(numericValue) ? numericValue.toFixed(2) : String(value);
+          })()
+        : String(value))
+    : '—';
   return (
     <div className="group relative flex flex-col p-4 bg-[var(--surface2)] border border-[var(--border)] rounded-[12px] transition-all hover:border-[var(--accent)] hover:shadow-sm cursor-default overflow-hidden">
       <div className="absolute top-0 left-0 bottom-0 w-[3px]" style={{ background: accent }} />
@@ -182,7 +191,7 @@ export default function PlayerProfile() {
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3" role="list" aria-label="Player statistics">
                 {ALL_STATS.map((stat, i) => (
                   <div key={stat.key} role="listitem" className={`fade-up delay-${Math.min(i + 1, 5)}`}>
-                    <StatCard label={stat.label} value={(stats as unknown as Record<string, unknown>)[stat.key]} category={stat.category} />
+                    <StatCard label={stat.label} value={(stats as unknown as Record<string, unknown>)[stat.key]} category={stat.category} statKey={stat.key} />
                   </div>
                 ))}
               </div>

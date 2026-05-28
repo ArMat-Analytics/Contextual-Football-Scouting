@@ -44,18 +44,17 @@ const CORE_STATS: Record<StatViewMode, StatDef[]> = {
 
 function RadarTooltip({ active, payload }: any) {
   if (!active || !payload?.length) return null;
-  const item = payload[0];
+  const statLabel = payload[0]?.payload?.stat ?? payload[0]?.name ?? 'Decision Quality';
   return (
     <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] px-3.5 py-2.5 text-xs shadow-lg">
-      <p className="font-mono font-bold" style={{ color: DQ_COLOR }}>
-        {item.payload?.stat}
+      <p className="font-bold text-[var(--text)] mb-1.5">
+        {statLabel}
       </p>
-      <p className="font-mono text-[var(--text-muted)] mt-0.5">
-        Percentile:{' '}
-        <span className="font-bold" style={{ color: DQ_COLOR }}>
-          {typeof item.value === 'number' ? item.value.toFixed(1) : '—'}
-        </span>
-      </p>
+      {payload.map((item: any) => (
+        <p key={item.name ?? item.dataKey ?? item.color} className="font-mono" style={{ color: item.color ?? item.stroke ?? DQ_COLOR }}>
+          {item.name ?? 'Value'}: <strong>{typeof item.value === 'number' ? item.value.toFixed(1) : '—'}</strong>
+        </p>
+      ))}
     </div>
   );
 }
@@ -108,7 +107,7 @@ function StatRow({ label, value }: { label: string; value: string }) {
           </div>
         )}
       </div>
-      <span className="font-mono text-[13px] font-bold text-[var(--text)] shrink-0">
+      <span className="font-mono text-[13px] font-bold shrink-0" style={{ color: DQ_COLOR }}>
         {value}
       </span>
     </div>
