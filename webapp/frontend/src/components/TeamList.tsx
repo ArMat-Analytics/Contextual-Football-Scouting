@@ -33,7 +33,7 @@ export default function TeamList({ selectedTeams, setSelectedTeams }: TeamListPr
       className="w-full border-t mt-10 py-8 bg-[var(--surface)] border-[var(--border)]"
       aria-label="Filter by national team"
     >
-      <div className="justify-self-center mx-auto px-6">
+      <div className="max-w-[1200px] mx-auto px-6">
         <div className="flex justify-between items-center mb-6 pb-4 border-b border-[var(--border)]">
           <p className="font-mono text-[10px] tracking-widest uppercase text-[var(--text-dim)]">
             Filter by National Team
@@ -50,7 +50,7 @@ export default function TeamList({ selectedTeams, setSelectedTeams }: TeamListPr
         </div>
 
         <ul
-          className="grid grid-cols-[repeat(auto-fill,minmax(72px,1fr))] gap-y-5 gap-x-2"
+          className="flex flex-wrap justify-center gap-x-1 gap-y-4"
           role="list"
           aria-label="National teams"
         >
@@ -65,11 +65,11 @@ export default function TeamList({ selectedTeams, setSelectedTeams }: TeamListPr
                   onClick={() => toggleTeam(name)}
                   aria-pressed={selected}
                   aria-label={`${selected ? 'Deselect' : 'Select'} ${name}`}
-                  className="flex flex-col items-center gap-2 w-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-lg p-1 cursor-pointer"
+                  className="flex flex-col items-center gap-1.5 w-[76px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-lg p-1 cursor-pointer"
                   style={{ opacity: selected ? 1 : 0.6 }}
                 >
                   <div
-                    className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-mono font-bold overflow-hidden shrink-0 transition-all bg-[var(--surface2)]"
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-mono font-bold overflow-hidden shrink-0 transition-all bg-[var(--surface2)]"
                     style={{
                       border: selected ? '2px solid var(--accent)' : '2px solid transparent',
                       boxShadow: selected ? '0 4px 12px rgba(37,99,235,0.25)' : 'none',
@@ -86,7 +86,7 @@ export default function TeamList({ selectedTeams, setSelectedTeams }: TeamListPr
                     )}
                   </div>
                   <span
-                    className="text-[10px] font-display font-bold tracking-wide uppercase text-center w-full truncate leading-tight"
+                    className="text-[9px] font-display font-bold tracking-wide uppercase text-center w-full truncate leading-tight"
                     style={{ color: selected ? 'var(--accent)' : 'var(--text-muted)' }}
                     title={name}
                   >

@@ -24,7 +24,6 @@ export interface DecisionQualityRow {
 
   // Core stats — Raw
   score: number;
-  score_sd: number;
   avg_miss_cost: number;
 
   // Core stats — Per 90

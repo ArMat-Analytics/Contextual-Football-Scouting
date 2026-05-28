@@ -16,8 +16,8 @@ import { DQCompareRadar } from '../components/DecisionQualitySection';
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 
-const C_SOURCE  = '#16a34a'; // green — source player
-const C_SIMILAR = '#2563eb'; // blue  — comparison player
+const C_SOURCE  = '#626843';
+const C_SIMILAR = '#644646';
 
 // ── Radar dimension definitions ───────────────────────────────────────────────
 
@@ -217,22 +217,17 @@ function DualMotherStatRow({
   label,
   sourceValue,
   similarValue,
-  diff,
   color,
   showExperimental,
 }: {
   label: string;
   sourceValue: string;
   similarValue: string;
-  diff: number | null;
   color: string;
   showExperimental?: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
   const description = TOOLTIP_DESCRIPTIONS[label] ?? 'No description available.';
-
-  const better = diff != null && diff > 0;
-  const worse  = diff != null && diff < 0;
 
   return (
     <div className="relative grid gap-2 items-center" style={{ gridTemplateColumns: '1fr auto auto' }}>
@@ -282,21 +277,16 @@ function DualMotherStatRow({
       </div>
 
       {/* Source value */}
-      <span className="font-mono text-xs font-bold text-right min-w-[52px]" style={{ color: C_SOURCE }}>
+      <span className="font-mono text-xs font-bold text-right min-w-[52px]" style={{ color: '#000' }}>
         {sourceValue}
       </span>
 
-      {/* Similar value with ▲▼ indicator */}
+      {/* Similar value */}
       <span
         className="font-mono text-xs font-bold text-right min-w-[52px]"
-        style={{ color: better ? 'var(--win)' : worse ? 'var(--lose)' : C_SIMILAR }}
+        style={{ color: '#000' }}
       >
         {similarValue}
-        {diff != null && diff !== 0 && (
-          <span className="text-[9px] ml-0.5 opacity-80">
-            {better ? '▲' : '▼'}
-          </span>
-        )}
       </span>
     </div>
   );
@@ -418,7 +408,7 @@ function DualRadarCard({
       </div>
 
       <ResponsiveContainer width="100%" height={240}>
-        <RadarChart data={radarData} margin={{ top: 28, right: 50, bottom: 28, left: 50 }}>
+        <RadarChart data={radarData} margin={{ top: 28, right: 50, bottom: 40, left: 50 }}>
           <PolarGrid stroke="rgba(0,0,0,0.08)" />
           <PolarAngleAxis dataKey="stat" tick={renderTick} />
           <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
@@ -435,7 +425,7 @@ function DualRadarCard({
             formatter={(v: string) => (
               <span className="text-[10px] font-display" style={{ color: v === sName ? C_SOURCE : C_SIMILAR }}>{v}</span>
             )}
-            wrapperStyle={{ paddingTop: 4 }}
+            wrapperStyle={{ paddingTop: 16 }}
           />
         </RadarChart>
       </ResponsiveContainer>
@@ -461,14 +451,12 @@ function DualRadarCard({
             {statList.map(s => {
               const sv   = sourceAgg  ? (sourceAgg[s.col]  as number) : null;
               const mv   = similarAgg ? (similarAgg[s.col] as number) : null;
-              const diff = sv != null && mv != null ? mv - sv : null;
               return (
                 <DualMotherStatRow
                   key={s.col}
                   label={s.label}
                   sourceValue={fmt(sv)}
                   similarValue={fmt(mv)}
-                  diff={diff}
                   color={def.color}
                   showExperimental={def.key === 'GRAVITY'}
                 />
@@ -612,208 +600,260 @@ export default function SimilarPlayers() {
           <h1 className="font-display font-black text-5xl sm:text-6xl leading-none tracking-tight mb-3 text-[var(--text)]">
             Similar Players
           </h1>
-          <p className="text-base text-[var(--text-muted)]">
-            Comparison with <span className="font-bold text-[var(--text)]">{playerName}</span>
-            {macroRole && <> · Macro role: <span className="font-bold text-[var(--accent)]">{macroRole}</span></>}
-            {' '}· {similarList.length} profiles found
-          </p>
-          {(!macroRole || error === 'no_macro_role') && (
-            <div className="mt-4 px-4 py-3 rounded-xl border inline-flex gap-3 bg-amber-50 border-amber-200">
-              <span className="text-amber-600">⚠️</span>
-              <p className="text-sm font-semibold text-amber-700">
-                No macro role available. The player may have less than 90 minutes or SC tables have not been imported.
-              </p>
-            </div>
-          )}
         </div>
       </div>
 
       {similarList.length > 0 && (
         <div className="max-w-[1200px] mx-auto px-6 pt-8">
-          <div className="card p-6 sm:p-8 mb-8">
 
-            {/* Two-col comparison header */}
-            <div className="card p-0 mb-8 overflow-hidden">
-              <div className="flex flex-col lg:flex-row">
+          {/* Symmetric comparison header */}
+          <div className="card p-0 mb-8 overflow-hidden shadow-sm">
+            <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-[var(--border)]">
+              
+              {/* Left — Source Player */}
+              <div className="relative flex flex-col p-6 md:p-8 bg-[var(--surface2)] overflow-hidden">
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] pointer-events-none opacity-40 mix-blend-multiply" style={{ background: `radial-gradient(circle at top right, ${C_SOURCE}15 0%, transparent 60%)` }} />
+                
+                <div className="relative z-10 flex flex-col h-full">
+                  {/* Header row */}
+                  <div className="flex items-center justify-between mb-6 h-10">
+                     <span className="px-3 py-1.5 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider bg-[var(--surface)] border border-[var(--border)] shadow-sm" style={{ color: C_SOURCE }}>
+                       Source Player
+                     </span>
+                  </div>
 
-                {/* Left — source player */}
-                <div className="relative flex flex-col justify-between p-6 lg:w-[300px] shrink-0 border-b lg:border-b-0 lg:border-r border-[var(--border)] bg-[var(--surface2)]">
-                  <div className="absolute top-0 right-0 w-40 h-40 pointer-events-none" style={{ background: `radial-gradient(circle at top right, ${C_SOURCE}12 0%, transparent 65%)` }} />
-
-                  <div>
-                    <p className="font-mono text-[9px] tracking-[0.14em] uppercase font-bold mb-4" style={{ color: C_SOURCE }}>Source player</p>
-
-                    {/* Avatar + name row */}
-                    <div className="flex items-center gap-3.5 mb-4">
-                      <div
-                        className="w-12 h-12 rounded-[12px] shrink-0 flex items-center justify-center font-display font-black text-xl select-none"
-                        style={{ background: `${C_SOURCE}12`, color: C_SOURCE }}
-                        aria-hidden
-                      >
-                        {playerName[0]}
+                  {/* Avatar & Name */}
+                  <div className="flex items-center gap-5 mb-6">
+                    <div>
+                      <h1 className="font-display font-black text-2xl sm:text-3xl leading-tight tracking-tight text-[var(--text)] mb-2">
+                        {playerName}
+                      </h1>
+                      <div className="flex flex-wrap gap-2">
+                        {macroRole && (
+                          <span className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--surface)] shadow-sm text-xs font-bold text-[var(--text)]">
+                            {macroRole}
+                          </span>
+                        )}
+                        {searchParams.get('primaryRole') && (
+                          <span className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--surface)] shadow-sm text-xs font-bold text-[var(--text)]">
+                            {searchParams.get('primaryRole')!.replace(/_/g, ' ')}
+                          </span>
+                        )}
+                        {searchParams.get('playerTeam') && (
+                          <span className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--surface)] shadow-sm text-xs font-bold text-[var(--text-muted)] flex items-center gap-2">
+                            {getFlagUrl(searchParams.get('playerTeam')!) && <img src={getFlagUrl(searchParams.get('playerTeam')!)!} alt="" className="w-4 h-3 object-cover rounded-[2px]" aria-hidden />}
+                            {searchParams.get('playerTeam')}
+                          </span>
+                        )}
                       </div>
-                      <div>
-                        <p className="font-display font-black text-lg leading-tight text-[var(--text)]">{playerName}</p>
-                        {macroRole && <p className="text-[11px] mt-0.5 font-mono text-[var(--text-muted)]">Macro role: <span className="font-bold">{macroRole}</span></p>}
-                      </div>
-                    </div>
-
-                    {/* Meta pills */}
-                    <div className="flex flex-wrap gap-2">
-                      {sourceIdx?.minutes_played != null && (
-                        <div className="flex flex-col gap-0.5 px-3 py-2 bg-[var(--surface)] rounded-[10px] border border-[var(--border)]">
-                          <span className="font-mono text-[8px] tracking-[0.12em] uppercase text-[var(--text-dim)]">Minutes</span>
-                          <span className="font-display font-black text-sm text-[var(--text)]">{sourceIdx.minutes_played}'</span>
-                        </div>
-                      )}
-                      {sourcePassesAnalysed != null && (
-                        <div className="flex flex-col gap-0.5 px-3 py-2 bg-[var(--surface)] rounded-[10px] border border-[var(--border)]">
-                          <span className="font-mono text-[8px] tracking-[0.12em] uppercase text-[var(--text-dim)]">Passes analysed</span>
-                          <span className="font-display font-black text-sm text-[var(--text)]">{sourcePassesAnalysed}</span>
-                        </div>
-                      )}
                     </div>
                   </div>
 
-                  {playerId && (
-                    <Link
-                      to={`/player/${playerId}`}
-                      className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors"
-                    >
-                      View full profile →
-                    </Link>
-                  )}
-                </div>
-
-                {/* Right — comparison selector */}
-                <div className="flex-1 p-6">
-                  <p className="font-mono text-[9px] tracking-[0.14em] uppercase font-bold mb-4" style={{ color: C_SIMILAR }}>Compare with</p>
-
-                  {/* Dropdown */}
-                  <div className="relative mb-4">
-                    <label htmlFor={dropdownId} className="block font-mono text-[9px] tracking-[0.1em] uppercase text-[var(--text-dim)] mb-1.5">
-                      Select player
-                    </label>
-                    <div className="relative">
-                      <select
-                        id={dropdownId}
-                        value={selectedIdx}
-                        onChange={e => setSelectedIdx(Number(e.target.value))}
-                        className="input pr-9 appearance-none"
-                      >
-                        {similarList.map((p, i) => (
-                          <option key={`${p.player}-${p.team}`} value={i}>{p.player} ({p.team}) — Similarity: N/A</option>
-                        ))}
-                      </select>
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-dim)] text-[13px] pointer-events-none">▾</span>
+                  {/* Meta stats */}
+                  <div className="grid grid-cols-2 gap-3 mb-6">
+                    <div className="flex flex-col gap-1 p-3 bg-[var(--surface)] rounded-[12px] border border-[var(--border)] shadow-sm">
+                      <span className="font-mono text-[9px] tracking-[0.12em] uppercase text-[var(--text-dim)]">Minutes played</span>
+                      <span className="font-display font-black text-xl text-[var(--text)]">
+                        {sourceIdx?.minutes_played != null ? `${sourceIdx.minutes_played}'` : '—'}
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-1 p-3 bg-[var(--surface)] rounded-[12px] border border-[var(--border)] shadow-sm">
+                      <span className="font-mono text-[9px] tracking-[0.12em] uppercase text-[var(--text-dim)]">Passes</span>
+                      <span className="font-display font-black text-xl text-[var(--text)]">
+                        {sourcePassesAnalysed != null ? sourcePassesAnalysed : '—'}
+                      </span>
                     </div>
                   </div>
 
-                  {/* Selected comparison player card */}
-                  {selectedPlayer && (
-                    <div
-                      className="relative overflow-hidden flex items-center gap-3.5 p-4 rounded-[14px] border"
-                      style={{ borderColor: `${C_SIMILAR}30`, background: `${C_SIMILAR}06` }}
-                    >
-                      <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l" style={{ background: C_SIMILAR }} />
-                      <div className="pl-2 flex items-center gap-3.5 flex-1 min-w-0">
-                        {getFlagUrl(selectedPlayer.team)
-                          ? <img src={getFlagUrl(selectedPlayer.team)!} alt="" className="w-7 h-5 object-cover rounded-[3px] shadow-sm shrink-0" aria-hidden />
-                          : <span className="text-[10px] font-mono font-bold rounded shrink-0 bg-[var(--surface)] px-1.5 py-0.5 text-[var(--text-muted)]" aria-hidden>{selectedPlayer.team?.substring(0, 3).toUpperCase()}</span>
-                        }
-                        <div className="flex-1 min-w-0">
-                          <p className="font-display font-black text-base leading-tight truncate" style={{ color: C_SIMILAR }}>{selectedPlayer.player}</p>
-                          <p className="text-[11px] font-mono text-[var(--text-muted)] mt-0.5">
-                            {selectedPlayer.team} · {selectedPlayer.primary_role} · {selectedPlayer.minutes_played}'
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  <div className="mt-auto pt-4">
+                    {playerId ? (
+                      <Link
+                        to={`/player/${playerId}`}
+                        className="inline-flex items-center justify-center w-full gap-1.5 text-sm font-semibold text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[var(--accent)] transition-colors bg-[var(--surface)] px-6 py-3 rounded-xl border border-[var(--border)] shadow-sm hover:shadow"
+                      >
+                        View full profile →
+                      </Link>
+                    ) : (
+                      <div className="h-[46px]"></div>
+                    )}
+                  </div>
                 </div>
-
               </div>
-            </div>
 
-            {/* 4 dual radar cards + DQ card — split into two panels */}
-            {chartsReady && selectedPlayer ? (
-              loadingAgg ? (
-                <div className="text-center py-8">
-                  <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin mx-auto" style={{ borderColor: C_SIMILAR, borderTopColor: 'transparent' }} />
+              {/* Right — Comparison Player */}
+              <div className="relative flex flex-col p-6 md:p-8 bg-[var(--surface2)] overflow-hidden">
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] pointer-events-none opacity-40 mix-blend-multiply" style={{ background: `radial-gradient(circle at top right, ${C_SIMILAR}15 0%, transparent 60%)` }} />
+                
+                <div className="relative z-10 flex flex-col h-full">
+                  {/* Header row with dropdown */}
+                  <div className="flex items-center justify-between mb-6 h-10 gap-4">
+                     <span className="shrink-0 px-3 py-1.5 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider bg-[var(--surface)] border border-[var(--border)] shadow-sm hidden sm:inline-block" style={{ color: C_SIMILAR }}>
+                       Compare With
+                     </span>
+                     <div className="relative flex-1 max-w-[280px]">
+                        <select
+                          id={dropdownId}
+                          value={selectedIdx}
+                          onChange={e => setSelectedIdx(Number(e.target.value))}
+                          className="w-full appearance-none bg-[var(--surface)] border border-[var(--border)] shadow-sm font-semibold text-sm h-10 px-4 pr-10 rounded-lg cursor-pointer focus:outline-none focus:border-[var(--accent)] transition-colors"
+                        >
+                          {similarList.map((p, i) => (
+                            <option key={`${p.player}-${p.team}`} value={i}>{p.player} ({p.team})</option>
+                          ))}
+                        </select>
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-dim)] pointer-events-none">▾</span>
+                     </div>
+                  </div>
+
+                  {selectedPlayer ? (
+                    <>
+                      {/* Avatar & Name */}
+                      <div className="flex items-center gap-5 mb-6">
+                        <div>
+                          <h1 className="font-display font-black text-2xl sm:text-3xl leading-tight tracking-tight text-[var(--text)] mb-2">
+                            {selectedPlayer.player}
+                          </h1>
+                          <div className="flex flex-wrap gap-2">
+                            {macroRole && (
+                              <span className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--surface)] shadow-sm text-xs font-bold text-[var(--text)]">
+                                {macroRole}
+                              </span>
+                            )}
+                            {selectedPlayer.primary_role && (
+                              <span className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--surface)] shadow-sm text-xs font-bold text-[var(--text)]">
+                                {selectedPlayer.primary_role.replace(/_/g, ' ')}
+                              </span>
+                            )}
+                            {selectedPlayer.team && (
+                              <span className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--surface)] shadow-sm text-xs font-bold text-[var(--text-muted)] flex items-center gap-2">
+                                {getFlagUrl(selectedPlayer.team) && <img src={getFlagUrl(selectedPlayer.team)!} alt="" className="w-4 h-3 object-cover rounded-[2px]" aria-hidden />}
+                                {selectedPlayer.team}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Meta stats */}
+                      <div className="grid grid-cols-2 gap-3 mb-6">
+                        <div className="flex flex-col gap-1 p-3 bg-[var(--surface)] rounded-[12px] border border-[var(--border)] shadow-sm">
+                          <span className="font-mono text-[9px] tracking-[0.12em] uppercase text-[var(--text-dim)]">Minutes played</span>
+                          <span className="font-display font-black text-xl text-[var(--text)]">
+                            {selectedPlayer.minutes_played != null ? `${selectedPlayer.minutes_played}'` : '—'}
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-1 p-3 bg-[var(--surface)] rounded-[12px] border border-[var(--border)] shadow-sm">
+                          <span className="font-mono text-[9px] tracking-[0.12em] uppercase text-[var(--text-dim)]">Passes</span>
+                          <span className="font-display font-black text-xl text-[var(--text)]">
+                            {(similarAgg as any)?.passes_analysed != null ? (similarAgg as any).passes_analysed : '—'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="mt-auto pt-4">
+                        {selectedPlayer.player_id ? (
+                          <Link
+                            to={`/player/${selectedPlayer.player_id}`}
+                            className="inline-flex items-center justify-center w-full gap-1.5 text-sm font-semibold text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[var(--accent)] transition-colors bg-[var(--surface)] px-6 py-3 rounded-xl border border-[var(--border)] shadow-sm hover:shadow"
+                          >
+                            View full profile →
+                          </Link>
+                        ) : (
+                          <div className="inline-flex items-center justify-center w-full gap-1.5 text-sm font-semibold text-[var(--text-muted)] bg-[var(--surface)] px-6 py-3 rounded-xl border border-[var(--border)] shadow-sm opacity-50 cursor-not-allowed">
+Contextual passing metrics —                            Profile unavailable
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex-1 flex items-center justify-center text-sm font-mono text-[var(--text-dim)]">
+                      Select a player to compare
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <>
-                  {/* Space & Control panel (first four radars) */}
-                  <section className="max-w-[1200px] mx-auto px-0 pb-6">
-                    <div className="flex items-center justify-between gap-3 mb-4">
-                      <div>
-                        <h2 className="font-display font-black text-xl text-[var(--text)] mb-1">Space Control &amp; Value</h2>
-                        <p className="text-xs text-[var(--text-muted)]">Contextual passing metrics — {playerName}{selectedPlayer?.team ? ` · ${selectedPlayer.team}` : ''}</p>
-                      </div>
-                      <div role="tablist" aria-label="Statistic view mode" className="inline-flex gap-1 bg-[var(--surface2)] rounded-xl p-1">
-                        <StatViewToggle mode={statMode} onChange={setStatMode} />
-                      </div>
-                    </div>
+              </div>
 
-                    <div className="grid grid-cols-2 gap-5">
-                      {RADAR_DEFS.map(def => (
-                        <DualRadarCard
-                          key={def.key}
-                          def={def}
-                          sourceIdx={sourceIdx}
-                          similarIdx={selectedPlayer}
-                          sourceAgg={sourceAgg}
-                          similarAgg={similarAgg}
-                          sourceName={playerName}
-                          similarName={selectedPlayer.player}
-                          mode={statMode}
-                        />
-                      ))}
-                    </div>
-                  </section>
+            </div>
+          </div>
 
-                  {/* Decision Quality panel (single DQ radar) */}
-                  <section className="max-w-[1200px] mx-auto px-0 pb-12 mt-8">
-                    <div className="flex items-center justify-between gap-3 mb-4">
-                      <div>
-                        <h2 className="font-display font-black text-xl text-[var(--text)] mb-1">Decision Quality</h2>
-                        <p className="text-xs text-[var(--text-muted)]">Contextual decision-making metrics — {playerName}{selectedPlayer?.team ? ` · ${selectedPlayer.team}` : ''}</p>
-                      </div>
-                      <div role="tablist" aria-label="Statistic view mode" className="inline-flex gap-1 bg-[var(--surface2)] rounded-xl p-1">
-                        {/* DQCompareRadar manages its own mode; keep UI consistent by showing the toggle but not wiring it here */}
-                        <StatViewToggle mode={statMode} onChange={setStatMode} />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-5">
-                      {sourceDQ && compareDQ ? (
-                        <DQCompareRadar
-                          sourceRow={sourceDQ}
-                          compareRow={compareDQ}
-                          sourceName={playerName}
-                          compareName={selectedPlayer?.player ?? 'Comparison player'}
-                          mode={statMode}
-                        />
-                      ) : (
-                        <div className="col-span-2 text-sm text-[var(--text-muted)]">Decision Quality data not available for one of the players.</div>
-                      )}
-                    </div>
-                  </section>
-                </>
-              )
-            ) : sourceScLoading ? (
+          {/* 4 dual radar cards + DQ card — split into two panels */}
+          {chartsReady && selectedPlayer ? (
+            loadingAgg ? (
               <div className="text-center py-8">
-                <p className="font-mono text-xs text-[var(--text-dim)]">Loading source player's space control profile…</p>
+                <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin mx-auto" style={{ borderColor: C_SIMILAR, borderTopColor: 'transparent' }} />
               </div>
             ) : (
-              <div className="rounded-xl px-4 py-3 border bg-[var(--surface2)] border-[var(--border)]">
-                <p className="text-xs font-mono text-[var(--text-dim)]">
-                  The source player's space control profile is not available. Make sure the SC tables have been imported.
-                </p>
-              </div>
-            )}
+              <>
+                {/* Space & Control panel (first four radars) */}
+                <section className="max-w-[1200px] mx-auto px-0 pb-6">
+                  <div className="flex items-center justify-between gap-3 mb-4">
+                    <div>
+                      <h2 className="font-display font-black text-xl text-[var(--text)] mb-1">Space Control &amp; Value</h2>
+                      <p className="text-xs text-[var(--text-muted)]">Contextual passing metrics — {playerName} vs {selectedPlayer.player}</p>
+                    </div>
+                    <div role="tablist" aria-label="Statistic view mode" className="inline-flex gap-1 bg-[var(--surface2)] rounded-xl p-1">
+                      <StatViewToggle mode={statMode} onChange={setStatMode} />
+                    </div>
+                  </div>
 
-          </div>
+                  <div className="grid grid-cols-2 gap-5">
+                    {RADAR_DEFS.map(def => (
+                      <DualRadarCard
+                        key={def.key}
+                        def={def}
+                        sourceIdx={sourceIdx}
+                        similarIdx={selectedPlayer}
+                        sourceAgg={sourceAgg}
+                        similarAgg={similarAgg}
+                        sourceName={playerName}
+                        similarName={selectedPlayer.player}
+                        mode={statMode}
+                      />
+                    ))}
+                  </div>
+                </section>
+
+                {/* Decision Quality panel (single DQ radar) */}
+                <section className="max-w-[1200px] mx-auto px-0 pb-12 mt-8">
+                  <div className="flex items-center justify-between gap-3 mb-4">
+                    <div>
+                      <h2 className="font-display font-black text-xl text-[var(--text)] mb-1">Decision Quality</h2>
+                      <p className="text-xs text-[var(--text-muted)]">Contextual decision-making metrics — {playerName} vs {selectedPlayer.player}</p>
+                    </div>
+                    <div role="tablist" aria-label="Statistic view mode" className="inline-flex gap-1 bg-[var(--surface2)] rounded-xl p-1">
+                      {/* DQCompareRadar manages its own mode; keep UI consistent by showing the toggle but not wiring it here */}
+                      <StatViewToggle mode={statMode} onChange={setStatMode} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-5">
+                    {sourceDQ && compareDQ ? (
+                      <DQCompareRadar
+                        sourceRow={sourceDQ}
+                        compareRow={compareDQ}
+                        sourceName={playerName}
+                        compareName={selectedPlayer?.player ?? 'Comparison player'}
+                        mode={statMode}
+                      />
+                    ) : (
+                      <div className="col-span-2 text-sm text-[var(--text-muted)]">Decision Quality data not available for one of the players.</div>
+                    )}
+                  </div>
+                </section>
+              </>
+            )
+          ) : sourceScLoading ? (
+            <div className="text-center py-8">
+              <p className="font-mono text-xs text-[var(--text-dim)]">Loading source player's space control profile…</p>
+            </div>
+          ) : (
+            <div className="rounded-xl px-4 py-3 border bg-[var(--surface2)] border-[var(--border)]">
+              <p className="text-xs font-mono text-[var(--text-dim)]">
+                The source player's space control profile is not available. Make sure the SC tables have been imported.
+              </p>
+            </div>
+          )}
+
 
           {/* Full similar players list */}
           <h2 className="font-display font-black text-2xl mb-4 text-[var(--text)]">

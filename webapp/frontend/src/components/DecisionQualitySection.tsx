@@ -27,7 +27,6 @@ type StatDef = { col: keyof DecisionQualityRow; label: string };
 const CORE_STATS: Record<StatViewMode, StatDef[]> = {
   raw: [
     { col: 'score',        label: 'Score' },
-    { col: 'score_sd',     label: 'Score SD' },
     { col: 'avg_miss_cost', label: 'Avg miss cost' },
     { col: 'value_impact', label: 'Value Impact' },
   ],
@@ -148,7 +147,7 @@ export interface DQCardProps {
 }
 
 export default function DecisionQualitySection({
-  playerName, teamName, row, mode, onModeChange,
+  playerName, row, mode, onModeChange,
 }: DQCardProps) {
   const lastName = playerName.split(' ').at(-1) ?? playerName;
   const [hoveredTitle, setHoveredTitle] = useState(false);
@@ -173,7 +172,7 @@ export default function DecisionQualitySection({
             Decision Quality
           </h2>
           <p className="text-xs text-[var(--text-muted)]">
-            Contextual decision-making metrics — {playerName}{teamName ? ` · ${teamName}` : ''}
+            Contextual decision-making metrics — {playerName}
           </p>
         </div>
         <StatViewToggle mode={mode} onChange={onModeChange} />
@@ -296,8 +295,8 @@ export default function DecisionQualitySection({
 
 // ── Dual stat row (source vs compare) ────────────────────────────────────────
 
-const C_SOURCE  = '#16a34a';
-const C_COMPARE = '#2563eb';
+const C_SOURCE  = '#626843';
+const C_COMPARE = '#644646';
 
 function DualStatRow({
   label,
@@ -311,11 +310,8 @@ function DualStatRow({
   const [hovered, setHovered] = useState(false);
   const description = TOOLTIP_DESCRIPTIONS[label] ?? 'No description available.';
 
-  const sv = typeof srcVal === 'number' ? srcVal : null;
-  const cv = typeof cmpVal === 'number' ? cmpVal : null;
-  const diff = sv != null && cv != null ? cv - sv : null;
-  const better = diff != null && diff > 0;
-  const worse  = diff != null && diff < 0;
+  const sourceValue = fmt(srcVal);
+  const compareValue = fmt(cmpVal);
 
   return (
     <div className="relative grid gap-2 items-center" style={{ gridTemplateColumns: '1fr auto auto' }}>
@@ -350,20 +346,15 @@ function DualStatRow({
       </div>
 
       {/* Source value */}
-      <span className="font-mono text-xs font-bold text-right min-w-[52px]" style={{ color: C_SOURCE }}>
-        {fmt(srcVal)}
+      <span className="font-mono text-xs font-bold text-right min-w-[52px]" style={{ color: '#000' }}>
+        {sourceValue}
       </span>
 
-      {/* Compare value with ▲▼ */}
-      <span className="font-mono text-xs font-bold text-right min-w-[52px]"
-        style={{ color: better ? 'var(--win)' : worse ? 'var(--lose)' : C_COMPARE }}
+      <span
+        className="font-mono text-xs font-bold text-right min-w-[52px]"
+        style={{ color: '#000' }}
       >
-        {fmt(cmpVal)}
-        {diff != null && diff !== 0 && (
-          <span className="text-[9px] ml-0.5 opacity-80">
-            {better ? '▲' : '▼'}
-          </span>
-        )}
+        {compareValue}
       </span>
     </div>
   );
@@ -425,11 +416,11 @@ export function DQCompareRadar({
 
       {/* Dual radar — static axis labels */}
       <ResponsiveContainer width="100%" height={240}>
-          <RadarChart data={radarData} margin={{ top: 28, right: 50, bottom: 28, left: 50 }}>
+          <RadarChart data={radarData} margin={{ top: 28, right: 50, bottom: 40, left: 50 }}>
           <PolarGrid stroke="rgba(0,0,0,0.06)" />
-          <PolarAngleAxis dataKey="stat" tick={{ fontSize: 9, fontFamily: 'Inter, sans-serif', fill: 'var(--text-muted)', fontWeight: 600 }} />
+          <PolarAngleAxis dataKey="stat" tick={<SimpleRadarTick />} />
           <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
-          <Tooltip />
+          <Tooltip content={<RadarTooltip />} />
           <Radar name={sName} dataKey={sName}
             stroke={C_SOURCE} fill={C_SOURCE} fillOpacity={0.12} strokeWidth={2}
             dot={{ fill: C_SOURCE, r: 3, strokeWidth: 0 }}
@@ -444,7 +435,7 @@ export function DQCompareRadar({
             formatter={(v: string) => (
               <span className="text-[10px] font-display" style={{ color: v === sName ? C_SOURCE : C_COMPARE }}>{v}</span>
             )}
-            wrapperStyle={{ paddingTop: 4 }}
+            wrapperStyle={{ paddingTop: 16 }}
           />
         </RadarChart>
       </ResponsiveContainer>

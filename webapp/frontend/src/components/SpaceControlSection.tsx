@@ -491,7 +491,7 @@ function RadarCard({
 // ── Exported section ──────────────────────────────────────────────────────────
 
 export default function SpaceControlSection({
-  playerName, teamName, indexRow, aggRow, mode, onModeChange,
+  playerName, indexRow, aggRow, mode, onModeChange,
 }: {
   playerName: string;
   teamName?: string;
@@ -508,7 +508,7 @@ export default function SpaceControlSection({
             Space Control &amp; Value
           </h2>
           <p className="text-xs text-[var(--text-muted)]">
-            Contextual passing metrics — {playerName}{teamName ? ` · ${teamName}` : ''}
+            Contextual passing metrics — {playerName}
           </p>
         </div>
         <StatViewToggle mode={mode} onChange={onModeChange} />
