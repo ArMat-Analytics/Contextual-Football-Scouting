@@ -47,12 +47,10 @@ function RadarTooltip({ active, payload }: any) {
   const statLabel = payload[0]?.payload?.stat ?? payload[0]?.name ?? 'Decision Quality';
   return (
     <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] px-3.5 py-2.5 text-xs shadow-lg">
-      <p className="font-bold text-[var(--text)] mb-1.5">
-        {statLabel}
-      </p>
+      <p className="font-bold text-[var(--text)] mb-1.5">{statLabel}</p>
       {payload.map((item: any) => (
-        <p key={item.name ?? item.dataKey ?? item.color} className="font-mono" style={{ color: item.color ?? item.stroke ?? DQ_COLOR }}>
-          {item.name ?? 'Value'}: <strong>{typeof item.value === 'number' ? item.value.toFixed(1) : '—'}</strong>
+        <p key={item.name} className="font-mono" style={{ color: item.color }}>
+          {item.name}: <strong>{typeof item.value === 'number' ? item.value.toFixed(1) : '—'}</strong>
         </p>
       ))}
     </div>
@@ -63,6 +61,9 @@ function RadarTooltip({ active, payload }: any) {
 
 function fmt(v: unknown): string {
   if (v == null) return '—';
+  if (typeof v === 'string' && /^-?\d+,\d+$/.test(v)) {
+    v = parseFloat(v.replace(',', '.'));
+  }
   if (typeof v === 'number') return v.toFixed(2);
   return String(v);
 }
@@ -171,7 +172,7 @@ export default function DecisionQualitySection({
             Decision Quality
           </h2>
           <p className="text-xs text-[var(--text-muted)]">
-            Contextual decision-making metrics — {playerName}
+            Selected player's metrics — {playerName}
           </p>
         </div>
         <StatViewToggle mode={mode} onChange={onModeChange} />

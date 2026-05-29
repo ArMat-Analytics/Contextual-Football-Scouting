@@ -104,7 +104,7 @@ export default function Filters({ filters, setFilters }: FiltersProps) {
           ref={panelRef}
           role="dialog"
           aria-label="Advanced filters"
-          className="absolute right-0 top-full mt-2 w-[480px] max-sm:w-screen max-sm:right-0 z-50 p-6 max-h-[80vh] overflow-y-auto bg-[var(--surface)] border border-[var(--border2)] rounded-[var(--radius-lg)] shadow-xl"
+          className="absolute right-0 top-full mt-2 w-[480px] max-sm:w-[calc(100vw-3rem)] z-50 p-6 max-h-[80vh] overflow-y-auto bg-[var(--surface)] border border-[var(--border2)] rounded-[var(--radius-lg)] shadow-xl"
         >
           <div className="flex justify-between items-center mb-8 border-b border-[var(--border)] pb-4">
             <h2 className="font-display font-extrabold text-2xl tracking-tight text-[var(--text)]">

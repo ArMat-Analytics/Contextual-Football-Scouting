@@ -136,6 +136,9 @@ const MOTHER: Record<string, Record<StatViewMode, StatDef[]>> = {
 
 function fmt(v: unknown): string {
   if (v == null) return '—';
+  if (typeof v === 'string' && /^-?\d+,\d+$/.test(v)) {
+    v = parseFloat(v.replace(',', '.'));
+  }
   if (typeof v === 'number') return Math.abs(v) < 10 ? v.toFixed(2) : v.toFixed(1);
   return String(v);
 }
@@ -596,7 +599,6 @@ export default function SimilarPlayers() {
             </ol>
           </nav>
 
-          <p className="font-mono text-xs tracking-widest mb-2 text-[var(--accent)]">SIMILARITY ANALYSIS</p>
           <h1 className="font-display font-black text-5xl sm:text-6xl leading-none tracking-tight mb-3 text-[var(--text)]">
             Similar Players
           </h1>
@@ -629,6 +631,12 @@ export default function SimilarPlayers() {
                         {playerName}
                       </h1>
                       <div className="flex flex-wrap gap-2">
+                        {searchParams.get('playerTeam') && (
+                          <span className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--surface)] shadow-sm text-xs font-bold text-[var(--text-muted)] flex items-center gap-2">
+                            {getFlagUrl(searchParams.get('playerTeam')!) && <img src={getFlagUrl(searchParams.get('playerTeam')!)!} alt="" className="w-4 h-3 object-cover rounded-[2px]" aria-hidden />}
+                            {searchParams.get('playerTeam')}
+                          </span>
+                        )}
                         {macroRole && (
                           <span className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--surface)] shadow-sm text-xs font-bold text-[var(--text)]">
                             {macroRole}
@@ -637,12 +645,6 @@ export default function SimilarPlayers() {
                         {searchParams.get('primaryRole') && (
                           <span className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--surface)] shadow-sm text-xs font-bold text-[var(--text)]">
                             {searchParams.get('primaryRole')!.replace(/_/g, ' ')}
-                          </span>
-                        )}
-                        {searchParams.get('playerTeam') && (
-                          <span className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--surface)] shadow-sm text-xs font-bold text-[var(--text-muted)] flex items-center gap-2">
-                            {getFlagUrl(searchParams.get('playerTeam')!) && <img src={getFlagUrl(searchParams.get('playerTeam')!)!} alt="" className="w-4 h-3 object-cover rounded-[2px]" aria-hidden />}
-                            {searchParams.get('playerTeam')}
                           </span>
                         )}
                       </div>
@@ -714,6 +716,12 @@ export default function SimilarPlayers() {
                             {selectedPlayer.player}
                           </h1>
                           <div className="flex flex-wrap gap-2">
+                            {selectedPlayer.team && (
+                              <span className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--surface)] shadow-sm text-xs font-bold text-[var(--text-muted)] flex items-center gap-2">
+                                {getFlagUrl(selectedPlayer.team) && <img src={getFlagUrl(selectedPlayer.team)!} alt="" className="w-4 h-3 object-cover rounded-[2px]" aria-hidden />}
+                                {selectedPlayer.team}
+                              </span>
+                            )}
                             {macroRole && (
                               <span className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--surface)] shadow-sm text-xs font-bold text-[var(--text)]">
                                 {macroRole}
@@ -722,12 +730,6 @@ export default function SimilarPlayers() {
                             {selectedPlayer.primary_role && (
                               <span className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--surface)] shadow-sm text-xs font-bold text-[var(--text)]">
                                 {selectedPlayer.primary_role.replace(/_/g, ' ')}
-                              </span>
-                            )}
-                            {selectedPlayer.team && (
-                              <span className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--surface)] shadow-sm text-xs font-bold text-[var(--text-muted)] flex items-center gap-2">
-                                {getFlagUrl(selectedPlayer.team) && <img src={getFlagUrl(selectedPlayer.team)!} alt="" className="w-4 h-3 object-cover rounded-[2px]" aria-hidden />}
-                                {selectedPlayer.team}
                               </span>
                             )}
                           </div>
@@ -751,18 +753,12 @@ export default function SimilarPlayers() {
                       </div>
 
                       <div className="mt-auto pt-4">
-                        {selectedPlayer.player_id ? (
-                          <Link
-                            to={`/player/${selectedPlayer.player_id}`}
-                            className="inline-flex items-center justify-center w-full gap-1.5 text-sm font-semibold text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[var(--accent)] transition-colors bg-[var(--surface)] px-6 py-3 rounded-xl border border-[var(--border)] shadow-sm hover:shadow"
-                          >
-                            View full profile →
-                          </Link>
-                        ) : (
-                          <div className="inline-flex items-center justify-center w-full gap-1.5 text-sm font-semibold text-[var(--text-muted)] bg-[var(--surface)] px-6 py-3 rounded-xl border border-[var(--border)] shadow-sm opacity-50 cursor-not-allowed">
-Contextual passing metrics —                            Profile unavailable
-                          </div>
-                        )}
+                        <Link
+                          to={`/player/${selectedPlayer.player_id}`}
+                          className="inline-flex items-center justify-center w-full gap-1.5 text-sm font-semibold text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[var(--accent)] transition-colors bg-[var(--surface)] px-6 py-3 rounded-xl border border-[var(--border)] shadow-sm hover:shadow"
+                        >
+                          View full profile →
+                        </Link>
                       </div>
                     </>
                   ) : (
@@ -789,7 +785,7 @@ Contextual passing metrics —                            Profile unavailable
                   <div className="flex items-center justify-between gap-3 mb-4">
                     <div>
                       <h2 className="font-display font-black text-xl text-[var(--text)] mb-1">Space Control &amp; Value</h2>
-                      <p className="text-xs text-[var(--text-muted)]">Contextual passing metrics — {playerName} vs {selectedPlayer.player}</p>
+                      <p className="text-xs text-[var(--text-muted)]">Selected players metrics — {playerName} · {selectedPlayer.player}</p>
                     </div>
                     <div role="tablist" aria-label="Statistic view mode" className="inline-flex gap-1 bg-[var(--surface2)] rounded-xl p-1">
                       <StatViewToggle mode={statMode} onChange={setStatMode} />
@@ -818,7 +814,7 @@ Contextual passing metrics —                            Profile unavailable
                   <div className="flex items-center justify-between gap-3 mb-4">
                     <div>
                       <h2 className="font-display font-black text-xl text-[var(--text)] mb-1">Decision Quality</h2>
-                      <p className="text-xs text-[var(--text-muted)]">Contextual decision-making metrics — {playerName} vs {selectedPlayer.player}</p>
+                      <p className="text-xs text-[var(--text-muted)]">Selected players metrics — {playerName} · {selectedPlayer.player}</p>
                     </div>
                     <div role="tablist" aria-label="Statistic view mode" className="inline-flex gap-1 bg-[var(--surface2)] rounded-xl p-1">
                       {/* DQCompareRadar manages its own mode; keep UI consistent by showing the toggle but not wiring it here */}

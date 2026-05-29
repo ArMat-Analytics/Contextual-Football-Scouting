@@ -31,7 +31,7 @@ function EntryCard({ label, description, color }: { label: string; description: 
     >
       <span
         className="font-mono text-xs font-bold tracking-wide"
-        style={{ color }}
+        style={{ color: '#000' }}
       >
         {label}
       </span>
@@ -74,12 +74,6 @@ function SectionBlock({
           {title}
         </h2>
         {/* Variable count tag */}
-        <span
-          className="tag font-mono ml-auto"
-          style={{ background: `${color}12`, color }}
-        >
-          {entries.length} {entries.length === 1 ? 'variable' : 'variables'}
-        </span>
       </div>
 
       {/* Intro paragraph */}
@@ -115,11 +109,6 @@ export default function Glossary() {
       ? GLOSSARY_SECTIONS
       : GLOSSARY_SECTIONS.filter(s => s.category === activeFilter);
 
-  const totalVariables = GLOSSARY_SECTIONS.reduce(
-    (acc, s) => acc + s.entries.length,
-    0,
-  );
-
   return (
     <div className="w-full pb-20 min-h-screen">
 
@@ -142,9 +131,6 @@ export default function Glossary() {
             </ol>
           </nav>
 
-          <p className="font-mono text-xs tracking-widest mb-3 text-[var(--accent)]">
-            REFERENCE · {totalVariables} VARIABLES
-          </p>
           <h1
             className="font-display font-black leading-none tracking-tight mb-4 text-[var(--text)]"
             style={{ fontSize: 'clamp(36px, 6vw, 60px)' }}

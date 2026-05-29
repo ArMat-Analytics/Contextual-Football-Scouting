@@ -42,8 +42,18 @@ const INDICES = [
   { key: 'DQ_index',           label: 'Decision Quality', color: '#7c3aed', short: 'DQ' },
 ] as const;
 
+const TABLE_ABBREVIATION_LABELS: Record<string, string> = {
+  PROG: 'Progression',
+  DNGR: 'Dangerousness',
+  RECEP: 'Reception',
+  GRAV: 'Gravity',
+  DQ: 'Decision Quality',
+  AVG: 'Average',
+  MIN: 'Minutes played',
+};
+
 type IndexKey = typeof INDICES[number]['key'];
-type SortKey  = IndexKey | 'avg' | 'minutes_played';
+type SortKey  = IndexKey | 'avg' | 'minutes_played' | 'nation' | 'player';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -52,11 +62,13 @@ interface IndexRange { min: string; max: string; }
 interface Filters {
   macroRole: string;
   role: string;
+  nation: string;
   ranges: Record<IndexKey, IndexRange>;
 }
 
 interface PlayerRow {
   player: string;
+  nation: string;
   player_id?: number;
   team: string;
   primary_role: string;
@@ -176,12 +188,17 @@ function RangeFilter({
 // ── Index badge ───────────────────────────────────────────────────────────────
 
 function IndexBadge({ label, value, color }: { label: string; value: number | null; color: string }) {
+  const fullLabel = TABLE_ABBREVIATION_LABELS[label] ?? label;
   return (
     <div className="flex flex-col items-center min-w-[48px]">
       <span className="font-mono font-black text-base leading-none" style={{ color }}>
         {value != null ? value.toFixed(0) : '—'}
       </span>
-      <span className="font-mono text-[8px] tracking-[0.1em] uppercase text-[var(--text-dim)] mt-0.5">
+      <span
+        className="font-mono text-[8px] tracking-[0.1em] uppercase text-[var(--text-dim)] mt-0.5"
+        title={fullLabel}
+        aria-label={fullLabel}
+      >
         {label}
       </span>
     </div>
@@ -191,7 +208,8 @@ function IndexBadge({ label, value, color }: { label: string; value: number | nu
 // ── Player result row ─────────────────────────────────────────────────────────
 
 function PlayerResultRow({ player, rank }: { player: PlayerRow; rank: number }) {
-  const flagUrl    = getFlagUrl(player.team);
+  const nationName = player.nation || player.team;
+  const flagUrl    = getFlagUrl(nationName);
   const macro      = player.macro_role;
   const macroColor = MACRO_COLOR[macro] ?? 'var(--text-muted)';
 
@@ -211,14 +229,14 @@ function PlayerResultRow({ player, rank }: { player: PlayerRow; rank: number }) 
 
         {/* Player info */}
         <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
-          <span className={`font-mono font-bold text-[13px] min-w-[24px] text-right ${rank <= 3 ? 'text-[var(--accent)]' : 'text-[var(--text-dim)]'}`}>
+          <span className="font-mono font-bold text-[13px] min-w-[24px] text-right text-[var(--text-dim)]">
             {rank}
           </span>
 
           {/* Flag */}
           {flagUrl
-            ? <img src={flagUrl} alt="" className="w-7 h-5 object-cover rounded-sm shrink-0" aria-hidden />
-            : <span className="w-7 shrink-0 font-mono text-[9px] text-[var(--text-dim)]">{player.team.substring(0, 3).toUpperCase()}</span>
+            ? <img src={flagUrl} alt={nationName} title={nationName} aria-label={nationName} className="w-7 h-5 object-cover rounded-sm shrink-0" />
+            : <span className="w-7 shrink-0 font-mono text-[9px] text-[var(--text-dim)]" title={nationName} aria-label={nationName}>{nationName.substring(0, 3).toUpperCase()}</span>
           }
 
           {/* Name + role */}
@@ -238,8 +256,6 @@ function PlayerResultRow({ player, rank }: { player: PlayerRow; rank: number }) 
               </p>
             )}
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="font-display text-[10px] font-bold tracking-wide uppercase text-[var(--text-muted)]">{player.team}</span>
-              <span className="text-[var(--text-dim)] text-[10px]">·</span>
               <span className="font-display text-[10px] font-bold tracking-wide uppercase text-[var(--text-muted)]">{player.primary_role}</span>
               <span className="tag text-[9px]" style={{ background: `${macroColor}12`, color: macroColor, border: `1px solid ${macroColor}30` }}>
                 {macro}
@@ -248,8 +264,9 @@ function PlayerResultRow({ player, rank }: { player: PlayerRow; rank: number }) 
           </div>
 
           {/* Minutes (Mobile) */}
-          <div className="lg:hidden text-right whitespace-nowrap">
-            <span className="font-mono text-[11px] text-[var(--text-dim)]">{player.minutes_played}'</span>
+          <div className="lg:hidden flex flex-col items-end">
+            <span className="font-mono font-black text-[13px] leading-none text-[var(--text)]">{player.minutes_played}'</span>
+            <span className="font-mono text-[8px] tracking-[0.1em] uppercase text-[var(--text-dim)] mt-0.5">MIN</span>
           </div>
         </div>
 
@@ -266,17 +283,26 @@ function PlayerResultRow({ player, rank }: { player: PlayerRow; rank: number }) 
             ))}
 
             {/* Average score */}
-            <div className="flex flex-col items-center bg-[var(--surface2)] rounded-lg py-1.5 px-2.5 min-w-[52px]">
+            <div
+              className="flex flex-col items-center bg-[var(--surface2)] rounded-lg py-1.5 px-2.5 min-w-[52px]"
+              title="Average"
+              aria-label="Average"
+            >
               <span className="font-mono font-black text-lg leading-none text-[var(--text)]">
                 {avg.toFixed(0)}
               </span>
-              <span className="font-mono text-[8px] tracking-[0.1em] uppercase text-[var(--text-dim)] mt-0.5">AVG</span>
+              <span className="font-mono text-[8px] tracking-[0.1em] uppercase text-[var(--text-dim)] mt-0.5" title="Average" aria-label="Average">AVG</span>
             </div>
           </div>
 
           {/* Minutes (Desktop) */}
-          <div className="hidden lg:block text-right min-w-[48px]">
-            <span className="font-mono text-[11px] text-[var(--text-dim)]">{player.minutes_played}'</span>
+          <div className="hidden lg:flex flex-col items-center min-w-[48px]">
+            <span className="font-mono font-black text-[15px] leading-none text-[var(--text)]" title="Minutes played" aria-label="Minutes played">
+              {player.minutes_played}'
+            </span>
+            <span className="font-mono text-[8px] tracking-[0.1em] uppercase text-[var(--text-dim)] mt-0.5" title="Minutes played" aria-label="Minutes played">
+              MIN
+            </span>
           </div>
         </div>
 
@@ -291,6 +317,7 @@ function ActiveFilterPills({ filters, onClear }: { filters: Filters; onClear: ()
   const pills: string[] = [];
   if (filters.macroRole) pills.push(`Macro: ${filters.macroRole}`);
   if (filters.role) pills.push(`Role: ${filters.role}`);
+  if (filters.nation) pills.push(`Nation: ${filters.nation}`);
   INDICES.forEach(idx => {
     const r = filters.ranges[idx.key];
     if (r.min !== '' || r.max !== '') {
@@ -332,12 +359,12 @@ const DEFAULT_RANGES: Record<IndexKey, IndexRange> = {
 };
 
 export default function SearchByAttribute() {
-  const [filters, setFilters]           = useState<Filters>({ macroRole: '', role: '', ranges: DEFAULT_RANGES });
+  const [filters, setFilters]           = useState<Filters>({ macroRole: '', role: '', nation: '', ranges: DEFAULT_RANGES });
   const [allPlayers, setAllPlayers]     = useState<PlayerRow[]>([]);
   const [loading, setLoading]           = useState(true);
   const [searched, setSearched]         = useState(false);
-  const [sortKey, setSortKey]           = useState<SortKey>('avg');
-  const [sortOrder, setSortOrder]       = useState<'asc' | 'desc'>('desc');
+  const [sortKey, setSortKey]           = useState<SortKey>('player');
+  const [sortOrder, setSortOrder]       = useState<'asc' | 'desc'>('asc');
   const [mobileFiltersOpen, setMobile]  = useState(false);
 
   const macroRoleId = useId();
@@ -354,7 +381,10 @@ export default function SearchByAttribute() {
       setLoading(true);
       try {
         const data: PlayerRow[] = await fetch(`${API_BASE_URL}/space-control/search`).then(r => r.json());
-        setAllPlayers(data);
+        setAllPlayers(data.map(player => ({
+          ...player,
+          nation: player.team,
+        })));
       } catch {
         setAllPlayers([]);
       } finally {
@@ -364,7 +394,7 @@ export default function SearchByAttribute() {
     })();
   }, []);
 
-  const clearFilters = () => setFilters({ macroRole: '', role: '', ranges: DEFAULT_RANGES });
+  const clearFilters = () => setFilters({ macroRole: '', role: '', nation: '', ranges: DEFAULT_RANGES });
 
   // Client-side filtering (since we fetch all players at once, we can do it here)
   const filtered = allPlayers.filter(player => {
@@ -373,6 +403,7 @@ export default function SearchByAttribute() {
     // Filter by macro role and primary role
     if (f.macroRole && player.macro_role !== f.macroRole) return false;
     if (f.role && player.primary_role !== f.role) return false;
+    if (f.nation && player.nation !== f.nation) return false;
 
     // Numerical filters: check if player indices fall within selected ranges
     for (const idx of INDICES) {
@@ -390,6 +421,13 @@ export default function SearchByAttribute() {
   });
 
   const sorted = [...filtered].sort((a, b) => {
+    if (sortKey === 'player' || sortKey === 'nation') {
+      const valA = String((a as any)[sortKey] ?? '');
+      const valB = String((b as any)[sortKey] ?? '');
+      const compare = valA.localeCompare(valB, undefined, { sensitivity: 'base' });
+      return sortOrder === 'asc' ? compare : -compare;
+    }
+
     let valA = 0, valB = 0;
     if (sortKey === 'avg') {
       valA = ((a.idx__PROGRESSION ?? 0) + (a.idx__DANGEROUSNESS ?? 0) + (a.idx__RECEPTION ?? 0) + (a.idx__GRAVITY ?? 0)) / 4;
@@ -402,8 +440,9 @@ export default function SearchByAttribute() {
   });
 
   const handleSort = (key: SortKey) => {
+    const defaultOrder = key === 'player' || key === 'nation' ? 'asc' : 'desc';
     if (sortKey === key) setSortOrder(p => p === 'asc' ? 'desc' : 'asc');
-    else { setSortKey(key); setSortOrder('desc'); }
+    else { setSortKey(key); setSortOrder(defaultOrder); }
   };
 
   return (
@@ -419,13 +458,12 @@ export default function SearchByAttribute() {
               <li className="font-semibold text-[var(--text)]" aria-current="page">Search by Attribute</li>
             </ol>
           </nav>
-          <p className="font-mono text-xs tracking-widest mb-2 text-[var(--accent)]">SPACE CONTROL & VALUE · EURO 2024</p>
           <h1 className="font-display font-black leading-none tracking-tight mb-3 text-[var(--text)]" style={{ fontSize: 'clamp(36px, 6vw, 64px)' }}>
             Search by Attribute
           </h1>
           <p className="text-[15px] text-[var(--text-muted)] max-w-[560px]">
             Filter all 272 players by macro role, tactical role, and contextual space control index ranges.
-            Rankings are sorted by average index score by default.
+            Rankings are sorted alphabetically by player name by default.
           </p>
         </div>
       </div>
@@ -508,6 +546,21 @@ export default function SearchByAttribute() {
                 </select>
               </div>
 
+              {/* Nation */}
+              <div className="mb-6">
+                <label className="block font-mono text-[10px] tracking-[0.12em] uppercase text-[var(--text-dim)] mb-2">
+                  Nation
+                </label>
+                <select
+                  value={filters.nation}
+                  onChange={e => setFilters(f => ({ ...f, nation: e.target.value }))}
+                  className="input text-[13px]"
+                >
+                  <option value="">All nations</option>
+                  {Array.from(new Set(allPlayers.map(p => p.nation))).sort().map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </div>
+
               {/* Divider */}
               <div className="h-px bg-[var(--border)] mb-5" />
 
@@ -556,16 +609,33 @@ export default function SearchByAttribute() {
             {sorted.length > 0 && (
               <div
                 className="hidden lg:grid items-center gap-4 py-2 px-5 mb-1.5"
-                style={{ gridTemplateColumns: '28px 28px 1fr repeat(6, 52px) 48px' }}
+                style={{ gridTemplateColumns: '28px 48px 1fr repeat(6, 52px) 48px' }}
               >
-                <span /><span />
-                <span className="font-mono text-[9px] text-[var(--text-dim)] tracking-[0.1em] uppercase">Player</span>
+                <span />
+                <button
+                  onClick={() => handleSort('nation')}
+                  className={`bg-transparent border-none cursor-pointer p-0 font-mono text-[9px] tracking-[0.1em] uppercase text-center flex items-center justify-center transition-colors ${sortKey === 'nation' ? 'text-[var(--text)]' : 'text-[var(--text-dim)]'}`}
+                  title="Nation"
+                  aria-label="Sort by nation"
+                >
+                  NAT <SortIcon active={sortKey === 'nation'} dir={sortOrder} />
+                </button>
+                <button
+                  onClick={() => handleSort('player')}
+                  className={`bg-transparent border-none cursor-pointer p-0 font-mono text-[9px] tracking-[0.1em] uppercase text-center flex items-center justify-center transition-colors ${sortKey === 'player' ? 'text-[var(--text)]' : 'text-[var(--text-dim)]'}`}
+                  title="Player name"
+                  aria-label="Sort by player name"
+                >
+                  Player name <SortIcon active={sortKey === 'player'} dir={sortOrder} />
+                </button>
                 {INDICES.map(idx => (
                   <button
                     key={idx.key}
                     onClick={() => handleSort(idx.key)}
                     className="bg-transparent border-none cursor-pointer p-0 font-mono text-[9px] tracking-[0.1em] uppercase text-center flex items-center justify-center transition-colors"
                     style={{ color: sortKey === idx.key ? idx.color : 'var(--text-dim)' }}
+                    title={idx.label}
+                    aria-label={`Sort by ${idx.label}`}
                   >
                     {idx.short} <SortIcon active={sortKey === idx.key} dir={sortOrder} />
                   </button>
@@ -573,12 +643,16 @@ export default function SearchByAttribute() {
                 <button
                   onClick={() => handleSort('avg')}
                   className={`bg-transparent border-none cursor-pointer p-0 font-mono text-[9px] tracking-[0.1em] uppercase text-center flex items-center justify-center transition-colors ${sortKey === 'avg' ? 'text-[var(--text)]' : 'text-[var(--text-dim)]'}`}
+                  title="Average"
+                  aria-label="Sort by average"
                 >
                   AVG <SortIcon active={sortKey === 'avg'} dir={sortOrder} />
                 </button>
                 <button
                   onClick={() => handleSort('minutes_played')}
                   className={`bg-transparent border-none cursor-pointer p-0 font-mono text-[9px] tracking-[0.1em] uppercase text-center flex items-center justify-center transition-colors ${sortKey === 'minutes_played' ? 'text-[var(--text)]' : 'text-[var(--text-dim)]'}`}
+                  title="Minutes played"
+                  aria-label="Sort by minutes played"
                 >
                   MIN <SortIcon active={sortKey === 'minutes_played'} dir={sortOrder} />
                 </button>

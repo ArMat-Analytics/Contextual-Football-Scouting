@@ -10,16 +10,16 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
 function StatCard({ label, value, category, statKey }: { label: string; value: unknown; category: string; statKey: string }) {
   const accent = CAT_ACCENT[category] ?? '#64748b';
-  const display = value != null
-    ? (statKey === 'xg_total'
-        ? (() => {
-            const numericValue = typeof value === 'string'
-              ? Number(value.replace(',', '.'))
-              : Number(value);
-            return Number.isFinite(numericValue) ? numericValue.toFixed(2) : String(value);
-          })()
-        : String(value))
-    : '—';
+  let display = String(value ?? '—');
+  if (value != null) {
+    if (typeof value === 'string' && /^-?\d+,\d+$/.test(value)) {
+      display = value.replace(',', '.');
+    }
+    if (label === 'xG' || statKey === 'xg_total' || statKey === 'xg' || label === 'Pass %' || statKey === 'pass_completion_pct') {
+      const num = typeof value === 'string' ? parseFloat(value.replace(',', '.')) : Number(value);
+      if (!isNaN(num)) display = num.toFixed(2);
+    }
+  }
   return (
     <div className="group relative flex flex-col p-4 bg-[var(--surface2)] border border-[var(--border)] rounded-[12px] transition-all hover:border-[var(--accent)] hover:shadow-sm cursor-default overflow-hidden">
       <div className="absolute top-0 left-0 bottom-0 w-[3px]" style={{ background: accent }} />
@@ -130,7 +130,14 @@ export default function PlayerProfile() {
             <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
               <div className="flex items-center gap-6 sm:gap-8">
                 <div>
+                  <h1 className="font-display font-black text-4xl sm:text-5xl leading-tight tracking-tight text-[var(--text)] mb-3">
+                    {stats.player_name}
+                  </h1>
                   <div className="flex flex-wrap gap-2 mb-3">
+                    <p className="flex items-center gap-2.5 text-base font-semibold text-[var(--text-muted)]">
+                      {flagUrl && <img src={flagUrl} alt="" className="w-7 h-5 object-cover rounded-[3px] shadow-sm" aria-hidden />}
+                      {stats.source_team_name}
+                    </p>
                     {stats.primary_role && (
                       <span className="tag bg-[var(--surface)] border border-[var(--border)] text-[var(--accent)] font-bold shadow-sm">
                         {stats.primary_role.replace(/_/g, ' ')}
@@ -142,13 +149,6 @@ export default function PlayerProfile() {
                       </span>
                     )}
                   </div>
-                  <h1 className="font-display font-black text-4xl sm:text-5xl leading-tight tracking-tight text-[var(--text)] mb-3">
-                    {stats.player_name}
-                  </h1>
-                  <p className="flex items-center gap-2.5 text-base font-semibold text-[var(--text-muted)]">
-                    {flagUrl && <img src={flagUrl} alt="" className="w-7 h-5 object-cover rounded-[3px] shadow-sm" aria-hidden />}
-                    {stats.source_team_name}
-                  </p>
                 </div>
               </div>
 
@@ -168,7 +168,7 @@ export default function PlayerProfile() {
             {/* Left Column: Player Info */}
             <div className="xl:w-[320px] p-8 border-b xl:border-b-0 xl:border-r border-[var(--border)]" style={{ background: 'rgba(var(--surface2-rgb, 248, 250, 252), 0.5)' }}>
               <p className="font-mono text-[10px] tracking-[0.14em] uppercase text-[var(--text-dim)] mb-6 font-bold">Player Info</p>
-              <div className="grid grid-cols-2 xl:grid-cols-1 gap-5">
+              <div className="grid grid-cols-2 xl:grid-cols-1 gap-3" role="list">
                 {([
                   { label: 'Age',             value: stats.age },
                   { label: 'Preferred Foot',  value: stats.preferred_foot },
@@ -176,11 +176,12 @@ export default function PlayerProfile() {
                   { label: 'Passes Analysed', value: passesAnalysed },
                   { label: 'Pre-Euros Value', value: stats.market_value_before_euros },
                   { label: 'Post-Euros Value',value: stats.market_value_after_euros },
-                ] as { label: string; value: string | number | null | undefined }[]).filter(d => d.value != null && d.value !== '').map(d => (
-                  <div key={d.label} className="flex flex-col gap-1">
-                    <span className="font-mono text-[9px] tracking-[0.12em] uppercase text-[var(--text-dim)]">{d.label}</span>
-                    <span className="font-display font-extrabold text-lg text-[var(--text)]">{String(d.value)}</span>
-                  </div>
+                ] as { label: string; value: string | number | null | undefined }[])
+                  .filter(d => d.value != null && d.value !== '')
+                  .map((d, i) => (
+                    <div key={d.label} role="listitem" className={`fade-up delay-${Math.min(i + 1, 5)}`}>
+                      <StatCard label={d.label} value={d.value} category="General" statKey={d.label.toLowerCase()} />
+                    </div>
                 ))}
               </div>
             </div>

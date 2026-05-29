@@ -30,27 +30,18 @@ export default function TeamList({ selectedTeams, setSelectedTeams }: TeamListPr
 
   return (
     <section
-      className="w-full border-t mt-10 py-8 bg-[var(--surface)] border-[var(--border)]"
+      className="w-full mb-6"
       aria-label="Filter by national team"
     >
       <div className="max-w-[1200px] mx-auto px-6">
-        <div className="flex justify-between items-center mb-6 pb-4 border-b border-[var(--border)]">
+        <div className="mb-4 pb-2 border-b border-[var(--border)]">
           <p className="font-mono text-[10px] tracking-widest uppercase text-[var(--text-dim)]">
             Filter by National Team
           </p>
-          {selectedTeams.length > 0 && (
-            <button
-              onClick={() => setSelectedTeams([])}
-              className="btn btn-ghost text-xs py-1.5 px-3 text-[var(--red)]"
-              aria-label="Clear all team filters"
-            >
-              Clear ({selectedTeams.length})
-            </button>
-          )}
         </div>
 
         <ul
-          className="flex flex-wrap justify-center gap-x-1 gap-y-4"
+          className="flex flex-wrap items-center gap-x-2 gap-y-2"
           role="list"
           aria-label="National teams"
         >
@@ -64,12 +55,13 @@ export default function TeamList({ selectedTeams, setSelectedTeams }: TeamListPr
                 <button
                   onClick={() => toggleTeam(name)}
                   aria-pressed={selected}
-                  aria-label={`${selected ? 'Deselect' : 'Select'} ${name}`}
-                  className="flex flex-col items-center gap-1.5 w-[76px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-lg p-1 cursor-pointer"
-                  style={{ opacity: selected ? 1 : 0.6 }}
+                  aria-label={name}
+                  title={name}
+                  className="flex items-center justify-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-full cursor-pointer"
+                  style={{ opacity: selected ? 1 : 0.5 }}
                 >
                   <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-mono font-bold overflow-hidden shrink-0 transition-all bg-[var(--surface2)]"
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-mono font-bold overflow-hidden shrink-0 transition-all bg-[var(--surface2)]"
                     style={{
                       border: selected ? '2px solid var(--accent)' : '2px solid transparent',
                       boxShadow: selected ? '0 4px 12px rgba(37,99,235,0.25)' : 'none',
@@ -78,24 +70,28 @@ export default function TeamList({ selectedTeams, setSelectedTeams }: TeamListPr
                     {flagUrl ? (
                       <img src={flagUrl} alt={name} className="w-full h-full object-cover" />
                     ) : team.logo_url ? (
-                      <img src={team.logo_url} alt={name} className="w-8 h-8 object-contain" />
+                      <img src={team.logo_url} alt={name} className="w-6 h-6 object-contain" />
                     ) : (
                       <span className={selected ? 'text-[var(--text)]' : 'text-[var(--text-muted)]'}>
-                        {name.substring(0,3).toUpperCase()}
+                        {name.substring(0,2).toUpperCase()}
                       </span>
                     )}
                   </div>
-                  <span
-                    className="text-[9px] font-display font-bold tracking-wide uppercase text-center w-full truncate leading-tight"
-                    style={{ color: selected ? 'var(--accent)' : 'var(--text-muted)' }}
-                    title={name}
-                  >
-                    {name}
-                  </span>
                 </button>
               </li>
             );
           })}
+          {selectedTeams.length > 0 && (
+            <li role="listitem" className="ml-auto">
+              <button
+                onClick={() => setSelectedTeams([])}
+                className="btn btn-ghost text-xs py-1.5 px-3 text-[var(--red)] h-8 rounded-full"
+                aria-label="Clear all team filters"
+              >
+                Clear ({selectedTeams.length})
+              </button>
+            </li>
+          )}
         </ul>
       </div>
     </section>

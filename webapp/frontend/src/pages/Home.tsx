@@ -37,6 +37,21 @@ const LIMITATIONS = [
   },
 ];
 
+const HYPOTHESES = [
+  {
+    title: 'Spatial Influence (Space Control & Value)',
+    body: 'A player\'s quality is measurable through their spatial influence on the pitch, quantified via convex hulls of the opposing block, line-breakers weighted by Expected Possession Value (EPV), and the gravity exerted on defenders.',
+  },
+  {
+    title: 'Decision Quality',
+    body: 'A player\'s decision-making can be evaluated by comparing the chosen pass against all available alternatives the player could have played. This ranks the options to determine if the player consistently picks the most valuable action.',
+  },
+  {
+    title: 'Contextual Scouting & Similarities',
+    body: 'Players can be objectively compared and clustered not just by traditional metrics, but by their spatial and decision-making fingerprints, allowing for true contextual scouting and more accurate player profiling.',
+  },
+];
+
 export default function Home() {
   return (
     <div className="w-full pb-20 min-h-screen">
@@ -44,9 +59,6 @@ export default function Home() {
       {/* ── Hero ────────────────────────────────────────────────────────────── */}
       <div className="border-b border-[var(--border)] px-6 pt-16 pb-14 bg-[var(--surface)]">
         <div className="max-w-[1200px] mx-auto">
-          <p className="font-mono text-xs tracking-widest mb-3 text-[var(--accent)]">
-            UEFA EURO 2024 · STATSBOMB 360° · 272 PLAYERS
-          </p>
           <h1
             className="font-display font-black leading-none tracking-tight mb-5 text-[var(--text)]"
             style={{ fontSize: 'clamp(40px, 7vw, 72px)' }}
@@ -61,15 +73,50 @@ export default function Home() {
         </div>
       </div>
 
+      {/* ── Project Hypotheses ──────────────────────────────────────────────── */}
+      <div className="px-6 pt-14 pb-4 bg-[var(--surface2)] border-b border-[var(--border)]">
+        <div className="max-w-[1200px] mx-auto">
+          {/* Section header */}
+          <div className="mb-10 pb-6 border-b border-[var(--border)]">
+            <h2
+              className="font-display font-black tracking-tight mb-3 text-[var(--text)]"
+              style={{ fontSize: 'clamp(24px, 4vw, 36px)' }}
+            >
+              Project Hypotheses
+            </h2>
+            <p className="text-[15px] leading-relaxed text-[var(--text-muted)] max-w-[640px]">
+              This project is built upon three core hypotheses that aim to quantify the contextual value of player actions on the pitch.
+            </p>
+          </div>
+
+          {/* Hypotheses list */}
+          <ol className="flex flex-col divide-y divide-[var(--border)]" aria-label="Project Hypotheses">
+            {HYPOTHESES.map((item, i) => (
+              <li key={i} className="flex gap-5 sm:gap-8 py-5 items-baseline">
+                {/* Number */}
+                <span
+                  className="font-mono text-[13px] font-black text-[var(--accent)] shrink-0 w-6 text-right select-none"
+                  aria-hidden
+                >
+                  H{i + 1}
+                </span>
+                {/* Content */}
+                <p className="text-[14px] text-[var(--text-muted)] leading-[1.7] m-0">
+                  <strong className="font-semibold text-[var(--text)] mr-2">{item.title}.</strong>
+                  {item.body}
+                </p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+
       {/* ── Data scope & limitations ────────────────────────────────────────── */}
       <div className="px-6 pt-14 pb-4">
         <div className="max-w-[1200px] mx-auto">
 
           {/* Section header */}
           <div className="mb-10 pb-6 border-b border-[var(--border)]">
-            <p className="font-mono text-xs tracking-[0.14em] mb-3 text-[var(--text-dim)] uppercase">
-              METHODOLOGY · TRANSPARENCY
-            </p>
             <h2
               className="font-display font-black tracking-tight mb-3 text-[var(--text)]"
               style={{ fontSize: 'clamp(24px, 4vw, 36px)' }}

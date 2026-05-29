@@ -186,6 +186,9 @@ function RadarTooltip({ active, payload }: any) {
 
 function fmt(v: unknown): string {
   if (v == null) return '—';
+  if (typeof v === 'string' && /^-?\d+,\d+$/.test(v)) {
+    v = parseFloat(v.replace(',', '.'));
+  }
   if (typeof v === 'number') return Math.abs(v) < 10 ? v.toFixed(2) : v.toFixed(1);
   return String(v);
 }
@@ -508,7 +511,7 @@ export default function SpaceControlSection({
             Space Control &amp; Value
           </h2>
           <p className="text-xs text-[var(--text-muted)]">
-            Contextual passing metrics — {playerName}
+            Selected player's metrics — {playerName}
           </p>
         </div>
         <StatViewToggle mode={mode} onChange={onModeChange} />
