@@ -1,12 +1,21 @@
 """
 urs.py — H3 Off-Ball Movement
-URS (Uncapitalized Run Score) aggregation and validation.
+Per-player aggregation of the off-ball KPIs and split-half reliability.
 
-Formula — event level (spec §5.3):
-    URS_i = OBSO_i * (1 - received_i) * EPV(loc_i)
+Three derived event-level signals per (event, candidate teammate):
+    off_ball_value_i = xEPV_H2(target_i)                              # offered value
+    urs_i            = xEPV_H2(target_i) * (1 - received_i)           # uncapitalised
+    captured_i       = xEPV_H2(target_i) *      received_i            # realised
 
-Aggregation:
-    URS_per90_p = sum(URS_i) / minutes_p * 90
+Aggregated per player on the H1 minutes pool (≥ 135 min, no GK):
+    off_ball_potential_per90  = Σ off_ball_value / minutes * 90       # presence × quality
+    urs_per90                 = Σ urs            / minutes * 90       # latent EPV / 90
+    capitalization_rate       = Σ captured / Σ off_ball_value  ∈ [0,1]# realised share
+    latency_rate              = 1 − capitalization_rate               # latent share
+
+URS /90 is the H3 headline (single number that combines presence and latency
+in EPV units, directly comparable with H1 / H2 numbers).  The radar uses
+Potential, xEPV mean and Latency as the three independent angles.
 """
 
 from __future__ import annotations
@@ -27,7 +36,7 @@ if str(_H3_DIR) not in sys.path:
 from src.config import (
     COMPETITION_ID, SEASON_ID,
     RECEIVED_WINDOW_S, MIN_MINUTES,
-    OBSO_PARQUET, URS_CSV,
+    XEPV_PARQUET, URS_CSV,
     PITCH_LENGTH, PITCH_WIDTH,
     X_SCALE, Y_SCALE,
     H1_PLAYER_TOTALS,
@@ -35,76 +44,15 @@ from src.config import (
     load_h2_package,
 )
 
-from epv_pipeline import EPVPipeline  # H1 — flat layout
-
 logger = logging.getLogger(__name__)
 
 
-def _flag_received(obso: pd.DataFrame,
-                   ev_cache: dict[int, pd.DataFrame]) -> pd.Series:
-    """Flag whether each candidate actually received the ball.
-
-    received_i = 1 if the next ball-touch within RECEIVED_WINDOW_S seconds
-    belongs to this candidate.
-    """
-    received = pd.Series(False, index=obso.index)
-    for match_id, grp in obso.groupby("match_id"):
-        if match_id not in ev_cache:
-            continue
-        ev = ev_cache[match_id].copy()
-        ev["t_abs"] = ev["minute"].astype(float) * 60.0 + ev["second"].astype(float)
-        for idx, row in grp.iterrows():
-            t0   = float(row["minute"]) * 60.0 + float(row["second"])
-            cand = row["player"]
-            future = ev[(ev["t_abs"] > t0) & (ev["t_abs"] <= t0 + RECEIVED_WINDOW_S)]
-            if future.shape[0] > 0 and future.iloc[0].get("player") == cand:
-                received.at[idx] = True
-    return received
-
-
-def _player_minutes(matches: pd.DataFrame) -> pd.DataFrame:
-    """Return (player, team, primary_role, minutes_played).
-
-    Reads H1's Euro2024_Player_Totals_Distances_Roles.csv first (spec §6).
-    Falls back to StatsBomb lineups if the CSV is absent.
-    """
-    if H1_PLAYER_TOTALS.exists():
-        df = pd.read_csv(H1_PLAYER_TOTALS)
-        return df[["player", "team", "primary_role", "minutes_played"]].copy()
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        from statsbombpy import sb
-
-    rows = []
-    for _, m in matches.iterrows():
-        try:
-            lineups = sb.lineups(match_id=m["match_id"])
-            for team, lu in lineups.items():
-                for _, player in lu.iterrows():
-                    def _pos_minutes(pos: dict) -> int:
-                        fp = pos.get("from_period") or 1
-                        tp = pos.get("to_period")   or fp   # None = until end of match
-                        return max(0, tp - fp + 1) * 45     # StatsBomb periods are 45 mins each
-
-                    mins = sum(_pos_minutes(pos) for pos in player.get("positions", []))
-
-                    rows.append({
-                        "player"        : player["player_name"],
-                        "team"          : team,
-                        "primary_role"  : (player.get("positions") or [{}])[0].get("position", ""),
-                        "minutes_played": mins,
-                    })
-        except Exception:
-            pass
-    return (pd.DataFrame(rows)
-              .groupby(["player", "team"], as_index=False)
-              .agg(primary_role=("primary_role", "first"),
-                   minutes_played=("minutes_played", "sum")))
-
-
 def main() -> None:
-    """Aggregate OBSO into per-player URS_per90 and save player_urs_aggregated.csv."""
+    """Aggregate xEPV into per-player URS_per90 and save player_urs_aggregated.csv.
+
+    Reads  : data/off_ball_xepv.parquet  (produced by xepv.main())
+    Writes : data/player_urs_aggregated.csv
+    """
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         from statsbombpy import sb
@@ -112,92 +60,117 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s  %(levelname)s  %(message)s")
 
-    if not OBSO_PARQUET.exists():
-        raise FileNotFoundError(f"{OBSO_PARQUET} not found. Run obso.main() first.")
+    if not XEPV_PARQUET.exists():
+        raise FileNotFoundError(f"{XEPV_PARQUET} not found. Run xepv.main() first.")
 
-    obso = pd.read_parquet(OBSO_PARQUET)
-    logger.info("Loaded %d OBSO rows", len(obso))
+    cand = pd.read_parquet(XEPV_PARQUET)
+    logger.info("Loaded %d xEPV-confident rows", len(cand))
 
     matches = sb.matches(competition_id=COMPETITION_ID, season_id=SEASON_ID)
-    ev_cache: dict[int, pd.DataFrame] = {}
-    for mid in obso["match_id"].unique():
-        try:
-            ev_cache[int(mid)] = sb.events(match_id=mid)
-        except Exception:
-            pass
 
-    obso["received"] = _flag_received(obso, ev_cache)
+    if "received" not in cand.columns:
+        raise ValueError(
+            f"'received' column missing from {XEPV_PARQUET}. "
+            "Re-run xepv.main() — it now writes the received flag too."
+        )
     logger.info("received=True: %d / %d  (%.1f%%)",
-                int(obso["received"].sum()), len(obso), 100 * obso["received"].mean())
+                int(cand["received"].sum()), len(cand),
+                100 * cand["received"].mean())
 
-    if "epv_target" not in obso.columns:
-        epv_pipe = EPVPipeline()
-        obso["epv_target"] = [
-            float(epv_pipe.epv_at(r["target_x_m"], r["target_y_m"]))
-            for _, r in obso.iterrows()
-        ]
-
-    obso["urs"] = obso["obso"] * (1 - obso["received"].astype(float)) * obso["epv_target"]
+    # Two complementary signals per candidate:
+    #   off_ball_value = xEPV — value of the run regardless of capitalisation
+    #   urs            = xEPV · (1 − received) — the latent (non-served) share
+    # xEPV already encodes upside vs turnover penalty (H2 design), so no
+    # separate Pitch-Control filter is needed.
+    cand["urs"] = cand["xepv"] * (1 - cand["received"].astype(float))
+    cand["xepv_received"] = cand["xepv"] * cand["received"].astype(float)
 
     agg = (
-        obso.groupby("player")
+        cand.groupby("player")
         .agg(
-            team                   = ("team",     "first"),
-            urs_sum                = ("urs",      "sum"),
-            obso_mean              = ("obso",     "mean"),
-            n_confident_candidates = ("obso",     "count"),
-            n_received             = ("received", "sum"),
+            team                   = ("team",          "first"),
+            urs_sum                = ("urs",           "sum"),
+            off_ball_potential_sum = ("xepv",          "sum"),
+            off_ball_captured_sum  = ("xepv_received", "sum"),
+            xepv_mean              = ("xepv",          "mean"),
+            n_confident_candidates = ("xepv",          "count"),
+            n_received             = ("received",      "sum"),
         )
         .reset_index()
     )
     agg["receiver_conf_rate"] = agg["n_received"] / agg["n_confident_candidates"]
 
-    mins_df = _player_minutes(matches)
-    agg = agg.merge(mins_df, on=["player", "team"], how="left")
-    agg["macro_role"] = agg["primary_role"].fillna("").apply(map_role)
+    # ── Minutes + primary_role: H1 player_totals is the authoritative source ────
+    # H2 uses exactly the same file with an inner join + min_minutes filter;
+    # mirroring that join makes H3 directly comparable to H2's 272-player pool.
+    # Names in events == names in H1 player_totals (full names, no nicknames).
+    if not H1_PLAYER_TOTALS.exists():
+        raise FileNotFoundError(
+            f"H1 player totals not found: {H1_PLAYER_TOTALS}\n"
+            "URS aggregation requires H1's authoritative minutes/role table."
+        )
+    h1 = pd.read_csv(H1_PLAYER_TOTALS)[["player", "team", "primary_role", "minutes_played"]]
+    logger.info("Loaded H1 player_totals: %d players", len(h1))
 
-    eligible = agg["minutes_played"].notna() & (agg["minutes_played"] >= MIN_MINUTES)
+    # Inner join → restrict to H1's pool exactly (mirrors H2 line 146-147).
+    agg = agg.merge(h1, on=["player", "team"], how="inner")
+    agg["macro_role"] = agg["primary_role"].apply(map_role)
+
+    # Exclude goalkeepers (mirrors H2 corpus.py `is_gk` filter).
+    pre_gk = len(agg)
+    agg = agg[agg["macro_role"] != "GK"].copy()
+    logger.info("Excluded %d goalkeepers", pre_gk - len(agg))
+
+    # Apply the same minutes threshold as H2 (ANALYSIS_MIN_MINUTES = 135).
+    eligible = agg["minutes_played"] >= MIN_MINUTES
+    mins_safe = agg["minutes_played"].replace(0, np.nan)
     agg["urs_per90"] = np.where(
-        eligible,
-        agg["urs_sum"] / agg["minutes_played"].replace(0, np.nan) * 90,
+        eligible, agg["urs_sum"] / mins_safe * 90, np.nan,
+    )
+    agg["off_ball_potential_per90"] = np.where(
+        eligible, agg["off_ball_potential_sum"] / mins_safe * 90, np.nan,
+    )
+    agg["n_confident_per90"] = np.where(
+        eligible, agg["n_confident_candidates"] / mins_safe * 90, np.nan,
+    )
+    # capitalisation rate = captured / potential ∈ [0, 1]; what fraction of the
+    # off-ball value the player generates ends up being realised by teammates.
+    pot = agg["off_ball_potential_sum"]
+    cap = agg["off_ball_captured_sum"]
+    agg["capitalization_rate"] = np.where(
+        eligible & (pot > 0),
+        (cap / pot.replace(0, np.nan)).clip(lower=0.0, upper=1.0),
         np.nan,
     )
+    # latency rate = 1 - capitalisation; the radar reads it directly so high
+    # values consistently mean "more uncapitalised value".
+    agg["latency_rate"] = np.where(
+        eligible & agg["capitalization_rate"].notna(),
+        1.0 - agg["capitalization_rate"], np.nan,
+    )
 
-    agg["urs_pct_within_role"] = np.nan
-    for role, grp in agg[eligible].groupby("macro_role"):
-        valid = grp["urs_per90"].notna()
-        if valid.sum() < 3:
-            continue
-        pct = grp.loc[valid, "urs_per90"].rank(pct=True) * 100
-        agg.loc[pct.index, "urs_pct_within_role"] = pct.values
+    # Within-role percentiles for the radar / leaderboard.
+    def _pct_within_role(col: str, out_col: str) -> None:
+        agg[out_col] = np.nan
+        for role, grp in agg[eligible].groupby("macro_role"):
+            valid = grp[col].notna()
+            if valid.sum() < 3: continue
+            pct = grp.loc[valid, col].rank(pct=True) * 100
+            agg.loc[pct.index, out_col] = pct.values
+
+    _pct_within_role("urs_per90",                "urs_pct_within_role")
+    _pct_within_role("off_ball_potential_per90", "potential_pct_within_role")
+    _pct_within_role("xepv_mean",                "xepv_mean_pct_within_role")
+    _pct_within_role("latency_rate",             "latency_pct_within_role")
 
     agg = agg.sort_values("urs_per90", ascending=False, na_position="last")
 
-    # --- START KNOWN NAME MAPPING ---
-    logger.info("Mapping full names to nicknames (may take a few seconds)...")
-    name_map = {}
-    for mid in obso["match_id"].unique():
-        try:
-            lineups = sb.lineups(match_id=mid)
-            for team, lu in lineups.items():
-                for _, p in lu.iterrows():
-                    full_name = p["player_name"]
-                    nickname = p.get("player_nickname")
-                    # If a nickname exists, use it. Otherwise keep the full name.
-                    if pd.notna(nickname) and nickname:
-                        name_map[full_name] = nickname
-                    elif full_name not in name_map:
-                        name_map[full_name] = full_name
-        except Exception:
-            pass
-
-    # Apply mapping to the player column
-    agg["player"] = agg["player"].map(lambda x: name_map.get(x, x))
-    # --- END KNOWN NAME MAPPING ---
-
     URS_CSV.parent.mkdir(parents=True, exist_ok=True)
     agg.to_csv(URS_CSV, index=False)
-    logger.info("Saved %s  (%d eligible players)", URS_CSV, int(eligible.sum()))
+    logger.info(
+        "Saved %s  (%d rows, %d eligible >= %d min)",
+        URS_CSV, len(agg), int(eligible.sum()), MIN_MINUTES,
+    )
 
 
 def show_uncapitalised_runs(player: str, n: int = 4) -> None:
@@ -211,17 +184,16 @@ def show_uncapitalised_runs(player: str, n: int = 4) -> None:
         warnings.simplefilter("ignore")
         from statsbombpy import sb
 
-    if not OBSO_PARQUET.exists():
-        logger.error("%s not found — run obso.main() first.", OBSO_PARQUET)
+    if not XEPV_PARQUET.exists():
+        logger.error("%s not found — run xepv.main() first.", XEPV_PARQUET)
         return
 
-    obso = pd.read_parquet(OBSO_PARQUET)
-    if "urs" not in obso.columns:
-        obso["urs"] = (obso["obso"]
-                       * (1 - obso.get("received", pd.Series(False, index=obso.index)).astype(float))
-                       * obso.get("epv_target", pd.Series(1.0, index=obso.index)))
+    cand = pd.read_parquet(XEPV_PARQUET)
+    if "urs" not in cand.columns:
+        cand["urs"] = (cand["xepv"]
+                       * (1 - cand.get("received", pd.Series(False, index=cand.index)).astype(float)))
 
-    player_rows = obso[(obso["player"] == player) & obso["urs"].notna()].nlargest(n, "urs")
+    player_rows = cand[(cand["player"] == player) & cand["urs"].notna()].nlargest(n, "urs")
     if player_rows.shape[0] == 0:
         logger.warning("No rows for player: %s", player)
         return
@@ -231,7 +203,7 @@ def show_uncapitalised_runs(player: str, n: int = 4) -> None:
     if ncols == 1:
         axes = [axes]
 
-    norm = mcolors.Normalize(vmin=0, vmax=obso["obso"].quantile(0.95))
+    norm = mcolors.Normalize(vmin=0, vmax=cand["xepv"].quantile(0.95))
     cmap = cm.get_cmap("YlOrRd")
 
     for ax, (_, row) in zip(axes, player_rows.iterrows()):
@@ -275,17 +247,17 @@ def show_uncapitalised_runs(player: str, n: int = 4) -> None:
             except Exception:
                 pass
 
-        event_obso = obso[obso["event_id"] == row["event_id"]]
+        event_cand = cand[cand["event_id"] == row["event_id"]]
         for _, dot in fr[(fr["teammate"] == True) & (fr["actor"] == False)].iterrows():
             loc = dot["location"]
             if loc is None: continue
             xm, ym = loc[0] * X_SCALE, loc[1] * Y_SCALE
-            mr = event_obso[
-                (abs(event_obso["target_x_m"] - xm) < 2.0) &
-                (abs(event_obso["target_y_m"] - ym) < 2.0)
+            mr = event_cand[
+                (abs(event_cand["target_x_m"] - xm) < 2.0) &
+                (abs(event_cand["target_y_m"] - ym) < 2.0)
             ]
-            oval = float(mr["obso"].iloc[0]) if mr.shape[0] > 0 else 0.0
-            ax.scatter(xm, ym, s=120, color=cmap(norm(oval)),
+            xval = float(mr["xepv"].iloc[0]) if mr.shape[0] > 0 else 0.0
+            ax.scatter(xm, ym, s=120, color=cmap(norm(xval)),
                        edgecolors="white", linewidths=0.8, zorder=3)
 
         ax.scatter(row["target_x_m"], row["target_y_m"],
@@ -301,7 +273,7 @@ def show_uncapitalised_runs(player: str, n: int = 4) -> None:
 
         ax.set_title(
             f"{row['sender']}  {prow['minute']}'\n"
-            f"OBSO={row['obso']:.3f}  PC={row.get('pc_target', float('nan')):.2f}"
+            f"xEPV={row['xepv']:.3f}  xpass={row.get('xpass', float('nan')):.2f}"
             f"  EPV={row.get('epv_target', float('nan')):.3f}\n"
             f"URS={row['urs']:.4f}  candidate: {player.split()[-1]}",
             fontsize=9,
@@ -313,82 +285,81 @@ def show_uncapitalised_runs(player: str, n: int = 4) -> None:
     plt.show()
 
 
-def _player_minutes_from_lineups(matches: pd.DataFrame) -> pd.DataFrame:
-    """Compute minutes played from StatsBomb lineups for a given subset of matches.
+def _player_minutes_from_events(match_ids: list[int]) -> pd.DataFrame:
+    """Per-(player, team) minutes computed exactly like H1's player_totals.
 
-    Always uses the StatsBomb API — never the H1 CSV — so it works correctly
-    on any subset of matches (e.g. the first or second tournament half).
+    H1 formula (player_totals.py line 144):
+        minutes_played_per_match = events.minute.max() - events.minute.min()
+    Summed across the given match_ids. Names match H1's CSV column 'player'
+    (StatsBomb full names from event['player']).
     """
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         from statsbombpy import sb
 
     rows = []
-    for _, m in matches.iterrows():
+    for mid in match_ids:
         try:
-            lineups = sb.lineups(match_id=m["match_id"])
-            for team, lu in lineups.items():
-                for _, player in lu.iterrows():
-                    def _pos_minutes(pos: dict) -> int:
-                        fp = pos.get("from_period") or 1
-                        tp = pos.get("to_period")   or fp   # None = until end of match
-                        return max(0, tp - fp + 1) * 45     # StatsBomb periods are 45 mins each
-
-                    mins = sum(_pos_minutes(pos) for pos in player.get("positions", []))
-
-                    rows.append({
-                        "player"        : player["player_name"],
-                        "team"          : team,
-                        "primary_role"  : (player.get("positions") or [{}])[0].get("position", ""),
-                        "minutes_played": mins,
-                    })
+            ev = sb.events(match_id=int(mid))
         except Exception:
-            pass
+            continue
+        ev = ev.dropna(subset=["player"])
+        per_match = (ev.groupby(["team", "player"])["minute"]
+                       .agg(["min", "max"]).reset_index())
+        per_match["minutes_played"] = per_match["max"] - per_match["min"]
+        for _, r in per_match.iterrows():
+            rows.append({"player": r["player"], "team": r["team"],
+                         "minutes_played": float(r["minutes_played"])})
 
     return (pd.DataFrame(rows)
               .groupby(["player", "team"], as_index=False)
-              .agg(primary_role=("primary_role", "first"),
-                   minutes_played=("minutes_played", "sum")))
+              .agg(minutes_played=("minutes_played", "sum")))
+
 
 def split_half_reliability(min_minutes_per_half: int = 90) -> None:
-    """Spearman rho between first-half and second-half URS_per90 rankings."""
+    """Spearman rho between first-half and second-half URS_per90 rankings.
+
+    Minutes per half are computed with the same H1 events-based formula
+    (player_totals.py: minute.max - minute.min), so the split-half pool is
+    consistent with the main URS pool. Player names already match H1
+    (full names), so we join on (player, team) directly.
+    """
     import matplotlib.pyplot as plt
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         from statsbombpy import sb
 
-    if not OBSO_PARQUET.exists():
-        logger.error("%s not found — run obso.main() first.", OBSO_PARQUET)
+    if not XEPV_PARQUET.exists():
+        logger.error("%s not found — run xepv.main() first.", XEPV_PARQUET)
         return
 
-    obso    = pd.read_parquet(OBSO_PARQUET)
+    cand    = pd.read_parquet(XEPV_PARQUET)
     matches = sb.matches(competition_id=COMPETITION_ID, season_id=SEASON_ID)
     matches = matches.sort_values("match_date").reset_index(drop=True)
     mid_pt  = len(matches) // 2
 
-    first_ids  = set(matches["match_id"].iloc[:mid_pt].tolist())
-    second_ids = set(matches["match_id"].iloc[mid_pt:].tolist())
+    first_ids  = matches["match_id"].iloc[:mid_pt].tolist()
+    second_ids = matches["match_id"].iloc[mid_pt:].tolist()
 
-    if "urs" not in obso.columns:
-        obso["urs"] = (obso["obso"]
-                       * (1 - obso.get("received", pd.Series(False, index=obso.index)).astype(float))
-                       * obso.get("epv_target", pd.Series(1.0, index=obso.index)))
+    if "urs" not in cand.columns:
+        cand["urs"] = (cand["xepv"]
+                       * (1 - cand.get("received", pd.Series(False, index=cand.index)).astype(float)))
 
     results: dict[str, pd.Series] = {}
     for label, half_ids in [("first", first_ids), ("second", second_ids)]:
-        sub = obso[obso["match_id"].isin(half_ids)]
-        agg = sub.groupby("player").agg(urs_sum=("urs", "sum")).reset_index()
+        sub = cand[cand["match_id"].isin(half_ids)]
+        agg = (sub.groupby(["player", "team"])
+                  .agg(urs_sum=("urs", "sum")).reset_index())
 
-        # calculate minutes played in this half from lineups
-        half_matches = matches[matches["match_id"].isin(half_ids)]
-        half_mins    = _player_minutes_from_lineups(half_matches)
-        agg = agg.merge(half_mins[["player", "minutes_played"]], on="player", how="left")
+        half_mins = _player_minutes_from_events(half_ids)
+        agg = agg.merge(half_mins, on=["player", "team"], how="left")
 
-        # filter and normalize per 90 minutes; keep only players with enough minutes in this half
-        agg = agg[agg["minutes_played"].notna() & (agg["minutes_played"] >= min_minutes_per_half)]
+        agg = agg[agg["minutes_played"].notna() &
+                  (agg["minutes_played"] >= min_minutes_per_half)]
         agg["urs_per90"] = agg["urs_sum"] / agg["minutes_played"].replace(0, np.nan) * 90
-        results[label] = agg.set_index("player")["urs_per90"].dropna()
+        # one index key per player (player+team makes it unambiguous)
+        results[label] = (agg.set_index(["player", "team"])["urs_per90"].dropna())
 
     common = results["first"].index.intersection(results["second"].index)
     if len(common) < 10:
@@ -423,6 +394,135 @@ def split_half_reliability(min_minutes_per_half: int = 90) -> None:
                  fontsize=12)
     plt.tight_layout()
     plt.show()
+
+# Radar axes — same vocabulary as H2's viz.RADAR_AXES: (label, raw column,
+# within-role percentile column). All three are "outside = better":
+#   - Off-Ball Potential /90  -> presence × quality of off-ball exposure
+#   - xEPV mean               -> quality of the average frame
+#   - Latency (1 − Cap.)      -> latent (uncapitalised) share — high = more latent
+# URS /90 is the headline INDEX (its within-role percentile), NOT a radar axis:
+# URS = Potential × Latency, so an URS axis would be collinear with the other
+# two. Off-Ball Potential is itself strongly correlated with URS (ρ ≈ 0.97,
+# see §8.2) — kept on the radar because it is the most scout-readable volume
+# axis (mirrors H2 keeping correlated axes and documenting it, rather than
+# dropping readability). The radar decomposes the index; it does not repeat it.
+RADAR_AXES = [
+    ("Off-Ball Potential /90", "off_ball_potential_per90", "potential_pct_within_role"),
+    ("xEPV mean",              "xepv_mean",                "xepv_mean_pct_within_role"),
+    ("Latency (1 − Cap.)",     "latency_rate",             "latency_pct_within_role"),
+]
+H3_COLOR   = "#2ca02c"   # H3 family color (green; distinct from H1/H2 families)
+H3_COLOR_B = "#d62728"   # second player in the head-to-head overlay
+
+
+def _render_static(fig):
+    """Emit a static PNG copy of a Plotly figure into the notebook output.
+
+    Mirrors H2's viz helper. GitHub renders only embedded images in .ipynb
+    cells, not Plotly's interactive HTML, so the static copy keeps the
+    notebook viewable on github.com.
+    """
+    from IPython.display import Image, display
+    display(Image(fig.to_image(format="png", scale=2)))
+
+
+def _radar_hover(row, role: str) -> list[str]:
+    """Per-axis hover: '<b>Label</b><br>Raw: X<br>Pct in ROLE: Y'.
+
+    Same template as H2's viz._hover_for. Raw is the unflipped measurement.
+    """
+    hov = []
+    for lab, raw_col, pct_col in RADAR_AXES:
+        hov.append(
+            f"<b>{lab}</b><br>Raw: {row[raw_col]:.3f}<br>"
+            f"Pct in {role}: {row[pct_col]:.0f}")
+    return hov
+
+
+def off_ball_radar(players, urs_csv=None, show_static: bool = True, save: str | None = None):
+    """Off-Ball 3-axis radar (Plotly), styled like H2's Decision-Quality radar.
+
+    A headline INDEX (URS /90 within-role percentile) sits next to a within-role
+    percentile radar that decomposes the profile behind it. Same chrome as H2's
+    `viz.plot_dq_radar`: line width 2.5, fill opacity 0.35, radial range
+    [0, 100] with ticks [20, 40, 60, 80], hover with raw + within-role
+    percentile. A static PNG is emitted (`show_static`) so the .ipynb stays
+    viewable on github.com.
+
+    `players` may be a single name or a list/tuple (head-to-head overlay).
+    Names must match the CSV `player` column (full StatsBomb names).
+    """
+    import plotly.graph_objects as go
+
+    if isinstance(players, str):
+        players = [players]
+    csv_path = urs_csv if urs_csv is not None else URS_CSV
+    df = pd.read_csv(csv_path)
+
+    pct_cols = [pct for _, _, pct in RADAR_AXES]
+    labels   = [lab for lab, _, _ in RADAR_AXES]
+
+    rows = []
+    for name in players:
+        row = df[df["player"] == name]
+        if row.empty:
+            logger.warning("Player not found in %s: %s", csv_path, name)
+            continue
+        r = row.iloc[0]
+        if r[pct_cols].isna().any():
+            logger.warning("%s has NaN percentiles (likely below MIN_MINUTES).", name)
+            continue
+        rows.append((name, r))
+    if not rows:
+        return None
+
+    labels_c = labels + [labels[0]]          # close the loop
+    colors   = [H3_COLOR, H3_COLOR_B, "#1f77b4", "#9467bd"]
+
+    fig = go.Figure()
+    for i, (name, r) in enumerate(rows):
+        role = r["macro_role"]
+        vals = [0.0 if pd.isna(r[p]) else float(r[p]) for p in pct_cols]
+        hov  = _radar_hover(r, role)
+        col  = colors[i % len(colors)]
+        fig.add_trace(go.Scatterpolar(
+            r=vals + [vals[0]], theta=labels_c, fill="toself",
+            name=f"{name} ({role})",
+            hoverinfo="text", hovertext=hov + [hov[0]],
+            line=dict(color=col, width=2.5),
+            fillcolor=col, opacity=0.35,
+            showlegend=len(rows) > 1,
+        ))
+
+    if len(rows) == 1:
+        name, r = rows[0]
+        role = r["macro_role"]
+        idx = r.get("urs_pct_within_role", float("nan"))
+        title = (f"<b>OFF-BALL MOVEMENT</b>  ·  URS idx {idx:.0f}/100"
+                 f"<br><span style='font-size:12px;color:#666'>"
+                 f"{name}  ·  {r['team']}  ·  {r['primary_role']} ({role})  ·  "
+                 f"{int(r['minutes_played'])} min  ·  "
+                 f"URS/90 = {r['urs_per90']:.3f}</span>")
+    else:
+        title = ("<b>OFF-BALL MOVEMENT</b>  ·  head-to-head"
+                 "<br><span style='font-size:12px;color:#666'>"
+                 "within-role percentiles</span>")
+
+    fig.update_layout(
+        title=title,
+        polar=dict(
+            radialaxis=dict(range=[0, 100], tickvals=[20, 40, 60, 80],
+                            gridcolor="#ddd", tickfont=dict(size=9)),
+            angularaxis=dict(tickfont=dict(size=11)),
+        ),
+        width=560, height=480, margin=dict(t=80, b=40, l=60, r=60),
+    )
+    if save:
+        fig.write_image(save, scale=2)
+    if show_static:
+        _render_static(fig)
+    return fig
+
 
 def _draw_pitch(ax, color="black", lw=1.4):
     """Consistent pitch style matching H1/H2."""

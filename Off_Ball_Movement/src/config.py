@@ -79,20 +79,20 @@ Y_SCALE = PITCH_WIDTH  / 80.0    # 0.85
 EPV_ROWS = 32
 EPV_COLS = 50
 
-# ── Pitch Control grid — same dimensions as EPV (spec §5.1) ───────────────────
-PC_GRID_ROWS = EPV_ROWS   # 32
-PC_GRID_COLS = EPV_COLS   # 50
-
 # ── Receiver resolution ────────────────────────────────────────────────────────
-WINDOW_SECONDS = 20.0
+# WINDOW_SECONDS = max staleness PER SIDE (s): the resolver estimates a
+# teammate's position only from an event within this many seconds before OR
+# after the pass. Calibrated in §1.6.1 (10-match sweep): at the chosen
+# CONF_THR_M = 8 m, accuracy on confident dots rises as the window tightens
+# (88% at 20 s -> 96% at 5 s) while the confident-candidate VOLUME stays flat
+# (~1.0x across all W) — tighter = fresher position estimates at no volume cost.
+# The full-pipeline URS/90 ranking is stable across W (Spearman rho 0.96 vs
+# W=20), so 5 s is chosen for maximum per-candidate accuracy.
+WINDOW_SECONDS = 5.0
+# CONF_THR_M = max localisation residual (m) for a dot to count "confident".
+# At 8 m the mean residual of confident dots is ~4 m and accuracy ~96%;
+# tightening to 6 m does NOT raise accuracy but drops ~17% of candidates.
 CONF_THR_M     = 8.0
-
-# ── Pitch Control ──────────────────────────────────────────────────────────────
-PC_V_MAX = 9.0
-PC_K     = 3.0
-
-# ── OBSO ──────────────────────────────────────────────────────────────────────
-PC_MIN_FOR_OBSO = 0.5
 
 # ── URS ───────────────────────────────────────────────────────────────────────
 RECEIVED_WINDOW_S = 4.0
@@ -127,7 +127,7 @@ def map_role(position: str) -> str:
 DATA_DIR           = H3_DIR / "data"
 CACHE_DIR          = DATA_DIR / "cache"
 CANDIDATES_PARQUET = DATA_DIR / "off_ball_candidates.parquet"
-OBSO_PARQUET       = DATA_DIR / "off_ball_obso.parquet"
+XEPV_PARQUET       = DATA_DIR / "off_ball_xepv.parquet"
 URS_CSV            = DATA_DIR / "player_urs_aggregated.csv"
 
 # ── H2 outputs consumed by H3 (read-only) ─────────────────────────────────────
@@ -141,7 +141,7 @@ H1_PLAYER_TOTALS = REPO_ROOT / "Space_Control_and_Value" / "data" / \
 
 # ── H2 package loader ──────────────────────────────────────────────────────────
 _H2_PKG_PRIVATE = "_dq_src"          # private name — never conflicts with anything
-_H2_SUB_MODULES = ("config", "geometry", "features", "xpass")
+_H2_SUB_MODULES = ("config", "geometry", "features", "xpass", "xepv")
 
 def load_h2_package():
     """Load Decision_Quality/src/ as the private package `_dq_src`.

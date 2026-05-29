@@ -28,7 +28,7 @@ from src.config import (
     COMPETITION_ID, SEASON_ID,
     WINDOW_SECONDS, CONF_THR_M,
     CANDIDATES_PARQUET, CACHE_DIR,
-    H2_ALTERNATIVES, H2_XPASS_MODEL, H2_CORPUS_CACHE,
+    H2_XPASS_MODEL,
     load_h2_package,
     X_SCALE, Y_SCALE
 )
@@ -194,7 +194,7 @@ def resolve_receiver(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# H2 xPass scoring (spec §6 reuse — H2 Section 8.1)
+# H2 xPass scoring — uses CalibratedXPass from Decision_Quality.src.xpass.
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _load_h2_xpass_model():
@@ -208,27 +208,47 @@ def _load_h2_xpass_model():
     return joblib.load(H2_XPASS_MODEL)
 
 
-def _score_from_corpus(resolved_ids: set[str], xpass_model) -> pd.DataFrame:
-    """Call H2's features_for_all_candidates + predict_proba directly.
+def _score_candidates(frames_for_match: pd.DataFrame, xpass_model) -> pd.DataFrame:
+    """Compute H2's calibrated xPass for every visible teammate, on the fly.
 
-    Used when H2's alternatives.parquet has not yet been built.
-    Identical to H2 Section 8.1.
+    Why not merge H2's alternatives.parquet?  StatsBomb periodically
+    re-processes the open-data and regenerates every event UUID. H1/H2 were
+    built from an earlier pull whose `event_id`s are frozen inside
+    alternatives.parquet, while H3 reads the *current* `sb.events/frames`
+    pull — so the two event_id spaces no longer intersect and an event_id
+    merge yields zero rows. The fix is to stop joining on identity and
+    recompute xPass from geometry: identical model, identical 13 features
+    (H2 features.py), so the value attached to each candidate is exactly
+    what H2 would attach. Robust to any future re-pull.
+
+    Parameters
+    ----------
+    frames_for_match : one row per event with
+        event_id, match_id, start_x_m, start_y_m (sender, metres),
+        teammates / opponents (lists of (x, y) in metres).
+
+    Returns
+    -------
+    DataFrame: event_id, target_x_m, target_y_m, xpass — one row per
+    (event, visible teammate). Joined back to the confident dots on
+    (event_id, rounded target coords), all within the same live pull so
+    event_id matches by construction.
     """
-    if not H2_CORPUS_CACHE.exists():
-        raise FileNotFoundError(
-            f"H2 corpus cache not found: {H2_CORPUS_CACHE}\n"
-            "Run H2 notebook Sections 1-2 to build it."
-        )
-    corpus = pd.read_parquet(H2_CORPUS_CACHE)
-    subset = corpus[corpus["event_id"].isin(resolved_ids)].copy()
-    if subset.shape[0] == 0:
-        return pd.DataFrame(columns=["event_id", "end_x_m", "end_y_m", "xpass"])
+    if frames_for_match.shape[0] == 0:
+        return pd.DataFrame(columns=["event_id", "target_x_m", "target_y_m", "xpass"])
 
-    alts = h2_features.features_for_all_candidates(subset)   # H2 Section 8.1
-    alts["xpass"] = xpass_model.predict_proba(alts)           # H2 Section 8.1
+    # H2 Section 8.1 — same routine used to score alternatives in H2.
+    alts = h2_features.features_for_all_candidates(frames_for_match)
+    if alts.shape[0] == 0:
+        return pd.DataFrame(columns=["event_id", "target_x_m", "target_y_m", "xpass"])
 
-    keep = [c for c in ["event_id", "target_x_m", "target_y_m", "xpass"] if c in alts.columns]
-    return alts[keep].copy()
+    feat_cols = list(h2_features.FEATURE_COLS)
+    proba = xpass_model.predict_proba(alts[feat_cols])
+    # CalibratedXPass.predict_proba may return a 2-column array (sklearn API);
+    # take the positive class if so.
+    alts["xpass"] = proba[:, 1] if getattr(proba, "ndim", 1) == 2 else proba
+
+    return alts[["event_id", "target_x_m", "target_y_m", "xpass"]].copy()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -286,16 +306,13 @@ def main() -> None:
 
     xpass_model = _load_h2_xpass_model()
 
-    if H2_ALTERNATIVES.exists():
-        h2_alts: pd.DataFrame = pd.read_parquet(H2_ALTERNATIVES)
-        h2_alts["_tx_r"] = h2_alts["target_x_m"].round(1)
-        h2_alts["_ty_r"] = h2_alts["target_y_m"].round(1)
-        logger.info("H2 alternatives.parquet loaded (%d rows).", len(h2_alts))
-        use_prebuilt = True
-    else:
-        h2_alts = pd.DataFrame()
-        use_prebuilt = False
-        logger.info("H2 alternatives.parquet absent — calling features + predict_proba directly.")
+    # xPass is recomputed on the fly from the live freeze frames with H2's
+    # saved CalibratedXPass model (see _score_candidates for why we no longer
+    # merge alternatives.parquet — StatsBomb regenerated every event UUID, so
+    # H2's frozen event_ids no longer match the live pull). Same model, same
+    # 13 features: the value attached is exactly what H2 would attach.
+    logger.info("xPass scored on the fly with H2's CalibratedXPass "
+                "(event_id-independent; robust to StatsBomb re-pulls).")
 
     matches = sb.matches(competition_id=COMPETITION_ID, season_id=SEASON_ID)
     logger.info("Euro 2024 — %d matches to process", len(matches))
@@ -319,6 +336,8 @@ def main() -> None:
             ]
 
             match_rows: list[dict] = []
+            frame_rows: list[dict] = []   # one per event, fed to _score_candidates
+            seen_events: set[str] = set()
             for _, p in passes.iterrows():
                 dots, _ = resolve_receiver(events, frames, event_col, p["id"])
                 if dots is None:
@@ -350,28 +369,50 @@ def main() -> None:
                         "received"         : False,
                     })
 
+                # Build the per-event frame row once: every visible teammate /
+                # opponent in metres, the sender at its start position. This is
+                # what H2's features_for_all_candidates consumes (Section 8.1).
+                if p["id"] not in seen_events:
+                    seen_events.add(p["id"])
+                    fr = frames[frames[event_col] == p["id"]]
+                    tm = fr[(fr["teammate"] == True) & (fr["actor"] == False) &
+                            (fr["keeper"] == False)]
+                    opp = fr[(fr["teammate"] == False) & (fr["keeper"] == False)]
+                    tm_xy = [(float(l[0]) * X_SCALE, float(l[1]) * Y_SCALE)
+                             for l in tm["location"] if isinstance(l, list)]
+                    opp_xy = [(float(l[0]) * X_SCALE, float(l[1]) * Y_SCALE)
+                              for l in opp["location"] if isinstance(l, list)]
+                    if tm_xy:
+                        frame_rows.append({
+                            "event_id"  : p["id"],
+                            "match_id"  : mid,
+                            "start_x_m" : sx,
+                            "start_y_m" : sy,
+                            "teammates" : tm_xy,
+                            "opponents" : opp_xy,
+                            # H2 feature builder reads these; not used by H3 xPass.
+                            "chosen_teammate_idx": -1,
+                            "pass_complete"      : 0,
+                        })
+
             if not match_rows:
                 continue
 
             df_match = pd.DataFrame(match_rows)
-            resolved_ids = set(df_match["event_id"].unique())
             df_match["_tx_r"] = df_match["target_x_m"].round(1)
             df_match["_ty_r"] = df_match["target_y_m"].round(1)
 
-            if use_prebuilt:
-                h2_sub = h2_alts[h2_alts["event_id"].isin(resolved_ids)]
-                df_match = df_match.merge(
-                    h2_sub[["event_id", "_tx_r", "_ty_r", "xpass"]],
-                    on=["event_id", "_tx_r", "_ty_r"], how="left",
-                )
-            else:
-                scored = _score_from_corpus(resolved_ids, xpass_model)
-                scored["_tx_r"] = scored["target_x_m"].round(1)
-                scored["_ty_r"] = scored["target_y_m"].round(1)
-                df_match = df_match.merge(
-                    scored[["event_id", "_tx_r", "_ty_r", "xpass"]],
-                    on=["event_id", "_tx_r", "_ty_r"], how="left",
-                )
+            # Score every visible teammate with H2's model, then attach the
+            # candidate's xPass to its confident dot on (event_id, rounded
+            # target coords). Both sides come from the SAME live pull, so
+            # event_id matches by construction — no UUID drift possible.
+            scored = _score_candidates(pd.DataFrame(frame_rows), xpass_model)
+            scored["_tx_r"] = scored["target_x_m"].round(1)
+            scored["_ty_r"] = scored["target_y_m"].round(1)
+            df_match = df_match.merge(
+                scored[["event_id", "_tx_r", "_ty_r", "xpass"]],
+                on=["event_id", "_tx_r", "_ty_r"], how="left",
+            )
 
             df_match = df_match.drop(columns=["_tx_r", "_ty_r"], errors="ignore")
             df_match = df_match[df_match["xpass"].notna()].copy()
@@ -386,7 +427,7 @@ def main() -> None:
         return
 
     out = pd.DataFrame(all_rows)
-    out.to_parquet(CANDIDATES_PARQUET, index=False)
+    out.to_parquet(CANDIDATES_PARQUET, index=False, engine="pyarrow", version="2.6")
     logger.info(
         "Saved %s  (%d rows, %d events, %d players)",
         CANDIDATES_PARQUET, len(out),
