@@ -39,16 +39,16 @@ const LIMITATIONS = [
 
 const HYPOTHESES = [
   {
-    title: 'Spatial Influence (Space Control & Value)',
-    body: 'A player\'s quality is measurable through their spatial influence on the pitch, quantified via convex hulls of the opposing block, line-breakers weighted by Expected Possession Value (EPV), and the gravity exerted on defenders.',
+    title: 'Space Control & Value',
+    body: 'It is posited that a player’s quality is measurable by their spatial influence on the pitch. The methodology will explore the use of Convex Hulls to quantify defensive territorial control and evaluate an attacker’s ability to penetrate it. Utilizing Expected Possession Value (EPV), the objective is to identify "Line Breakers", who are players capable of executing passes that bypass defensive structures and significantly elevate the probability of scoring.',
   },
   {
     title: 'Decision Quality',
-    body: 'A player\'s decision-making can be evaluated by comparing the chosen pass against all available alternatives the player could have played. This ranks the options to determine if the player consistently picks the most valuable action.',
+    body: 'Aggregate pass completion rates lack analytical value when devoid of contextual factors. This phase will analyze "Passing under Pressure" by measuring the proximity of defending players. The aim is to assess decision-making efficacy: specifically, whether the player selected the optimal passing lane relative to immediate defensive danger. This differentiation facilitates the separation of players who default to conservative actions from those who exhibit tactical astuteness under high cognitive load.',
   },
   {
-    title: 'Contextual Scouting & Similarities',
-    body: 'Players can be objectively compared and clustered not just by traditional metrics, but by their spatial and decision-making fingerprints, allowing for true contextual scouting and more accurate player profiling.',
+    title: 'Off Ball Movement',
+    body: 'The vast majority of a player’s on-pitch activity occurs out of possession. This investigation seeks to identify players executing highvalue attacking runs that are ultimately not capitalized upon by teammates. Analyzing 360-degree spatial frames enables the detection of players who consistently occupy and attack dangerous areas, thereby quantifying a latent dimension of offensive contribution regardless of ball reception.',
   },
 ];
 
@@ -60,16 +60,52 @@ export default function Home() {
       <div className="border-b border-[var(--border)] px-6 pt-16 pb-14 bg-[var(--surface)]">
         <div className="max-w-[1200px] mx-auto">
           <h1
-            className="font-display font-black leading-none tracking-tight mb-5 text-[var(--text)]"
+            className="font-display font-black leading-none tracking-tight mb-3 text-[var(--text)]"
             style={{ fontSize: 'clamp(40px, 7vw, 72px)' }}
           >
             Contextual<br />Football Scouting
           </h1>
-          <p className="text-[17px] text-[var(--text-muted)] max-w-[600px] leading-[1.7]">
-            Hypothesis 1 — a player's quality is measurable through their spatial influence on the pitch,
-            quantified via convex hulls of the opposing block, line-breakers weighted by Expected Possession
-            Value (EPV), and the gravity exerted on defenders.
+          {/* Main title description */}
+          <p className="text-[16px] text-[var(--text-muted)] leading-[1.7] w-full mb-6">
+            A new paradigm for football scouting: quantifying player value through context-aware analytics, advanced spatial data, and decision-making under pressure. Discover the difference between individual talent and systemic advantage.
           </p>
+          {/* Separator line */}
+          <div className="w-full h-px bg-[var(--border)] mb-8" />
+          <div className="w-full">
+            {/* Analytical Challenge */}
+            <div className="flex items-start gap-3 mt-2 mb-1">
+              <span className="mt-1">
+                {/* Target SVG */}
+                <svg width="22" height="22" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="var(--accent)" strokeWidth="2"/><circle cx="12" cy="12" r="4" stroke="var(--accent)" strokeWidth="2"/><circle cx="12" cy="12" r="1.5" fill="var(--accent)"/></svg>
+              </span>
+              <h2 className="font-display font-bold text-[20px] text-[var(--text)] m-0">The Analytical Challenge</h2>
+            </div>
+            <p className="text-[16px] text-[var(--text-muted)] mb-5">
+              Within the modern transfer market, one of the most significant challenges is the phenomenon of "Team Bias". Clubs frequently overvalue players based on superficial statistical outputs that are often a byproduct of a dominant team structure rather than an accurate reflection of exceptional individual talent. It remains highly difficult to objectively evaluate an athlete without the compounding influence of their respective team's tactical system.
+            </p>
+            {/* Our Objective */}
+            <div className="flex items-start gap-3 mt-6 mb-1">
+              <span className="mt-1">
+                {/* Compass SVG */}
+                <svg width="22" height="22" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="var(--accent)" strokeWidth="2"/><polygon points="12,7 15,17 12,15 9,17" fill="var(--accent)"/></svg>
+              </span>
+              <h2 className="font-display font-bold text-[20px] text-[var(--text)] m-0">Our Objective</h2>
+            </div>
+            <p className="text-[16px] text-[var(--text-muted)] mb-5">
+              The primary objective of this project is to shift the analytical paradigm from descriptive to explanatory observations. By incorporating the geometric and spatial context provided by 360-degree data, we evaluate elements often obscured by standard statistics, such as optimal spatial positioning and effective decision-making under high-pressure scenarios. This methodology allows us to determine whether elite performance is a function of individual talent or systemic dominance, providing the optimal approach for uncovering undervalued talent currently operating within less prominent clubs.
+            </p>
+            {/* Who We Are */}
+            <div className="flex items-start gap-3 mt-6 mb-1">
+              <span className="mt-1">
+                {/* Users SVG */}
+                <svg width="22" height="22" fill="none" viewBox="0 0 24 24"><circle cx="8" cy="10" r="3" stroke="var(--accent)" strokeWidth="2"/><circle cx="16" cy="10" r="3" stroke="var(--accent)" strokeWidth="2"/><path d="M2 20c0-2.5 3-4.5 6-4.5s6 2 6 4.5" stroke="var(--accent)" strokeWidth="2"/><path d="M14 20c0-1.5 2-2.5 4-2.5s4 1 4 2.5" stroke="var(--accent)" strokeWidth="2"/></svg>
+              </span>
+              <h2 className="font-display font-bold text-[20px] text-[var(--text)] m-0">Who We Are</h2>
+            </div>
+            <p className="text-[16px] text-[var(--text-muted)]">
+              We are Matteo Vezzoli and Armando Mio, and we present this project as the culmination of our academic journey at the Barça Innovation Hub. Motivated by a rigorous interest in data science applied to football, our work focuses on uncovering the latent variables of a match that frequently escape standard statistical frameworks.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -84,7 +120,7 @@ export default function Home() {
             >
               Project Hypotheses
             </h2>
-            <p className="text-[15px] leading-relaxed text-[var(--text-muted)] max-w-[640px]">
+            <p className="text-[15px] leading-relaxed text-[var(--text-muted)]">
               This project is built upon three core hypotheses that aim to quantify the contextual value of player actions on the pitch.
             </p>
           </div>
@@ -95,7 +131,7 @@ export default function Home() {
               <li key={i} className="flex gap-5 sm:gap-8 py-5 items-baseline">
                 {/* Number */}
                 <span
-                  className="font-mono text-[13px] font-black text-[var(--accent)] shrink-0 w-6 text-right select-none"
+                  className="font-mono text-[15px] font-bold text-[var(--accent)] shrink-0 w-6 text-right select-none"
                   aria-hidden
                 >
                   H{i + 1}
@@ -123,9 +159,8 @@ export default function Home() {
             >
               Data scope and limitations
             </h2>
-            <p className="text-[15px] leading-relaxed text-[var(--text-muted)] max-w-[640px]">
-              All metrics on this site come from StatsBomb 360 freeze-frame data combined with
-              predictive models. This is what they can, and cannot, describe.
+            <p className="text-[15px] leading-relaxed text-[var(--text-muted)]">
+              All metrics on this site come from StatsBomb 360 freeze-frame data combined with predictive models. This is what they can, and cannot, describe.
             </p>
           </div>
 
@@ -135,7 +170,7 @@ export default function Home() {
               <li key={i} className="flex gap-5 sm:gap-8 py-5 items-baseline">
                 {/* Number */}
                 <span
-                  className="font-mono text-[11px] font-bold text-[var(--text-dim)] shrink-0 w-6 text-right select-none"
+                  className="font-mono text-[15px] font-bold text-[var(--accent)] shrink-0 w-6 text-right select-none"
                   aria-hidden
                 >
                   {String(i + 1).padStart(2, '0')}

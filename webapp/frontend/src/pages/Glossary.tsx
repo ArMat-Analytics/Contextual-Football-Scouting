@@ -137,7 +137,7 @@ export default function Glossary() {
           >
             Glossary
           </h1>
-          <p className="text-base max-w-xl text-[var(--text-muted)] leading-[1.7]">
+          <p className="text-base text-[var(--text-muted)] leading-[1.7]">
             Complete reference for every metric and index used across the platform.
             Variables are grouped by their Space Control dimension.
           </p>

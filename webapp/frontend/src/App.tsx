@@ -164,7 +164,7 @@ function SearchByPlayer() {
           <h1 className="font-display font-black text-5xl sm:text-6xl leading-none tracking-tight text-[var(--text)]">
             Search by Player
           </h1>
-          <p className="mt-3 text-base max-w-xl text-[var(--text-muted)]">
+          <p className="mt-3 text-base text-[var(--text-muted)]">
             272 players with full stats, market values, space-control indices, and value delta. Click any name to open the full profile.
           </p>
         </div>

@@ -461,7 +461,7 @@ export default function SearchByAttribute() {
           <h1 className="font-display font-black leading-none tracking-tight mb-3 text-[var(--text)]" style={{ fontSize: 'clamp(36px, 6vw, 64px)' }}>
             Search by Attribute
           </h1>
-          <p className="text-[15px] text-[var(--text-muted)] max-w-[560px]">
+          <p className="text-[15px] text-[var(--text-muted)]">
             Filter all 272 players by macro role, tactical role, and contextual space control index ranges.
             Rankings are sorted alphabetically by player name by default.
           </p>
