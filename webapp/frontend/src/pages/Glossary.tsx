@@ -113,11 +113,11 @@ export default function Glossary() {
     <div className="w-full pb-20 min-h-screen">
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <div className="border-b border-[var(--border)] px-6 pt-10 pb-10 bg-[var(--surface)]">
+      <div className="border-b border-[var(--border)] px-6 pt-10 pb-8 bg-[var(--surface)]">
         <div className="max-w-[1200px] mx-auto">
 
           {/* Breadcrumb */}
-          <nav aria-label="Breadcrumb" className="mb-5">
+          <nav aria-label="Breadcrumb" className="mb-4">
             <ol className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
               <li>
                 <Link to="/" className="hover:text-[var(--accent)] transition-colors font-semibold">
@@ -131,22 +131,18 @@ export default function Glossary() {
             </ol>
           </nav>
 
-          <h1
-            className="font-display font-black leading-none tracking-tight mb-4 text-[var(--text)]"
-            style={{ fontSize: 'clamp(36px, 6vw, 60px)' }}
-          >
+          <h1 className="font-display font-black text-5xl sm:text-6xl leading-none tracking-tight text-[var(--text)]">
             Glossary
           </h1>
-          <p className="text-base text-[var(--text-muted)] leading-[1.7]">
-            Complete reference for every metric and index used across the platform.
-            Variables are grouped by their Space Control dimension.
+          <p className="mt-3 text-base text-[var(--text-muted)]">
+            Definitions and explanations of the metrics and statistics used in the platform. Variables are grouped by their Space Control dimension.
           </p>
         </div>
       </div>
 
       {/* ── Filter bar ─────────────────────────────────────────────── */}
       <div className="border-b border-[var(--border)] z-40 px-6 py-3 bg-white/92 backdrop-blur-xl">
-        <div className="max-w-[1200px] mx-auto flex flex-wrap items-center gap-2">
+        <div className="max-w-[1200px] mx-auto flex flex-wrap justify-center items-center gap-2">
           <span className="font-mono text-[10px] tracking-widest uppercase mr-2 hidden sm:inline text-[var(--text-dim)]">
             Filter
           </span>

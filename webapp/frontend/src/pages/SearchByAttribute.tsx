@@ -271,8 +271,8 @@ function PlayerResultRow({ player, rank }: { player: PlayerRow; rank: number }) 
         </div>
 
         {/* Bottom: Indices and Statistics (go below on mobile, right on desktop) */}
-        <div className="flex items-center justify-between lg:justify-end gap-3 pt-3 lg:pt-0 border-t lg:border-t-0 border-[var(--border)]">
-          <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+        <div className="flex items-center justify-center lg:justify-end gap-3 pt-3 lg:pt-0 border-t lg:border-t-0 border-[var(--border)]">
+          <div className="flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
             {INDICES.map(idx => (
               <IndexBadge
                 key={idx.key}
@@ -458,11 +458,11 @@ export default function SearchByAttribute() {
               <li className="font-semibold text-[var(--text)]" aria-current="page">Search by Attribute</li>
             </ol>
           </nav>
-          <h1 className="font-display font-black leading-none tracking-tight mb-3 text-[var(--text)]" style={{ fontSize: 'clamp(36px, 6vw, 64px)' }}>
+          <h1 className="font-display font-black text-5xl sm:text-6xl leading-none tracking-tight text-[var(--text)]">
             Search by Attribute
           </h1>
-          <p className="text-[15px] text-[var(--text-muted)]">
-            Filter all 272 players by macro role, tactical role, and contextual space control index ranges.
+          <p className="mt-3 text-base text-[var(--text-muted)]">
+            Filter all the players by macro role, tactical role, and contextual space control index ranges.
             Rankings are sorted alphabetically by player name by default.
           </p>
         </div>

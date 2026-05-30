@@ -21,7 +21,7 @@ function StatCard({ label, value, category, statKey }: { label: string; value: u
     }
   }
   return (
-    <div className="group relative flex flex-col p-4 bg-[var(--surface2)] border border-[var(--border)] rounded-[12px] transition-all hover:border-[var(--accent)] hover:shadow-sm cursor-default overflow-hidden">
+    <div className="relative flex flex-col p-4 bg-[var(--surface2)] border border-[var(--border)] rounded-[12px] overflow-hidden">
       <div className="absolute top-0 left-0 bottom-0 w-[3px]" style={{ background: accent }} />
       <div className="pl-2 flex flex-col gap-1">
         <span className="font-mono text-[9px] tracking-[0.12em] uppercase font-bold" style={{ color: accent }}>{category}</span>
@@ -48,8 +48,13 @@ function ProfileSkeleton() {
           </div>
         </div>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-        {Array.from({ length: 11 }).map((_, i) => <div key={i} className="skeleton h-24 rounded-xl" />)}
+      <div className="flex flex-col gap-3 items-center w-full">
+        <div className="flex justify-center flex-wrap xl:flex-nowrap gap-3 w-full">
+          {Array.from({ length: 5 }).map((_, i) => <div key={`sk1-${i}`} className="skeleton h-24 w-[45%] sm:w-[30%] md:w-[18%] lg:w-[140px] xl:w-[150px] flex-shrink-0 rounded-xl" />)}
+        </div>
+        <div className="flex justify-center flex-wrap xl:flex-nowrap gap-3 w-full">
+          {Array.from({ length: 4 }).map((_, i) => <div key={`sk2-${i}`} className="skeleton h-24 w-[45%] sm:w-[30%] md:w-[18%] lg:w-[140px] xl:w-[150px] flex-shrink-0 rounded-xl" />)}
+        </div>
       </div>
     </div>
   );
@@ -189,12 +194,23 @@ export default function PlayerProfile() {
             {/* Right Column: Traditional Stats */}
             <div className="flex-1 p-8">
               <p className="font-mono text-[10px] tracking-[0.14em] uppercase text-[var(--text-dim)] mb-6 font-bold">Traditional Stats</p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3" role="list" aria-label="Player statistics">
-                {ALL_STATS.map((stat, i) => (
-                  <div key={stat.key} role="listitem" className={`fade-up delay-${Math.min(i + 1, 5)}`}>
-                    <StatCard label={stat.label} value={(stats as unknown as Record<string, unknown>)[stat.key]} category={stat.category} statKey={stat.key} />
-                  </div>
-                ))}
+              <div className="flex flex-col gap-3 items-center w-full" role="list" aria-label="Player statistics">
+                {/* Top Row: 5 Attacking stats */}
+                <div className="flex justify-center flex-wrap xl:flex-nowrap gap-3 w-full">
+                  {ALL_STATS.slice(0, 5).map((stat, i) => (
+                    <div key={stat.key} role="listitem" className={`fade-up delay-${Math.min(i + 1, 5)} w-[45%] sm:w-[30%] md:w-[18%] lg:w-[140px] xl:w-[150px] flex-shrink-0`}>
+                      <StatCard label={stat.label} value={(stats as unknown as Record<string, unknown>)[stat.key]} category={stat.category} statKey={stat.key} />
+                    </div>
+                  ))}
+                </div>
+                {/* Bottom Row: 4 other stats */}
+                <div className="flex justify-center flex-wrap xl:flex-nowrap gap-3 w-full">
+                  {ALL_STATS.slice(5).map((stat, i) => (
+                    <div key={stat.key} role="listitem" className={`fade-up delay-${Math.min(i + 6, 5)} w-[45%] sm:w-[30%] md:w-[18%] lg:w-[140px] xl:w-[150px] flex-shrink-0`}>
+                      <StatCard label={stat.label} value={(stats as unknown as Record<string, unknown>)[stat.key]} category={stat.category} statKey={stat.key} />
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

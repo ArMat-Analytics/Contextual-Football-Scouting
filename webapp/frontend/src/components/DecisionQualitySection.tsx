@@ -179,7 +179,7 @@ export default function DecisionQualitySection({
       </div>
 
       {/* Single card — sits in first cell of the 2-col grid */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div
         className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] p-6 shadow-[var(--shadow)]"
         style={{ borderTop: `3px solid ${DQ_COLOR}` }}
@@ -295,8 +295,8 @@ export default function DecisionQualitySection({
 
 // ── Dual stat row (source vs compare) ────────────────────────────────────────
 
-const C_SOURCE  = '#626843';
-const C_COMPARE = '#644646';
+const C_SOURCE  = '#0891b2';
+const C_COMPARE = '#c026d3';
 
 function DualStatRow({
   label,

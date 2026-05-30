@@ -16,8 +16,8 @@ import { DQCompareRadar } from '../components/DecisionQualitySection';
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 
-const C_SOURCE  = '#626843';
-const C_SIMILAR = '#644646';
+const C_SOURCE  = '#0891b2';
+const C_SIMILAR = '#c026d3';
 
 // ── Radar dimension definitions ───────────────────────────────────────────────
 
@@ -599,7 +599,7 @@ export default function SimilarPlayers() {
             </ol>
           </nav>
 
-          <h1 className="font-display font-black text-5xl sm:text-6xl leading-none tracking-tight mb-3 text-[var(--text)]">
+          <h1 className="font-display font-black text-5xl sm:text-6xl leading-none tracking-tight text-[var(--text)]">
             Similar Players
           </h1>
         </div>
@@ -671,7 +671,7 @@ export default function SimilarPlayers() {
                     {playerId ? (
                       <Link
                         to={`/player/${playerId}`}
-                        className="inline-flex items-center justify-center w-full gap-1.5 text-sm font-semibold text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[var(--accent)] transition-colors bg-[var(--surface)] px-6 py-3 rounded-xl border border-[var(--border)] shadow-sm hover:shadow"
+                        className="btn btn-primary w-full justify-center rounded-xl py-3"
                       >
                         View full profile →
                       </Link>
@@ -755,7 +755,7 @@ export default function SimilarPlayers() {
                       <div className="mt-auto pt-4">
                         <Link
                           to={`/player/${selectedPlayer.player_id}`}
-                          className="inline-flex items-center justify-center w-full gap-1.5 text-sm font-semibold text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[var(--accent)] transition-colors bg-[var(--surface)] px-6 py-3 rounded-xl border border-[var(--border)] shadow-sm hover:shadow"
+                          className="btn btn-primary w-full justify-center rounded-xl py-3"
                         >
                           View full profile →
                         </Link>
@@ -782,17 +782,15 @@ export default function SimilarPlayers() {
               <>
                 {/* Space & Control panel (first four radars) */}
                 <section className="max-w-[1200px] mx-auto px-0 pb-6">
-                  <div className="flex items-center justify-between gap-3 mb-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
                     <div>
                       <h2 className="font-display font-black text-xl text-[var(--text)] mb-1">Space Control &amp; Value</h2>
                       <p className="text-xs text-[var(--text-muted)]">Selected players metrics — {playerName} · {selectedPlayer.player}</p>
                     </div>
-                    <div role="tablist" aria-label="Statistic view mode" className="inline-flex gap-1 bg-[var(--surface2)] rounded-xl p-1">
-                      <StatViewToggle mode={statMode} onChange={setStatMode} />
-                    </div>
+                    <StatViewToggle mode={statMode} onChange={setStatMode} />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-5">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                     {RADAR_DEFS.map(def => (
                       <DualRadarCard
                         key={def.key}
@@ -811,18 +809,15 @@ export default function SimilarPlayers() {
 
                 {/* Decision Quality panel (single DQ radar) */}
                 <section className="max-w-[1200px] mx-auto px-0 pb-12 mt-8">
-                  <div className="flex items-center justify-between gap-3 mb-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
                     <div>
                       <h2 className="font-display font-black text-xl text-[var(--text)] mb-1">Decision Quality</h2>
                       <p className="text-xs text-[var(--text-muted)]">Selected players metrics — {playerName} · {selectedPlayer.player}</p>
                     </div>
-                    <div role="tablist" aria-label="Statistic view mode" className="inline-flex gap-1 bg-[var(--surface2)] rounded-xl p-1">
-                      {/* DQCompareRadar manages its own mode; keep UI consistent by showing the toggle but not wiring it here */}
-                      <StatViewToggle mode={statMode} onChange={setStatMode} />
-                    </div>
+                    <StatViewToggle mode={statMode} onChange={setStatMode} />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-5">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                     {sourceDQ && compareDQ ? (
                       <DQCompareRadar
                         sourceRow={sourceDQ}
@@ -864,7 +859,7 @@ export default function SimilarPlayers() {
                   key={`${player.player}-${player.team}`}
                   role="listitem"
                   className="card p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 transition-all cursor-pointer"
-                  style={isSelected ? { borderColor: C_SIMILAR, boxShadow: `0 0 0 1px ${C_SIMILAR}` } : undefined}
+                  style={isSelected ? { borderColor: 'var(--accent)', boxShadow: '0 0 0 1px var(--accent)' } : undefined}
                   onClick={() => setSelectedIdx(idx)}
                   tabIndex={0}
                   onKeyDown={e => e.key === 'Enter' && setSelectedIdx(idx)}
@@ -879,7 +874,7 @@ export default function SimilarPlayers() {
                   }
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <span className="font-display font-black text-xl" style={{ color: isSelected ? C_SIMILAR : 'var(--text)' }}>{player.player}</span>
+                      <span className="font-display font-black text-xl" style={{ color: isSelected ? 'var(--accent)' : 'var(--text)' }}>{player.player}</span>
                       <ScoreBadge />
                     </div>
                     <p className="text-xs flex items-center gap-2 text-[var(--text-muted)]">
@@ -890,11 +885,8 @@ export default function SimilarPlayers() {
                     <div className="mt-2 max-w-xs"><ScoreBar /></div>
                   </div>
                   <button
-                    className="btn text-xs px-3 py-1.5 shrink-0"
-                    style={isSelected
-                      ? { background: `${C_SIMILAR}12`, color: C_SIMILAR, border: `1px solid ${C_SIMILAR}` }
-                      : { background: 'var(--surface2)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
-                    }
+                    className={`btn text-xs px-3 py-1.5 shrink-0 ${isSelected ? 'bg-[var(--accent-dim)] text-[var(--accent)] border-[var(--accent)]' : 'bg-[var(--surface2)] text-[var(--text-muted)] border-[var(--border)]'}`}
+                    style={isSelected ? { borderColor: 'var(--accent)' } : undefined}
                     onClick={e => { e.stopPropagation(); setSelectedIdx(idx); }}
                     aria-pressed={isSelected}
                   >

@@ -23,7 +23,7 @@ export function StatViewToggle({
     <div
       role="tablist"
       aria-label="Statistic view mode"
-      className="inline-flex gap-1 bg-[var(--surface2)] rounded-xl p-1"
+      className="flex w-full sm:w-auto sm:inline-flex gap-1 bg-[var(--surface2)] rounded-xl p-1"
     >
       {MODES.map(m => (
         <button
@@ -31,7 +31,7 @@ export function StatViewToggle({
           role="tab"
           aria-selected={mode === m.key}
           onClick={() => onChange(m.key)}
-          className={`px-4 py-1.5 rounded-lg text-[11px] font-bold font-display tracking-wide border-none cursor-pointer transition-all ${
+          className={`flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-[11px] font-bold font-display tracking-wide border-none cursor-pointer transition-all ${
             mode === m.key
               ? 'bg-[var(--accent)] text-white'
               : 'bg-transparent text-[var(--text-muted)] hover:text-[var(--text)]'
@@ -517,7 +517,7 @@ export default function SpaceControlSection({
         <StatViewToggle mode={mode} onChange={onModeChange} />
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {RADAR_DEFS.map(def => (
           <RadarCard
             key={def.key}

@@ -65,6 +65,16 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+a:not(.btn):not(header a) {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: currentColor;
+  transition: all 0.2s ease;
+}
+a:not(.btn):not(header a):hover {
+  color: var(--accent);
+}
+
 /* ── Typography helpers ────────────────────────────────────── */
 .font-display { font-family: 'Inter', sans-serif; }
 .font-mono    { font-family: 'JetBrains Mono', monospace; }

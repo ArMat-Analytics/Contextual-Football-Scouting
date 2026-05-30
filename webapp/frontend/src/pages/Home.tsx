@@ -57,16 +57,13 @@ export default function Home() {
     <div className="w-full pb-20 min-h-screen">
 
       {/* ── Hero ────────────────────────────────────────────────────────────── */}
-      <div className="border-b border-[var(--border)] px-6 pt-16 pb-14 bg-[var(--surface)]">
+      <div className="border-b border-[var(--border)] px-6 pt-10 pb-8 bg-[var(--surface)]">
         <div className="max-w-[1200px] mx-auto">
-          <h1
-            className="font-display font-black leading-none tracking-tight mb-3 text-[var(--text)]"
-            style={{ fontSize: 'clamp(40px, 7vw, 72px)' }}
-          >
+          <h1 className="font-display font-black text-5xl sm:text-6xl leading-none tracking-tight text-[var(--text)]">
             Contextual<br />Football Scouting
           </h1>
           {/* Main title description */}
-          <p className="text-[16px] text-[var(--text-muted)] leading-[1.7] w-full mb-6">
+          <p className="mt-3 text-base text-[var(--text-muted)] mb-6">
             A new paradigm for football scouting: quantifying player value through context-aware analytics, advanced spatial data, and decision-making under pressure. Discover the difference between individual talent and systemic advantage.
           </p>
           {/* Separator line */}
@@ -102,8 +99,10 @@ export default function Home() {
               </span>
               <h2 className="font-display font-bold text-[20px] text-[var(--text)] m-0">Who We Are</h2>
             </div>
-            <p className="text-[16px] text-[var(--text-muted)]">
-              We are Matteo Vezzoli and Armando Mio, and we present this project as the culmination of our academic journey at the Barça Innovation Hub. Motivated by a rigorous interest in data science applied to football, our work focuses on uncovering the latent variables of a match that frequently escape standard statistical frameworks.
+            <p className="text-[16px] text-[var(--text-muted)] leading-relaxed">
+              We are <a href="https://www.linkedin.com/in/matteo-vezzoli83" target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 font-semibold text-[var(--text)] hover:text-[var(--accent)] transition-colors">Matteo Vezzoli<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a> and <a href="https://www.linkedin.com/in/armando-mio" target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 font-semibold text-[var(--text)] hover:text-[var(--accent)] transition-colors">Armando Mio<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>, and we present this project as the culmination of our academic journey at the <a href="https://barcainnovationhub.fcbarcelona.com/" target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 font-semibold text-[var(--text)] hover:text-[var(--accent)] transition-colors">Barça Innovation Hub<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>. Motivated by a rigorous interest in data science applied to football, our work focuses on uncovering the latent variables of a match that frequently escape standard statistical frameworks.
+              <br /><br />
+              For more information, you can view our <a href="https://github.com/ArMat-Analytics/Contextual-Football-Scouting" target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 font-semibold text-[var(--text)] hover:text-[var(--accent)] transition-colors">GitHub repository<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>.
             </p>
           </div>
         </div>
