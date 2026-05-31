@@ -33,7 +33,11 @@ const LIMITATIONS = [
   },
   {
     title: 'Reconstructed off-ball identities (H3)',
-    body: ' The 360 frames name only the player on the ball, so for off-ball movement we reconstruct who each anonymous teammate is: we estimate their position at the moment of the pass and assign identities by matching them to the players\' recent on-ball events. This is validated against StatsBomb\'s actual pass recipient and is accurate on the high-confidence assignments it keeps, but it remains an estimate, not a certainty. Combined with the per-role minutes threshold, players with few off-ball events carry a noisier ranking.',
+    body: 'The 360 frames name only the player on the ball, so for off-ball movement we reconstruct who each anonymous teammate is: we estimate their position at the moment of the pass and assign identities by matching them to the players\' recent on-ball events. This is validated against StatsBomb\'s actual pass recipient and is accurate on the high-confidence assignments it keeps, but it remains an estimate, not a certainty. Combined with the per-role minutes threshold, players with few off-ball events carry a noisier ranking.',
+  },
+  {
+    title: 'Position, not the run itself (H3)',
+    body: 'Off-ball value is read from the freeze frame at the instant the pass is played, so it measures how dangerous the space a player occupies is, not whether he actively ran into it. A player standing in a high-value zone and one sprinting into it at that moment score the same. As with the other metrics, this is the geometry of a single snapshot, not tracked movement.',
   },
   {
     title: 'Single tournament, small samples',
