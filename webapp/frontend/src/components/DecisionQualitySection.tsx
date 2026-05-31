@@ -117,14 +117,21 @@ function StatRow({ label, value }: { label: string; value: string }) {
 
 // ── Simple static radar axis tick (no hover) ──────────────────────────────────
 
-function SimpleRadarTick({ x = 0, y = 0, payload }: any) {
+function SimpleRadarTick({ x = 0, y = 0, cx = 0, cy = 0, payload }: any) {
   if (!payload) return null;
+
+  const dx = x - cx;
+  const dy = y - cy;
+  const length = Math.sqrt(dx * dx + dy * dy) || 1;
+  const offset = 22; // push outward
+  const nx = x + (dx / length) * offset;
+  const ny = y + (dy / length) * offset;
 
   return (
     <text
-      x={x}
-      y={y}
-      textAnchor={x > 257 ? 'start' : x < 257 ? 'end' : 'middle'}
+      x={nx}
+      y={ny}
+      textAnchor="middle"
       dominantBaseline="middle"
       fill="var(--text-muted)"
       fontSize={10}
@@ -244,8 +251,8 @@ export default function DecisionQualitySection({
         </div>
 
         {/* Radar — percentile axes 0–100 */}
-        <ResponsiveContainer width="100%" height={400}>
-          <RadarChart data={radarData} margin={{ top: 28, right: 50, bottom: 28, left: 50 }}>
+        <ResponsiveContainer width="100%" height={440}>
+          <RadarChart data={radarData} margin={{ top: 28, right: 50, bottom: 40, left: 50 }}>
             <PolarGrid stroke="rgba(0,0,0,0.08)" />
             <PolarAngleAxis dataKey="stat" tick={renderTick} />
             <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
@@ -259,7 +266,7 @@ export default function DecisionQualitySection({
             />
             <Legend
               formatter={() => <span className="text-[var(--text-muted)] text-[11px]">Percentile rank (0–100)</span>}
-              wrapperStyle={{ paddingTop: 6 }}
+              wrapperStyle={{ position: 'relative', top: 20 }}
             />
           </RadarChart>
         </ResponsiveContainer>
@@ -415,7 +422,7 @@ export function DQCompareRadar({
       </div>
 
       {/* Dual radar — static axis labels */}
-      <ResponsiveContainer width="100%" height={400}>
+      <ResponsiveContainer width="100%" height={440}>
           <RadarChart data={radarData} margin={{ top: 28, right: 50, bottom: 40, left: 50 }}>
           <PolarGrid stroke="rgba(0,0,0,0.06)" />
           <PolarAngleAxis dataKey="stat" tick={<SimpleRadarTick />} />
@@ -435,7 +442,7 @@ export function DQCompareRadar({
             formatter={(v: string) => (
               <span className="text-[10px] font-display" style={{ color: v === sName ? C_SOURCE : C_COMPARE }}>{v}</span>
             )}
-            wrapperStyle={{ paddingTop: 16 }}
+            wrapperStyle={{ position: 'relative', top: 20 }}
           />
         </RadarChart>
       </ResponsiveContainer>

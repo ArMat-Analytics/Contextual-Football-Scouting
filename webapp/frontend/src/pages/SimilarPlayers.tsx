@@ -174,13 +174,14 @@ function RadarTooltip({ active, payload }: any) {
 interface CustomRadarTickProps {
   x?: number;
   y?: number;
+  cx?: number;
+  cy?: number;
   payload?: { value: string };
-  textAnchor?: React.SVGAttributes<SVGTextElement>['textAnchor'];
 }
 
 function CustomRadarTick({
-  x = 0, y = 0,
-  payload, textAnchor = 'middle',
+  x = 0, y = 0, cx = 0, cy = 0,
+  payload,
 }: CustomRadarTickProps) {
   if (!payload) return null;
 
@@ -188,19 +189,26 @@ function CustomRadarTick({
 
   const halfW = label.length * 3.5;
 
+  const dx = x - cx;
+  const dy = y - cy;
+  const length = Math.sqrt(dx * dx + dy * dy) || 1;
+  const offset = 22; // push outward
+  const nx = x + (dx / length) * offset;
+  const ny = y + (dy / length) * offset;
+
   return (
     <g>
       <rect
-        x={x - halfW}
-        y={y - 8}
+        x={nx - halfW}
+        y={ny - 8}
         width={halfW * 2}
         height={16}
         fill="transparent"
       />
       <text
-        x={x}
-        y={y}
-        textAnchor={textAnchor}
+        x={nx}
+        y={ny}
+        textAnchor="middle"
         dominantBaseline="middle"
         fill="var(--text-muted)"
         fontSize={10}
@@ -410,7 +418,7 @@ function DualRadarCard({
         }
       </div>
 
-      <ResponsiveContainer width="100%" height={400}>
+      <ResponsiveContainer width="100%" height={440}>
         <RadarChart data={radarData} margin={{ top: 28, right: 50, bottom: 40, left: 50 }}>
           <PolarGrid stroke="rgba(0,0,0,0.08)" />
           <PolarAngleAxis dataKey="stat" tick={renderTick} />
@@ -428,7 +436,7 @@ function DualRadarCard({
             formatter={(v: string) => (
               <span className="text-[10px] font-display" style={{ color: v === sName ? C_SOURCE : C_SIMILAR }}>{v}</span>
             )}
-            wrapperStyle={{ paddingTop: 16 }}
+            wrapperStyle={{ position: 'relative', top: 20 }}
           />
         </RadarChart>
       </ResponsiveContainer>

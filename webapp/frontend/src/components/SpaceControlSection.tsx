@@ -269,18 +269,25 @@ function MotherStatRow({
 // ── Simple static radar axis tick (no hover) ──────────────────────────────────
 
 function SimpleRadarTick({
-  x = 0, y = 0,
-  payload, textAnchor = 'middle',
+  x = 0, y = 0, cx = 0, cy = 0,
+  payload,
 }: {
-  x?: number; y?: number;
+  x?: number; y?: number; cx?: number; cy?: number;
   payload?: { value: string };
-  textAnchor?: React.SVGAttributes<SVGTextElement>['textAnchor'];
 }) {
   if (!payload) return null;
+
+  const dx = x - cx;
+  const dy = y - cy;
+  const length = Math.sqrt(dx * dx + dy * dy) || 1;
+  const offset = 22; // push outward
+  const nx = x + (dx / length) * offset;
+  const ny = y + (dy / length) * offset;
+
   return (
     <text
-      x={x} y={y}
-      textAnchor={textAnchor}
+      x={nx} y={ny}
+      textAnchor="middle"
       dominantBaseline="middle"
       fill="var(--text-muted)"
       fontSize={10}
@@ -439,8 +446,8 @@ function RadarCard({
       </div>
 
       {/* Radar — static axis labels */}
-      <ResponsiveContainer width="100%" height={400}>
-        <RadarChart data={radarData} margin={{ top: 28, right: 50, bottom: 28, left: 50 }}>
+      <ResponsiveContainer width="100%" height={440}>
+        <RadarChart data={radarData} margin={{ top: 28, right: 50, bottom: 40, left: 50 }}>
           <PolarGrid stroke="rgba(0,0,0,0.08)" />
           <PolarAngleAxis dataKey="stat" tick={renderTick} />
           <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
@@ -454,7 +461,7 @@ function RadarCard({
           />
           <Legend
             formatter={() => <span className="text-[var(--text-muted)] text-[11px]">Percentile rank (0–100)</span>}
-            wrapperStyle={{ paddingTop: 6 }}
+            wrapperStyle={{ position: 'relative', top: 20 }}
           />
         </RadarChart>
       </ResponsiveContainer>
