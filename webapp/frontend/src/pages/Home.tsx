@@ -32,6 +32,10 @@ const LIMITATIONS = [
     body: 'H2 compares the chosen pass against the alternatives the player could have played. Those alternatives were never actually played, so there is no real outcome to check them against. The index limits this by ranking the options within each event, which only needs them ordered roughly right.',
   },
   {
+    title: 'Reconstructed off-ball identities (H3)',
+    body: ' The 360 frames name only the player on the ball, so for off-ball movement we reconstruct who each anonymous teammate is: we estimate their position at the moment of the pass and assign identities by matching them to the players\' recent on-ball events. This is validated against StatsBomb\'s actual pass recipient and is accurate on the high-confidence assignments it keeps, but it remains an estimate, not a certainty. Combined with the per-role minutes threshold, players with few off-ball events carry a noisier ranking.',
+  },
+  {
     title: 'Single tournament, small samples',
     body: 'All data come from Euro 2024 alone, so patterns may not carry over to club football or other competitions. Players need at least 135 minutes (about 1.5 matches) to be included, and per-role pools are small: a player with few events has a noisy ranking that can also nudge the players around him. The sample size is always shown so low-sample profiles can be discounted.',
   },
@@ -40,7 +44,7 @@ const LIMITATIONS = [
 const HYPOTHESES = [
   {
     title: 'Space Control & Value',
-    body: 'It is posited that a player’s quality is measurable by their spatial influence on the pitch. The methodology will explore the use of Convex Hulls to quantify defensive territorial control and evaluate an attacker’s ability to penetrate it. Utilizing Expected Possession Value (EPV), the objective is to identify "Line Breakers", who are players capable of executing passes that bypass defensive structures and significantly elevate the probability of scoring.',
+    body: 'It is posited that a player\'s quality is measurable by their spatial influence on the pitch. The methodology will explore the use of Convex Hulls to quantify defensive territorial control and evaluate an attacker\'s ability to penetrate it. Utilizing Expected Possession Value (EPV), the objective is to identify "Line Breakers", who are players capable of executing passes that bypass defensive structures and significantly elevate the probability of scoring.',
   },
   {
     title: 'Decision Quality',
@@ -48,7 +52,7 @@ const HYPOTHESES = [
   },
   {
     title: 'Off Ball Movement',
-    body: 'The vast majority of a player’s on-pitch activity occurs out of possession. This investigation seeks to identify players executing highvalue attacking runs that are ultimately not capitalized upon by teammates. Analyzing 360-degree spatial frames enables the detection of players who consistently occupy and attack dangerous areas, thereby quantifying a latent dimension of offensive contribution regardless of ball reception.',
+    body: 'The vast majority of a player\'s on-pitch activity occurs out of possession. This investigation seeks to identify players executing highvalue attacking runs that are ultimately not capitalized upon by teammates. Analyzing 360-degree spatial frames enables the detection of players who consistently occupy and attack dangerous areas, thereby quantifying a latent dimension of offensive contribution regardless of ball reception.',
   },
 ];
 
@@ -64,7 +68,7 @@ export default function Home() {
           </h1>
           {/* Main title description */}
           <p className="mt-3 text-base text-[var(--text-muted)] mb-6">
-            A new paradigm for football scouting: quantifying player value through context-aware analytics, advanced spatial data, and decision-making under pressure. Discover the difference between individual talent and systemic advantage.
+            A new paradigm for football scouting: quantifying player value through context-aware analytics, advanced spatial data, and contextual decision quality. Discover the difference between individual talent and systemic advantage.
           </p>
           {/* Separator line */}
           <div className="w-full h-px bg-[var(--border)] mb-8" />
@@ -89,7 +93,7 @@ export default function Home() {
               <h2 className="font-display font-bold text-[20px] text-[var(--text)] m-0">Our Objective</h2>
             </div>
             <p className="text-[16px] text-[var(--text-muted)] mb-5">
-              The primary objective of this project is to shift the analytical paradigm from descriptive to explanatory observations. By incorporating the geometric and spatial context provided by 360-degree data, we evaluate elements often obscured by standard statistics, such as optimal spatial positioning and effective decision-making under high-pressure scenarios. This methodology allows us to determine whether elite performance is a function of individual talent or systemic dominance, providing the optimal approach for uncovering undervalued talent currently operating within less prominent clubs.
+              The primary objective of this project is to shift the analytical paradigm from descriptive to explanatory observations. By incorporating the geometric and spatial context provided by 360-degree data, we evaluate elements often obscured by standard statistics, such as optimal spatial positioning and the quality of a player's decisions relative to the defensive pressure around them. This methodology allows us to determine whether elite performance is a function of individual talent or systemic advantage, providing the optimal approach for uncovering undervalued talent currently operating within less prominent clubs.
             </p>
             {/* Who We Are */}
             <div className="flex items-start gap-3 mt-6 mb-1">
