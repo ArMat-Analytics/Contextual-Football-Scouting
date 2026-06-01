@@ -98,30 +98,48 @@ CONF_THR_M     = 8.0
 RECEIVED_WINDOW_S = 4.0
 MIN_MINUTES       = 135
 
-# ── Macro-role mapping (identical to H1 config.py) ────────────────────────────
+# ── Macro-role mapping (verbatim from H1/H2 config.py) ────────────────────────
+# IMPORTANT: keys must match the StatsBomb position strings EXACTLY as they
+# appear in H1's `primary_role` column — the Left/Right/Center variants
+# ("Left Center Back", "Center Attacking Midfield", ...). A shortened key like
+# "Center Back" silently sends every "Left/Right Center Back" to the default,
+# which collapsed CB 61->9 and CAM 25->0 in earlier runs. Two-stage mapping
+# (fine ROLE_MAP -> ROLE_REMAP) is identical to H1/H2, so H3's macro_role
+# matches H2's 272-player pool exactly (CB 61, FB 56, MID 67, CAM 25, WIDE 29,
+# FW 34).
 ROLE_MAP = {
-    "Goalkeeper"          : "GK",
-    "Center Back"         : "CB",
-    "Left Back"           : "FB",
-    "Right Back"          : "FB",
-    "Left Wing Back"      : "FB",
-    "Right Wing Back"     : "FB",
-    "Defensive Midfield"  : "MID",
-    "Central Midfield"    : "MID",
-    "Left Midfield"       : "MID",
-    "Right Midfield"      : "MID",
-    "Attacking Midfield"  : "CAM",
-    "Left Wing"           : "WIDE",
-    "Right Wing"          : "WIDE",
-    "Left Center Forward" : "FW",
-    "Right Center Forward": "FW",
-    "Center Forward"      : "FW",
-    "Secondary Striker"   : "FW",
+    "Goalkeeper"               : "GK",
+    "Right Back"               : "FB",  "Left Back"                : "FB",
+    "Right Wing Back"          : "FB",  "Left Wing Back"           : "FB",
+    "Right Center Back"        : "CB",  "Left Center Back"         : "CB",
+    "Center Back"              : "CB",
+    "Right Defensive Midfield" : "CDM", "Left Defensive Midfield"  : "CDM",
+    "Center Defensive Midfield": "CDM",
+    "Right Center Midfield"    : "CM",  "Left Center Midfield"     : "CM",
+    "Center Midfield"          : "CM",
+    "Right Attacking Midfield" : "CAM", "Left Attacking Midfield"  : "CAM",
+    "Center Attacking Midfield": "CAM",
+    "Right Midfield"           : "WM",  "Left Midfield"            : "WM",
+    "Right Wing"               : "W",   "Left Wing"                : "W",
+    "Right Center Forward"     : "FW",  "Left Center Forward"      : "FW",
+    "Center Forward"           : "FW",
+    "Secondary Striker"        : "FW",  "Striker"                  : "FW",
 }
 
+# Collapses small-sample fine roles into the 6 analysis macro-roles (H1/H2).
+ROLE_REMAP = {"CDM": "MID", "CM": "MID", "W": "WIDE", "WM": "WIDE"}
+
+MACRO_ROLES = ["CB", "FB", "MID", "CAM", "WIDE", "FW"]
+
 def map_role(position: str) -> str:
-    """Map a StatsBomb position string to a macro-role label (same as H1)."""
-    return ROLE_MAP.get(position, "MID")
+    """Map a StatsBomb position string to a macro-role label (same as H1/H2).
+
+    Two-stage: fine ROLE_MAP then ROLE_REMAP (CDM/CM -> MID, W/WM -> WIDE).
+    Unknown positions return 'OTHER' so they surface instead of silently
+    becoming MID.
+    """
+    fine = ROLE_MAP.get(str(position), "OTHER")
+    return ROLE_REMAP.get(fine, fine)
 
 # ── Output paths ───────────────────────────────────────────────────────────────
 DATA_DIR           = H3_DIR / "data"
@@ -131,11 +149,24 @@ XEPV_PARQUET       = DATA_DIR / "off_ball_xepv.parquet"
 URS_CSV            = DATA_DIR / "player_urs_aggregated.csv"
 
 # ── H2 outputs consumed by H3 (read-only) ─────────────────────────────────────
-H2_ALTERNATIVES  = H2_SRC.parent / "data" / "alternatives.parquet"
+# Only the saved xPass model is needed: candidates.py recomputes xPass on the
+# fly from the live freeze frames (StatsBomb regenerated every event UUID, so a
+# merge on H2's frozen alternatives.parquet would yield zero rows — see
+# candidates._score_candidates). The old alternatives / corpus-cache paths were
+# removed with that fix.
 H2_XPASS_MODEL   = H2_SRC.parent / "data" / "xpass_model_gbm_sigmoid.joblib"
-H2_CORPUS_CACHE  = H2_SRC.parent / "data" / "cache" / "dq_corpus_with_frames.parquet"
 
 # ── H1 outputs consumed by H3 (read-only) ─────────────────────────────────────
+# Authoritative per-player aggregate: one role per player + minutes, the exact
+# pool H2 inherits (135 min, 272 players). It carries `macro_role` already
+# computed as the per-event role MODE (aggregation.py), NOT derived from the
+# nominal primary_role — so a player who lined up mostly as MID despite a CAM
+# label reads as MID. H3 reads this same file with the same columns H2 reads
+# (decision_quality.py: usecols player/team/primary_role/macro_role/minutes),
+# so all three hypotheses share a byte-identical 272-player role assignment.
+H1_PLAYER_AGG    = REPO_ROOT / "Space_Control_and_Value" / "data" / \
+                   "player_space_control_aggregated.csv"
+# Totals file (no macro_role column) — kept only as a fallback minutes source.
 H1_PLAYER_TOTALS = REPO_ROOT / "Space_Control_and_Value" / "data" / \
                    "Euro2024_Player_Totals_Distances_Roles.csv"
 

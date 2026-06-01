@@ -39,8 +39,7 @@ from src.config import (
     XEPV_PARQUET, URS_CSV,
     PITCH_LENGTH, PITCH_WIDTH,
     X_SCALE, Y_SCALE,
-    H1_PLAYER_TOTALS,
-    map_role,
+    H1_PLAYER_AGG,
     load_h2_package,
 )
 
@@ -100,26 +99,30 @@ def main() -> None:
     )
     agg["receiver_conf_rate"] = agg["n_received"] / agg["n_confident_candidates"]
 
-    # ── Minutes + primary_role: H1 player_totals is the authoritative source ────
-    # H2 uses exactly the same file with an inner join + min_minutes filter;
-    # mirroring that join makes H3 directly comparable to H2's 272-player pool.
-    # Names in events == names in H1 player_totals (full names, no nicknames).
-    if not H1_PLAYER_TOTALS.exists():
+    # ── Role + minutes: H1's player_space_control_aggregated.csv is THE source ──
+    # H2 reads this exact file with these exact columns (decision_quality.py:
+    # usecols player/team/primary_role/macro_role/minutes_played) and an inner
+    # join + min_minutes filter. We mirror it byte-for-byte so H1/H2/H3 share an
+    # identical 272-player pool AND an identical macro_role per player. Crucially
+    # `macro_role` is read pre-computed — H1 derives it as the per-event role
+    # MODE (aggregation.py), not from the nominal primary_role — so we must NOT
+    # recompute it from primary_role here (that diverged on 11 players, e.g.
+    # Bruno Fernandes CAM-nominal but MID by minutes played).
+    if not H1_PLAYER_AGG.exists():
         raise FileNotFoundError(
-            f"H1 player totals not found: {H1_PLAYER_TOTALS}\n"
-            "URS aggregation requires H1's authoritative minutes/role table."
+            f"H1 player aggregate not found: {H1_PLAYER_AGG}\n"
+            "URS aggregation requires H1's authoritative role/minutes table "
+            "(player_space_control_aggregated.csv), the same file H2 reads."
         )
-    h1 = pd.read_csv(H1_PLAYER_TOTALS)[["player", "team", "primary_role", "minutes_played"]]
-    logger.info("Loaded H1 player_totals: %d players", len(h1))
+    h1 = pd.read_csv(
+        H1_PLAYER_AGG,
+        usecols=["player", "team", "primary_role", "macro_role", "minutes_played"],
+    )
+    logger.info("Loaded H1 player aggregate: %d players (GKs already dropped by H1)", len(h1))
 
-    # Inner join → restrict to H1's pool exactly (mirrors H2 line 146-147).
+    # Inner join → restrict to H1's pool exactly (mirrors H2's aggregate_players).
+    # H1's file has already dropped goalkeepers, so no GK filter is needed here.
     agg = agg.merge(h1, on=["player", "team"], how="inner")
-    agg["macro_role"] = agg["primary_role"].apply(map_role)
-
-    # Exclude goalkeepers (mirrors H2 corpus.py `is_gk` filter).
-    pre_gk = len(agg)
-    agg = agg[agg["macro_role"] != "GK"].copy()
-    logger.info("Excluded %d goalkeepers", pre_gk - len(agg))
 
     # Apply the same minutes threshold as H2 (ANALYSIS_MIN_MINUTES = 135).
     eligible = agg["minutes_played"] >= MIN_MINUTES
@@ -149,14 +152,22 @@ def main() -> None:
         1.0 - agg["capitalization_rate"], np.nan,
     )
 
-    # Within-role percentiles for the radar / leaderboard.
+    # Within-role percentiles for the radar / leaderboard. SAME recipe as
+    # H1 (indices.build_pct_table) and H2 (decision_quality): a plain
+    # groupby("macro_role")[col].rank(pct=True) * 100, rounded to 1 decimal.
+    # Computed on the eligible pool only; ineligible rows stay NaN. No
+    # minimum-group-size guard — H1/H2 don't have one, and pandas' rank
+    # already skips NaN, so the six full role pools (min CAM ≈ 20) are safe.
+    elig_idx = agg.index[eligible]
+
     def _pct_within_role(col: str, out_col: str) -> None:
         agg[out_col] = np.nan
-        for role, grp in agg[eligible].groupby("macro_role"):
-            valid = grp[col].notna()
-            if valid.sum() < 3: continue
-            pct = grp.loc[valid, col].rank(pct=True) * 100
-            agg.loc[pct.index, out_col] = pct.values
+        pct = (agg.loc[elig_idx]
+                  .groupby("macro_role")[col]
+                  .rank(pct=True)
+                  .mul(100)
+                  .round(1))
+        agg.loc[pct.index, out_col] = pct
 
     _pct_within_role("urs_per90",                "urs_pct_within_role")
     _pct_within_role("off_ball_potential_per90", "potential_pct_within_role")
@@ -176,8 +187,6 @@ def main() -> None:
 def show_uncapitalised_runs(player: str, n: int = 4) -> None:
     """Plot top-N highest-URS events for `player` (style: H1 show_line_breakers)."""
     import matplotlib.pyplot as plt
-    import matplotlib.cm as cm
-    import matplotlib.colors as mcolors
     from scipy.spatial import ConvexHull
 
     with warnings.catch_warnings():
@@ -202,9 +211,6 @@ def show_uncapitalised_runs(player: str, n: int = 4) -> None:
     fig, axes = plt.subplots(1, ncols, figsize=(6 * ncols, 6))
     if ncols == 1:
         axes = [axes]
-
-    norm = mcolors.Normalize(vmin=0, vmax=cand["xepv"].quantile(0.95))
-    cmap = cm.get_cmap("YlOrRd")
 
     for ax, (_, row) in zip(axes, player_rows.iterrows()):
         events     = sb.events(match_id=row["match_id"])
@@ -247,21 +253,23 @@ def show_uncapitalised_runs(player: str, n: int = 4) -> None:
             except Exception:
                 pass
 
-        event_cand = cand[cand["event_id"] == row["event_id"]]
+        # All visible teammates in a neutral grey — context only. We deliberately
+        # do NOT colour them by xEPV: a second warm colour competed with both the
+        # opponent block (red) and the highlighted candidate, and the gold arrow
+        # already shows where the ball actually went. The eye should go straight
+        # to the one player this panel is about: the uncapitalised candidate.
         for _, dot in fr[(fr["teammate"] == True) & (fr["actor"] == False)].iterrows():
             loc = dot["location"]
             if loc is None: continue
             xm, ym = loc[0] * X_SCALE, loc[1] * Y_SCALE
-            mr = event_cand[
-                (abs(event_cand["target_x_m"] - xm) < 2.0) &
-                (abs(event_cand["target_y_m"] - ym) < 2.0)
-            ]
-            xval = float(mr["xepv"].iloc[0]) if mr.shape[0] > 0 else 0.0
-            ax.scatter(xm, ym, s=120, color=cmap(norm(xval)),
+            ax.scatter(xm, ym, s=110, color="#bdbdbd",
                        edgecolors="white", linewidths=0.8, zorder=3)
 
+        # The highlighted candidate: the teammate who made the high-value run that
+        # was not served. Filled in the H3 family green so it stands clear of the
+        # red opponent hull.
         ax.scatter(row["target_x_m"], row["target_y_m"],
-                   s=300, facecolors="none", edgecolors="red", linewidths=3, zorder=5)
+                   s=240, color=H3_COLOR, edgecolors="black", linewidths=1.5, zorder=5)
 
         sx, sy = row["sender_x_m"], row["sender_y_m"]
         ax.scatter(sx, sy, s=150, color="cyan", edgecolors="black", linewidths=1.5, zorder=4)

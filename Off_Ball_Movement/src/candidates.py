@@ -328,8 +328,34 @@ def main() -> None:
                 logger.warning("  No 360 frames — skipping")
                 continue
 
+            # Open play only — IDENTICAL filter to H1 (epv_pipeline.py): a pass
+            # is open play iff `pass_type` is NaN. StatsBomb tags the restart
+            # pass of every set piece (Corner / Free Kick / Throw-in / Kick Off
+            # / Goal Kick) with a non-null pass_type, while the flowing play
+            # that follows keeps pass_type = NaN. This is far more precise than
+            # filtering on `play_pattern`, which stays "From Throw In/Free Kick"
+            # for several open passes after the restart and would discard real
+            # in-play actions. Keeping H3 on the same open-play subset as H1/H2
+            # makes the three hypotheses comparable on one event universe.
+            #
+            # Headers excluded (H2 corpus.py EXCLUDE_BODY_PARTS): the off-ball
+            # value is scored with H2's xPass, a foot-pass completion model. A
+            # teammate reached by a header is outside that model's domain, so
+            # its xPass/xEPV would be meaningless. ~1% of open-play passes.
+            #
+            # NOTE — H2's pass-into-space filter (PASS_INTO_SPACE_M) is
+            # deliberately NOT applied here. In H2 "into space" means "no
+            # identifiable receiver to grade the chosen pass against". H3 does
+            # not grade the chosen pass: it grades EVERY confidently-localised
+            # teammate dot in the frame as an off-ball candidate. A pass that
+            # happens to go long still has well-positioned teammates worth
+            # scoring, and the resolver's conf_thr (8 m) is already the per-
+            # candidate quality gate. Dropping the whole frame on the chosen
+            # pass's end location would discard legitimate off-ball candidates.
             passes = events[
                 (events["type"] == "Pass") &
+                (events["pass_type"].isna()) &
+                (events["pass_body_part"].fillna("") != "Head") &
                 (events["pass_end_location"].notna()) &
                 (events["id"].isin(frames[event_col].unique())) &
                 (events["position"] != "Goalkeeper")

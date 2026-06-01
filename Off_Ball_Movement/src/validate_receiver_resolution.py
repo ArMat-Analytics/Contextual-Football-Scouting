@@ -86,10 +86,18 @@ def main(per_match: int = 40,
         if fr.empty:
             continue
 
-        passes = ev[ev["type"] == "Pass"].copy()
+        # Validate on the SAME event universe the production pipeline uses
+        # (candidates.main): open play only (pass_type NaN, H1's filter),
+        # non-header (H2's EXCLUDE_BODY_PARTS), non-GK senders. Measuring
+        # accuracy on a different universe than the one the resolver actually
+        # runs on would make the headline number describe a sample the metric
+        # never sees.
+        passes = ev[(ev["type"] == "Pass") & (ev["pass_type"].isna())].copy()
         passes = passes[passes["pass_recipient"].notna() &
+                        (passes["pass_body_part"].fillna("") != "Head") &
                         passes["pass_end_location"].notna() &
-                        passes["id"].isin(fr[ev_col].unique())]
+                        passes["id"].isin(fr[ev_col].unique()) &
+                        (passes["position"] != "Goalkeeper")]
         if len(passes) == 0:
             continue
 
