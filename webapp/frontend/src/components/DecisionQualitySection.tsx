@@ -44,13 +44,14 @@ const CORE_STATS: Record<StatViewMode, StatDef[]> = {
 
 function RadarTooltip({ active, payload }: any) {
   if (!active || !payload?.length) return null;
-  const statLabel = payload[0]?.payload?.stat ?? payload[0]?.name ?? 'Decision Quality';
+  const statLabel = payload[0]?.payload?.stat ?? payload[0]?.name ?? 'Metric';
   return (
     <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] px-3.5 py-2.5 text-xs shadow-lg">
       <p className="font-bold text-[var(--text)] mb-1.5">{statLabel}</p>
       {payload.map((item: any) => (
-        <p key={item.name} className="font-mono" style={{ color: item.color }}>
-          {item.name}: <strong>{typeof item.value === 'number' ? item.value.toFixed(1) : '—'}</strong>
+        <p key={item.name} className="font-mono mt-0.5" style={{ color: item.color }}>
+          <span className="text-[var(--text-muted)] mr-1">{payload.length > 1 ? `${item.name} Percentile:` : 'Percentile:'}</span>
+          <strong>{typeof item.value === 'number' ? item.value.toFixed(1) : '—'}</strong>
         </p>
       ))}
     </div>
@@ -179,7 +180,7 @@ export default function DecisionQualitySection({
             Decision Quality
           </h2>
           <p className="text-xs text-[var(--text-muted)]">
-            Selected player's metrics — {playerName}
+            Selected player metrics — {playerName}
           </p>
         </div>
         <StatViewToggle mode={mode} onChange={onModeChange} />
@@ -303,7 +304,7 @@ export default function DecisionQualitySection({
 // ── Dual stat row (source vs compare) ────────────────────────────────────────
 
 const C_SOURCE  = '#0891b2';
-const C_COMPARE = '#c026d3';
+const C_COMPARE = '#df4d14';
 
 function DualStatRow({
   label,

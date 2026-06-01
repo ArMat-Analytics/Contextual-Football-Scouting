@@ -5,6 +5,8 @@ import { usePlayerSpaceControl } from '../hooks/useSpaceControl';
 import SpaceControlSection, { type StatViewMode } from '../components/SpaceControlSection';
 import { usePlayerDecisionQuality } from '../hooks/useDecisionQuality';
 import DecisionQualitySection from '../components/DecisionQualitySection';
+import { usePlayerOffBallMovement } from '../hooks/useOffBallMovement';
+import OffBallSection from '../components/OffBallSection';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
@@ -71,6 +73,7 @@ export default function PlayerProfile() {
 
   const { data: scData, loading: scLoading } = usePlayerSpaceControl(playerId);
   const { data: dqData, loading: dqLoading } = usePlayerDecisionQuality(playerId);
+  const { data: obData, loading: obLoading } = usePlayerOffBallMovement(playerId);
 
   useEffect(() => {
     if (!playerId) return;
@@ -264,6 +267,29 @@ export default function PlayerProfile() {
           <div className="card p-6">
             <p className="font-mono text-xs text-[var(--text-dim)]">
               No Decision Quality data available for this player.
+            </p>
+          </div>
+        </div>
+      )}
+
+
+      {/* Off-Ball Movement Section */}
+      {obLoading ? (
+        <div className="max-w-[1200px] mx-auto px-6 mb-12">
+          <div className="card p-8 text-center">
+            <p className="font-mono text-xs text-[var(--text-dim)]">Loading Off-Ball Movement data…</p>
+          </div>
+        </div>
+      ) : obData ? (
+        <OffBallSection
+          playerName={stats.player_name}
+          row={obData}
+        />
+      ) : (
+        <div className="max-w-[1200px] mx-auto px-6 mb-12">
+          <div className="card p-6">
+            <p className="font-mono text-xs text-[var(--text-dim)]">
+              No Off-Ball Movement data available for this player.
             </p>
           </div>
         </div>

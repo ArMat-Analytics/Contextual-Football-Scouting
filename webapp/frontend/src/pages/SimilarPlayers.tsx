@@ -13,11 +13,13 @@ import { StatViewToggle, type StatViewMode } from '../components/SpaceControlSec
 import { TOOLTIP_DESCRIPTIONS } from '../data/tooltip';
 import { usePlayerDecisionQuality } from '../hooks/useDecisionQuality';
 import { DQCompareRadar } from '../components/DecisionQualitySection';
+import { usePlayerOffBallMovement } from '../hooks/useOffBallMovement';
+import { OBCompareRadar } from '../components/OffBallSection';
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 
 const C_SOURCE  = '#0891b2';
-const C_SIMILAR = '#c026d3';
+const C_SIMILAR = '#df4d14';
 
 // ── Radar dimension definitions ───────────────────────────────────────────────
 
@@ -157,12 +159,14 @@ function ScoreBar() {
 
 function RadarTooltip({ active, payload }: any) {
   if (!active || !payload?.length) return null;
+  const statLabel = payload[0]?.payload?.stat ?? payload[0]?.name ?? 'Metric';
   return (
     <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] px-3.5 py-2.5 text-xs shadow-lg">
-      <p className="font-bold text-[var(--text)] mb-1.5">{payload[0]?.payload?.stat}</p>
-      {payload.map((p: any) => (
-        <p key={p.name} className="font-mono" style={{ color: p.color }}>
-          {p.name}: <strong>{typeof p.value === 'number' ? p.value.toFixed(1) : '—'}</strong>
+      <p className="font-bold text-[var(--text)] mb-1.5">{statLabel}</p>
+      {payload.map((item: any) => (
+        <p key={item.name} className="font-mono mt-0.5" style={{ color: item.color }}>
+          <span className="text-[var(--text-muted)] mr-1">{payload.length > 1 ? `${item.name} Percentile:` : 'Percentile:'}</span>
+          <strong>{typeof item.value === 'number' ? item.value.toFixed(1) : '—'}</strong>
         </p>
       ))}
     </div>
@@ -491,6 +495,7 @@ export default function SimilarPlayers() {
   const dropdownId = useId();
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [statMode, setStatMode] = useState<StatViewMode>('raw');
+  const [dqMode, setDqMode] = useState<StatViewMode>('raw');
 
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
@@ -505,9 +510,13 @@ export default function SimilarPlayers() {
     playerId ?? undefined,
   );
   const { data: sourceDQ } = usePlayerDecisionQuality(playerId ?? undefined);
+  const { data: sourceOB } = usePlayerOffBallMovement(playerId ?? undefined);
 
   const selectedPlayer = similarList[selectedIdx] ?? null;
   const { data: compareDQ } = usePlayerDecisionQuality(
+    selectedPlayer?.player_id != null ? String(selectedPlayer.player_id) : undefined,
+  );
+  const { data: compareOB } = usePlayerOffBallMovement(
     selectedPlayer?.player_id != null ? String(selectedPlayer.player_id) : undefined,
   );
   const sourceIdx = sourceScData?.indices ?? null;
@@ -822,7 +831,7 @@ export default function SimilarPlayers() {
                       <h2 className="font-display font-black text-xl text-[var(--text)] mb-1">Decision Quality</h2>
                       <p className="text-xs text-[var(--text-muted)]">Selected players metrics — {playerName} · {selectedPlayer.player}</p>
                     </div>
-                    <StatViewToggle mode={statMode} onChange={setStatMode} />
+                    <StatViewToggle mode={dqMode} onChange={setDqMode} />
                   </div>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -832,10 +841,33 @@ export default function SimilarPlayers() {
                         compareRow={compareDQ}
                         sourceName={playerName}
                         compareName={selectedPlayer?.player ?? 'Comparison player'}
-                        mode={statMode}
+                        mode={dqMode}
                       />
                     ) : (
                       <div className="col-span-2 text-sm text-[var(--text-muted)]">Decision Quality data not available for one of the players.</div>
+                    )}
+                  </div>
+                </section>
+
+                {/* Off-Ball Movement panel (single OB radar) */}
+                <section className="max-w-[1200px] mx-auto px-0 pb-12 mt-8">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+                    <div>
+                      <h2 className="font-display font-black text-xl text-[var(--text)] mb-1">Off-Ball Movement</h2>
+                      <p className="text-xs text-[var(--text-muted)]">Selected players metrics — {playerName.trim().split(' ').pop()} · {selectedPlayer.player.trim().split(' ').pop()}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                    {sourceOB && compareOB ? (
+                      <OBCompareRadar
+                        sourceRow={sourceOB}
+                        compareRow={compareOB}
+                        sourceName={playerName}
+                        compareName={selectedPlayer?.player ?? 'Comparison player'}
+                      />
+                    ) : (
+                      <div className="col-span-2 text-sm text-[var(--text-muted)]">Off-Ball Movement data not available for one of the players.</div>
                     )}
                   </div>
                 </section>

@@ -205,6 +205,30 @@ def get_player_decision_quality(player_id: int, db: Session = Depends(database.g
         return JSONResponse(status_code=404, content={"error": "Decision Quality data not found"})
     return dict(row._mapping)
 
+@app.get("/players/{player_id}/off-ball")
+def get_player_off_ball(player_id: int, db: Session = Depends(database.get_db)):
+    """Return the off-ball movement row for a single player, looked up by db_player_id."""
+    row = db.execute(text("""
+        WITH CorrectedSC AS (
+            SELECT 
+                sc.*,
+                CASE 
+                    WHEN sc.player = 'Daniel Olmo Carvajal' THEN (SELECT player_id FROM player_profiles WHERE player_name ILIKE '%Olmo%' LIMIT 1)
+                    ELSE sc.db_player_id
+                END as fixed_db_player_id
+            FROM sc_indices sc
+        )
+        SELECT ob.*
+        FROM player_off_ball ob
+        JOIN CorrectedSC sc ON sc.player = ob.player AND sc.team = ob.team
+        WHERE sc.fixed_db_player_id = :pid
+        LIMIT 1
+    """), {"pid": player_id}).fetchone()
+
+    if not row:
+        return JSONResponse(status_code=404, content={"error": "Off-Ball Movement data not found"})
+    return dict(row._mapping)
+
 @app.get("/players/{player_id}/space-control")
 def get_player_space_control(player_id: int, db: Session = Depends(database.get_db)):
     idx_row = db.execute(text(

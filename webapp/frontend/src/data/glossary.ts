@@ -7,7 +7,8 @@ export type GlossaryCategory =
   | 'RECEPTION'
   | 'GRAVITY'
   | 'INDEX'
-  | 'DECISION_QUALITY';
+  | 'DECISION_QUALITY'
+  | 'OFF_BALL_MOVEMENT';
 
 export interface GlossaryEntry {
   label: string;
@@ -112,6 +113,19 @@ export const GLOSSARY_SECTIONS: GlossarySection[] = [
       { label: 'Worst choice %',    description: 'The share of the player\'s events where the chosen pass had the lowest xEPV among all the in-frame alternatives, meaning he picked the single worst option available. This is the raw csv quantity, where a lower value is better. It is the mirror of Picks the best %, and the two are only weakly correlated in the data (within-role ρ ≈ 0.12), so picking the best and avoiding the worst are largely different skills. For each event the pass is flagged worst when its xEPV is at or below the xEPV of every alternative; the metric is the mean of that flag across the player\'s events, as a percentage. The Decision Quality radar plots this as a mirrored axis, Avoids the worst %, taking 100 minus the within-role percentile so that outside always means better; the core-stats row shows the raw percentage itself.' },
     ],
   },
+  {
+    category: 'OFF_BALL_MOVEMENT',
+    title: 'Off-Ball Movement',
+    color: '#10b981',
+    intro:
+      'The headline number of the Off-Ball Movement, shown big on the card. It grades how much high-value attacking space the player occupies that his teammates do not serve, expressed as a within macro-role percentile from 0 to 100: 100 means the most uncapitalized off-ball threat of the role, 50 the median. It is the only percentile on the card; every other number is a raw value or a rate. For every teammate visible in a 360 frame while an open-play pass is played, we score the value of the hypothetical pass that would serve him (xEPV) and check whether he was actually served next; URS /90 is the sum of the unserved value per 90 minutes, and the Uncapitalized Run Score is its within-role percentile.',
+    entries: [
+      { label: 'URS /90', description: 'The raw URS /90 the Uncapitalized Run Score is the percentile of. It is the off-ball value the player generates that teammates leave unrealised, in xEPV units (percentage points of scoring probability), per 90 minutes. It is not a percentile and not the headline; it is shown for transparency. For each visible teammate the unserved value is the xEPV of the hypothetical pass to him multiplied by (1 minus served); URS /90 sums this over all the player\'s open-play frames, divided by minutes played, times 90.' },
+      { label: 'Off-Ball Potential /90', description: 'The total off-ball value the player generates per 90 minutes, served or not. It is the same xEPV value as URS but without the unserved filter, so URS /90 equals Off-Ball Potential /90 multiplied by the Latency share. A high Potential with a high URS is a shadow runner (offers a lot, served little); a high Potential with a low URS is a trusted threat (offers a lot and is served). For every visible teammate we sum the xEPV of the hypothetical pass to him, divided by minutes played, times 90. It is also one of the three radar axes.' },
+      { label: 'Capitalisation rate', description: 'The fraction of the player\'s off-ball value that is realised by teammates, between 0 and 1: the served value divided by the total value offered. A low Capitalisation rate means the player offers dangerous options that go unused, which is the shadow-runner profile the Uncapitalized Run Score rewards; a high value means his runs are usually served. Its complement, Latency (1 minus Capitalisation rate), is the radar axis. A candidate counts as served when the next ball-touch within four seconds belongs to that teammate.' },
+      { label: 'xEPV mean', description: 'The mean xEPV across the player\'s confident candidate frames: how dangerous, on average, the off-ball positions he occupies are, independent of how often. A player with a high xEPV mean but moderate Potential makes few but excellent runs; one with a high Potential but moderate xEPV mean makes many ordinary ones. It is also one of the three radar axes.' },
+    ],
+  },
 ];
 
 // Colour map for index badges on the glossary page
@@ -121,4 +135,5 @@ export const INDEX_COLORS: Record<string, string> = {
   RECEPTION:        '#4da6ff',
   GRAVITY:          '#ffc947',
   DECISION_QUALITY: '#c084fc',
+  OFF_BALL_MOVEMENT:'#10b981',
 };

@@ -166,18 +166,16 @@ const MOTHER_STATS: Record<'PROGRESSION' | 'DANGEROUSNESS' | 'RECEPTION' | 'GRAV
 
 function RadarTooltip({ active, payload }: any) {
   if (!active || !payload?.length) return null;
-  const item = payload[0];
+  const statLabel = payload[0]?.payload?.stat ?? payload[0]?.name ?? 'Metric';
   return (
     <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] px-3.5 py-2.5 text-xs shadow-lg">
-      <p className="font-mono font-bold" style={{ color: item.color ?? 'var(--text)' }}>
-        {item.payload?.stat}
-      </p>
-      <p className="font-mono text-[var(--text-muted)] mt-0.5">
-        Percentile:{' '}
-        <span className="font-bold" style={{ color: item.color ?? 'var(--text)' }}>
-          {typeof item.value === 'number' ? item.value.toFixed(1) : '—'}
-        </span>
-      </p>
+      <p className="font-bold text-[var(--text)] mb-1.5">{statLabel}</p>
+      {payload.map((item: any) => (
+        <p key={item.name} className="font-mono mt-0.5" style={{ color: item.color }}>
+          <span className="text-[var(--text-muted)] mr-1">{payload.length > 1 ? `${item.name} Percentile:` : 'Percentile:'}</span>
+          <strong>{typeof item.value === 'number' ? item.value.toFixed(1) : '—'}</strong>
+        </p>
+      ))}
     </div>
   );
 }
@@ -518,7 +516,7 @@ export default function SpaceControlSection({
             Space Control &amp; Value
           </h2>
           <p className="text-xs text-[var(--text-muted)]">
-            Selected player's metrics — {playerName}
+            Selected player metrics — {playerName}
           </p>
         </div>
         <StatViewToggle mode={mode} onChange={onModeChange} />

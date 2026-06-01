@@ -6,6 +6,7 @@ export const TOOLTIP_DESCRIPTIONS: Record<string, string> = {
   'Gravity': 'How much the player bends the opposing defence around him when he has the ball. Measured as the displacement of the opposing centroid and the compression of the defensive block. 0–100 percentile within his role.',
   'Experimental': 'The "experimental" badge indicates that Gravity\'s statistical components do not reliably merge into a single score for every player role. Users should therefore evaluate the three signals separately rather than trusting the combined metric.',
   'Decision Quality': 'How good the player\'s passing decisions are, graded against the options he had available. A 0 to 100 percentile within his role: 100 is the best decision maker of the role, 50 the median.',
+  'Uncapitalized Run Score': 'How much dangerous off-ball value the player creates that teammates leave unused. A 0 to 100 percentile within his role: 100 is the most uncapitalized off-ball threat of the role, 50 the median.',
 
   // Progression Axes & Stats
   'LB Geom /90': 'Geometric line-breakers per 90 minutes. Who breaks through opposing pressure most often per unit of time.',
@@ -70,4 +71,10 @@ export const TOOLTIP_DESCRIPTIONS: Record<string, string> = {
   'Score SD': 'How much the player\'s decision quality swings from one pass to the next. It is a consistency reading, not a quality grade.',
   'Avg miss cost': ' When the player does not pick the best option, how much value he leaves on the table on average. Shown in percentage points of scoring probability (the underlying xEPV value is multiplied by 100). It measures how costly a mistake is, not how often it happens.',
   'Worst choice %': 'Share of the player\'s passes where he chose the single worst option available. A lower value is better; on the radar it appears mirrored, as the axis Avoids the worst %.',
+
+  // Off-Ball Movement Axes & Stats
+  'URS /90': 'The raw value behind the Uncapitalized Run Score, in xEPV units per 90 minutes. Shown for transparency, so the reader can see what the index is the percentile of.',
+  'Off-Ball Potential /90': 'The total dangerous off-ball value the player offers per 90 minutes, whether or not it is served. Higher means he occupies high-value space more often. In xEPV units (percentage points of scoring probability).',
+  'Capitalisation rate': 'The share of the off-ball value the player generates that teammates actually realise by serving him. A low value is the mark of a shadow runner. Between 0 and 1.',
+  'xEPV mean': 'The average value of the off-ball positions the player occupies. It separates few great runs from many ordinary ones. In xEPV units (percentage points of scoring probability).',
 };
