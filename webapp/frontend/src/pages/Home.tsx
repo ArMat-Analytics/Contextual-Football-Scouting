@@ -55,7 +55,7 @@ const HYPOTHESES = [
     body: 'Aggregate pass completion rates lack analytical value when devoid of contextual factors. This phase will analyze "Passing under Pressure" by measuring the proximity of defending players. The aim is to assess decision-making efficacy: specifically, whether the player selected the optimal passing lane relative to immediate defensive danger. This differentiation facilitates the separation of players who default to conservative actions from those who exhibit tactical astuteness under high cognitive load.',
   },
   {
-    title: 'Off Ball Movement',
+    title: 'Uncapitalized Run Score',
     body: 'The vast majority of a player\'s on-pitch activity occurs out of possession. This investigation seeks to identify players executing highvalue attacking runs that are ultimately not capitalized upon by teammates. Analyzing 360-degree spatial frames enables the detection of players who consistently occupy and attack dangerous areas, thereby quantifying a latent dimension of offensive contribution regardless of ball reception.',
   },
 ];

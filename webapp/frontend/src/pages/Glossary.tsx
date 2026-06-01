@@ -140,7 +140,7 @@ export default function Glossary() {
             Glossary
           </h1>
           <p className="mt-3 text-base text-[var(--text-muted)]">
-            Definitions of every metric on the platform. The variables are grouped by hypothesis: Space Control (H1), Decision Quality (H2) and Off-Ball Movement (H3). A few premises are shared by all three and are worth reading once before the individual cards below.
+            Definitions of every metric on the platform. The variables are grouped by hypothesis: Space Control (H1), Decision Quality (H2) and Uncapitalized Run Score (H3). A few premises are shared by all three and are worth reading once before the individual cards below.
           </p>
         </div>
       </div>

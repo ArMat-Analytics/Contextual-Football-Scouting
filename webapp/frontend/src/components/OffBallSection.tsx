@@ -77,7 +77,7 @@ export default function OffBallSection({ playerName, row }: OffBallSectionProps)
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
-          <h2 className="font-display font-black text-xl text-[var(--text)] mb-1">Off-Ball Movement</h2>
+          <h2 className="font-display font-black text-xl text-[var(--text)] mb-1">Uncapitalized Run Score</h2>
           <p className="text-xs text-[var(--text-muted)]">Selected player metrics — {playerName}</p>
         </div>
       </div>
@@ -90,10 +90,10 @@ export default function OffBallSection({ playerName, row }: OffBallSectionProps)
           <div className="flex justify-between items-start mb-2">
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-1.5">
-                <span className="font-mono text-[10px] tracking-[0.12em] uppercase font-bold" style={{ color: OB_COLOR }}>Off-Ball Movement</span>
+                <span className="font-mono text-[10px] tracking-[0.12em] uppercase font-bold" style={{ color: OB_COLOR }}>Uncapitalized Run Score</span>
                 <div className="relative">
                   <button
-                    aria-label="Description for Off-Ball Movement"
+                    aria-label="Description for Uncapitalized Run Score"
                     onMouseEnter={() => setHoveredTitle(true)}
                     onMouseLeave={() => setHoveredTitle(false)}
                     style={{
@@ -124,7 +124,7 @@ export default function OffBallSection({ playerName, row }: OffBallSectionProps)
                       }}
                     >
                       <p style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, fontWeight: 700, color: OB_COLOR, marginBottom: 6, letterSpacing: '0.04em' }}>
-                        Off-Ball Movement
+                        Uncapitalized Run Score
                       </p>
                       <p style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>
                         {TOOLTIP_DESCRIPTIONS['Off-Ball Potential /90'] || 'Quality of decisions relative to available space and pressure.'}
@@ -208,10 +208,10 @@ export function OBCompareRadar({ sourceRow, compareRow, sourceName, compareName 
       <div className="flex justify-between items-start mb-2">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-1.5">
-              <span className="font-mono text-[10px] tracking-[0.12em] uppercase font-bold" style={{ color: OB_COLOR }}>Off-Ball Movement</span>
+              <span className="font-mono text-[10px] tracking-[0.12em] uppercase font-bold" style={{ color: OB_COLOR }}>Uncapitalized Run Score</span>
                 <div className="relative">
                   <button
-                    aria-label="Description for Off-Ball Movement"
+                    aria-label="Description for Uncapitalized Run Score"
                     onMouseEnter={() => setHoveredTitle(true)}
                     onMouseLeave={() => setHoveredTitle(false)}
                     style={{
@@ -242,7 +242,7 @@ export function OBCompareRadar({ sourceRow, compareRow, sourceName, compareName 
                       }}
                     >
                       <p style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, fontWeight: 700, color: OB_COLOR, marginBottom: 6, letterSpacing: '0.04em' }}>
-                        Off-Ball Movement
+                        Uncapitalized Run Score
                       </p>
                       <p style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>
                         {TOOLTIP_DESCRIPTIONS['Off-Ball Potential /90'] || 'Quality of decisions relative to available space and pressure.'}
