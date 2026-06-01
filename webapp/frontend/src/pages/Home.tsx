@@ -21,7 +21,7 @@ const LIMITATIONS = [
   },
   {
     title: 'Built on base models',
-    body: 'The indices sit on top of an EPV model (adapted from Friends of Tracking) and, for H2, a custom pass-completion model. Any error in these base models carries through into the metrics above them.',
+    body: 'The indices sit on top of an EPV model (adapted from Friends of Tracking) and a custom pass-completion model (built for H2 and reused by H3). Any error in these base models carries through into the metrics above them.',
   },
   {
     title: 'No game state',
