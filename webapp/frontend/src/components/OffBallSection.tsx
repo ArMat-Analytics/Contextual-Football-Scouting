@@ -3,8 +3,9 @@ import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Responsi
 import { type OffBallRow } from '../hooks/useOffBallMovement';
 
 import { TOOLTIP_DESCRIPTIONS } from '../data/tooltip';
+import { StatViewToggle, type StatViewMode } from './SpaceControlSection';
 
-const OB_COLOR = '#10b981';
+const OB_COLOR = '#9cc507';
 const C_SOURCE = '#0891b2';
 const C_COMPARE = '#df4d14';
 
@@ -54,7 +55,20 @@ function RadarTooltip({ active, payload }: any) {
 
 // ── Core Stats Mapping ────────────────────────────────────────────────────────
 
-// No longer needed, using hardcoded core stats
+type StatDef = { col: keyof OffBallRow; label: string };
+
+const CORE_STATS: Record<StatViewMode, StatDef[]> = {
+  raw: [
+    { col: 'xepv_mean', label: 'xEPV mean' },
+  ],
+  per90: [
+    { col: 'urs_per90', label: 'URS /90' },
+    { col: 'off_ball_potential_per90', label: 'Off-Ball Potential /90' },
+  ],
+  percentages: [
+    { col: 'capitalization_rate', label: 'Capitalisation rate' },
+  ],
+};
 
 
 // ── Component: Single Player ──────────────────────────────────────────────────
@@ -62,9 +76,11 @@ function RadarTooltip({ active, payload }: any) {
 interface OffBallSectionProps {
   playerName: string;
   row: OffBallRow;
+  mode: StatViewMode;
+  onModeChange: (m: StatViewMode) => void;
 }
 
-export default function OffBallSection({ playerName, row }: OffBallSectionProps) {
+export default function OffBallSection({ playerName, row, mode, onModeChange }: OffBallSectionProps) {
   const [hoveredTitle, setHoveredTitle] = useState(false);
   const radarData = [
     { stat: 'Off-Ball Potential /90', value: row.potential_pct_within_role ?? 0 },
@@ -80,6 +96,7 @@ export default function OffBallSection({ playerName, row }: OffBallSectionProps)
           <h2 className="font-display font-black text-xl text-[var(--text)] mb-1">Uncapitalized Run Score</h2>
           <p className="text-xs text-[var(--text-muted)]">Selected player metrics — {playerName}</p>
         </div>
+        <StatViewToggle mode={mode} onChange={onModeChange} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -170,12 +187,21 @@ export default function OffBallSection({ playerName, row }: OffBallSectionProps)
           {/* Core stats panel */}
           <div className="mt-4 bg-[var(--surface2)] rounded-xl p-4">
             <p className="font-mono text-[9px] tracking-[0.1em] uppercase text-[var(--text-dim)] mb-3">Core stats</p>
-            <div className="flex flex-col gap-2">
-              <StatRow label="URS /90" val={row.urs_per90} color={OB_COLOR} />
-              <StatRow label="Off-Ball Potential /90" val={row.off_ball_potential_per90} color={OB_COLOR} />
-              <StatRow label="Capitalisation rate" val={row.capitalization_rate} color={OB_COLOR} />
-              <StatRow label="xEPV mean" val={row.xepv_mean} color={OB_COLOR} />
-            </div>
+            {CORE_STATS[mode].length === 0 ? (
+              <div className="bg-[var(--bg)] p-3 rounded-md border border-[var(--border)]">
+                <p className="text-[11px] text-[var(--text-muted)] leading-[1.5]">
+                  No metrics available for this view.
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {CORE_STATS[mode].map(s => {
+                  let val = row[s.col];
+                  if (s.col === 'capitalization_rate' && typeof val === 'number') val *= 100;
+                  return <StatRow key={s.col} label={s.label} val={val} color={OB_COLOR} />;
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -190,9 +216,10 @@ interface OBCompareRadarProps {
   compareRow: OffBallRow;
   sourceName: string;
   compareName: string;
+  mode: StatViewMode;
 }
 
-export function OBCompareRadar({ sourceRow, compareRow, sourceName, compareName }: OBCompareRadarProps) {
+export function OBCompareRadar({ sourceRow, compareRow, sourceName, compareName, mode }: OBCompareRadarProps) {
   const [hoveredTitle, setHoveredTitle] = useState(false);
   const sName = sourceName.trim().split(' ').pop() ?? sourceName;
   const cName = compareName.trim().split(' ').pop() ?? compareName;
@@ -301,13 +328,30 @@ export function OBCompareRadar({ sourceRow, compareRow, sourceName, compareName 
         </div>
 
         <div className="mt-4 bg-[var(--surface2)] rounded-xl p-4">
-          <p className="font-mono text-[9px] tracking-[0.1em] uppercase text-[var(--text-dim)] mb-3">Core stats</p>
-          <div className="flex flex-col gap-2">
-            <DualStatRow label="URS /90" valS={sourceRow.urs_per90} valC={compareRow.urs_per90} />
-            <DualStatRow label="Off-Ball Potential /90" valS={sourceRow.off_ball_potential_per90} valC={compareRow.off_ball_potential_per90} />
-            <DualStatRow label="Capitalisation rate" valS={sourceRow.capitalization_rate} valC={compareRow.capitalization_rate} />
-            <DualStatRow label="xEPV mean" valS={sourceRow.xepv_mean} valC={compareRow.xepv_mean} />
+          <div className="grid gap-2 pb-1 mb-1 border-b border-[var(--border)]" style={{ gridTemplateColumns: '1fr auto auto' }}>
+            <span className="font-mono text-[9px] text-[var(--text-dim)] uppercase">Core Stats</span>
+            <span className="font-mono text-[9px] uppercase text-right min-w-[52px]" style={{ color: C_SOURCE }}>{sName}</span>
+            <span className="font-mono text-[9px] uppercase text-right min-w-[52px]" style={{ color: C_COMPARE }}>{cName}</span>
           </div>
+          {CORE_STATS[mode].length === 0 ? (
+            <div className="bg-[var(--bg)] p-3 rounded-md border border-[var(--border)]">
+              <p className="text-[11px] text-[var(--text-muted)] leading-[1.5]">
+                No metrics available for this view.
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {CORE_STATS[mode].map(s => {
+                let vS = sourceRow[s.col];
+                let vC = compareRow[s.col];
+                if (s.col === 'capitalization_rate') {
+                  if (typeof vS === 'number') vS *= 100;
+                  if (typeof vC === 'number') vC *= 100;
+                }
+                return <DualStatRow key={s.col} label={s.label} valS={vS} valC={vC} />;
+              })}
+            </div>
+          )}
         </div>
       </div>
   );
@@ -315,7 +359,7 @@ export function OBCompareRadar({ sourceRow, compareRow, sourceName, compareName 
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function StatRow({ label, val, color }: { label: string; val: number | null | undefined; color: string }) {
+function StatRow({ label, val, color }: { label: string; val: string | number | null | undefined; color: string }) {
   const [hovered, setHovered] = useState(false);
   const description = TOOLTIP_DESCRIPTIONS[label] ?? 'No description available.';
 
@@ -360,7 +404,7 @@ function StatRow({ label, val, color }: { label: string; val: number | null | un
   );
 }
 
-function DualStatRow({ label, valS, valC }: { label: string; valS: number | null | undefined; valC: number | null | undefined }) {
+function DualStatRow({ label, valS, valC }: { label: string; valS: string | number | null | undefined; valC: string | number | null | undefined }) {
   const [hovered, setHovered] = useState(false);
   const description = TOOLTIP_DESCRIPTIONS[label] ?? 'No description available.';
 

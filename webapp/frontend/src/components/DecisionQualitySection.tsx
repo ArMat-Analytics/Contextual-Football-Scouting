@@ -452,8 +452,8 @@ export function DQCompareRadar({
       <div className="mt-4 bg-[var(--surface2)] rounded-xl p-4">
 
         {/* Column headers */}
-        <div className="grid gap-2 pb-1.5 mb-1.5 border-b border-[var(--border)]" style={{ gridTemplateColumns: '1fr auto auto' }}>
-          <span className="font-mono text-[9px] text-[var(--text-dim)] uppercase">Stat</span>
+        <div className="grid gap-2 pb-1 mb-1 border-b border-[var(--border)]" style={{ gridTemplateColumns: '1fr auto auto' }}>
+          <span className="font-mono text-[9px] text-[var(--text-dim)] uppercase">Core Stats</span>
           <span className="font-mono text-[9px] uppercase text-right min-w-[52px]" style={{ color: C_SOURCE }}>{sName}</span>
           <span className="font-mono text-[9px] uppercase text-right min-w-[52px]" style={{ color: C_COMPARE }}>{cName}</span>
         </div>

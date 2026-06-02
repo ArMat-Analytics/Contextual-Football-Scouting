@@ -116,7 +116,7 @@ export const GLOSSARY_SECTIONS: GlossarySection[] = [
   {
     category: 'OFF_BALL_MOVEMENT',
     title: 'Uncapitalized Run Score',
-    color: '#10b981',
+    color: '#9cc507',
     intro:
       'The headline number of the Uncapitalized Run Score, shown big on the card. It grades how much high-value attacking space the player occupies that his teammates do not serve, expressed as a within macro-role percentile from 0 to 100: 100 means the most uncapitalized off-ball threat of the role, 50 the median. It is the only percentile on the card; every other number is a raw value or a rate. For every teammate visible in a 360 frame while an open-play pass is played, we score the value of the hypothetical pass that would serve him (xEPV) and check whether he was actually served next; URS /90 is the sum of the unserved value per 90 minutes, and the Uncapitalized Run Score is its within-role percentile.',
     entries: [
@@ -135,5 +135,5 @@ export const INDEX_COLORS: Record<string, string> = {
   RECEPTION:        '#4da6ff',
   GRAVITY:          '#ffc947',
   DECISION_QUALITY: '#c084fc',
-  OFF_BALL_MOVEMENT:'#10b981',
+  OFF_BALL_MOVEMENT:'#db2777',
 };

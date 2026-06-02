@@ -70,6 +70,7 @@ export default function PlayerProfile() {
   const [loadingStats, setLoadingStats] = useState(true);
   const [statMode, setStatMode] = useState<StatViewMode>('raw');
   const [dqMode, setDqMode] = useState<StatViewMode>('raw');
+  const [obMode, setObMode] = useState<StatViewMode>('raw');
 
   const { data: scData, loading: scLoading } = usePlayerSpaceControl(playerId);
   const { data: dqData, loading: dqLoading } = usePlayerDecisionQuality(playerId);
@@ -284,6 +285,8 @@ export default function PlayerProfile() {
         <OffBallSection
           playerName={stats.player_name}
           row={obData}
+          mode={obMode}
+          onModeChange={setObMode}
         />
       ) : (
         <div className="max-w-[1200px] mx-auto px-6 mb-12">

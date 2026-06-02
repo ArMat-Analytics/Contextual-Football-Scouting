@@ -14,6 +14,7 @@ const FILTER_OPTIONS: { key: FilterKey; label: string }[] = [
   { key: 'RECEPTION',       label: 'Reception' },
   { key: 'GRAVITY',         label: 'Gravity' },
   { key: 'DECISION_QUALITY',label: 'Decision Quality' },
+  { key: 'OFF_BALL_MOVEMENT',label: 'Uncapitalized Run Score' },
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -23,6 +24,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   RECEPTION:    '#2563eb',
   GRAVITY:      '#d97706',
   DECISION_QUALITY: '#7c3aed',
+  OFF_BALL_MOVEMENT: '#9cc507',
 };
 
 // ── Entry card ────────────────────────────────────────────────────────────────

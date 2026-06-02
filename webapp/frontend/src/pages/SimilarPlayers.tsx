@@ -496,6 +496,7 @@ export default function SimilarPlayers() {
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [statMode, setStatMode] = useState<StatViewMode>('raw');
   const [dqMode, setDqMode] = useState<StatViewMode>('raw');
+  const [obMode, setObMode] = useState<StatViewMode>('raw');
 
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
@@ -856,6 +857,7 @@ export default function SimilarPlayers() {
                       <h2 className="font-display font-black text-xl text-[var(--text)] mb-1">Off-Ball Movement</h2>
                       <p className="text-xs text-[var(--text-muted)]">Selected players metrics — {playerName.trim().split(' ').pop()} · {selectedPlayer.player.trim().split(' ').pop()}</p>
                     </div>
+                    <StatViewToggle mode={obMode} onChange={setObMode} />
                   </div>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -865,6 +867,7 @@ export default function SimilarPlayers() {
                         compareRow={compareOB}
                         sourceName={playerName}
                         compareName={selectedPlayer?.player ?? 'Comparison player'}
+                        mode={obMode}
                       />
                     ) : (
                       <div className="col-span-2 text-sm text-[var(--text-muted)]">Off-Ball Movement data not available for one of the players.</div>
