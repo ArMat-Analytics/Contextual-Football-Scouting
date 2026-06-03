@@ -18,8 +18,8 @@ import json
 import os
 from pathlib import Path
 
-# CSVs live in Space_Control_and_Value/data/ (three levels up to repo root, then to Space_Control_and_Value)
-DATA_DIR = Path(__file__).resolve().parents[3] / "Space_Control_and_Value" / "data"
+# CSVs live in H1_Space_Control_and_Value/data/ (three levels up to repo root, then to H1_Space_Control_and_Value)
+DATA_DIR = Path(__file__).resolve().parents[3] / "H1_Space_Control_and_Value" / "data"
 
 # .env lives in webapp/backend/
 ENV_FILE = Path(__file__).resolve().parents[2] / "backend" / ".env"

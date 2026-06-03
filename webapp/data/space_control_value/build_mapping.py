@@ -13,7 +13,7 @@ import unicodedata
 from pathlib import Path
 
 ROOT     = Path(__file__).resolve().parents[3]
-SC_CSV   = ROOT / "Space_Control_and_Value" / "data" / "player_space_control_indices.csv"
+SC_CSV   = ROOT / "H1_Space_Control_and_Value" / "data" / "player_space_control_indices.csv"
 DB_CSV   = Path(__file__).resolve().parents[1] / "data_clean" / "player_data_clean.csv"
 OUT_FILE = Path(__file__).resolve().parent / "sc_player_mapping.json"
 

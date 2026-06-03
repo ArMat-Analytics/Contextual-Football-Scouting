@@ -16,8 +16,8 @@ import csv
 import os
 from pathlib import Path
 
-# CSV lives in Decision_Quality/data/
-DATA_DIR = Path(__file__).resolve().parents[3] / "Decision_Quality" / "data"
+# CSV lives in H2_Decision_Quality/data/
+DATA_DIR = Path(__file__).resolve().parents[3] / "H2_Decision_Quality" / "data"
 CSV_NAME = "player_decision_quality.csv"
 
 # .env lives in webapp/backend/

@@ -60,8 +60,8 @@ python import_space_control.py --dry-run
 ```
 
 **Source files (read-only, not copied):**
-- `../../Space_Control_and_Value/data/player_space_control_indices.csv`
-- `../../Space_Control_and_Value/data/player_space_control_aggregated.csv`
+- `../../H1_Space_Control_and_Value/data/player_space_control_indices.csv`
+- `../../H1_Space_Control_and_Value/data/player_space_control_aggregated.csv`
 
 **DB tables created:**
 
