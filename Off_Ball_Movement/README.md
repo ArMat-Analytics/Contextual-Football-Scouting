@@ -115,13 +115,13 @@ The cleanest illustration of what the metric isolates is **Pedri against Kroos**
 
 **Split-half reliability.** Splitting the 51 matches by date into the first 25 and last 26, the URS /90 ranking reproduces at **Spearman ρ = 0.72** (n = 117 players who clear the floor in both blocks). A player's URS over the opening matches predicts his URS over the closing ones, so the order is a stable signal, not a single hot run.
 
-**The three radar axes are doing different jobs.** Off-Ball Potential and Latency are essentially uncorrelated (within-role ρ ≈ −0.01): how much space a player exposes says nothing about whether it gets used, which is exactly why the archetype map below spreads players across two real dimensions rather than one diagonal. xEPV mean correlates only weakly with both (ρ ≈ 0.30 and 0.18), adding a quality reading neither already contains.
+**The three radar axes carry distinct signal.** The matrix below is the **within-role** Spearman correlation of the three axes (each metric ranked inside its macro-role before correlating, the same recipe H2 applies to its radar, so role-level mean differences don't inflate it). Within role the axes are positively but only moderately correlated. Off-Ball Potential and Latency are weakly related (ρ ≈ 0.29): how much space a player exposes is largely independent of whether it gets used, which is why the archetype map below spreads players across two real dimensions rather than one diagonal. xEPV mean carries the most shared signal with Potential (ρ ≈ 0.68) — a player who exposes more value tends to expose *better* frames too — and is weakly tied to Latency (ρ ≈ 0.35). None of the off-diagonal values is high enough to call any axis redundant.
 
 | | Potential /90 | xEPV mean | Latency |
 |---|---:|---:|---:|
-| **Potential /90** | 1.00 | 0.30 | −0.01 |
-| **xEPV mean** | 0.30 | 1.00 | 0.18 |
-| **Latency** | −0.01 | 0.18 | 1.00 |
+| **Potential /90** | 1.00 | 0.68 | 0.29 |
+| **xEPV mean** | 0.68 | 1.00 | 0.35 |
+| **Latency** | 0.29 | 0.35 | 1.00 |
 
 **A declared dependency.** Off-Ball Potential correlates with the headline at ρ ≈ 0.97 by construction (`URS = Potential × Latency`, and Potential carries the wider spread). It is kept on the radar as the most readable volume axis rather than treated as an independent signal — the same honesty H2 applies to its Value Impact companion.
 
