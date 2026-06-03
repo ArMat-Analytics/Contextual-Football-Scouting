@@ -167,7 +167,7 @@ The mirror chart. Players whose naive ranking sits well above their contextual o
 ## Folder structure
 
 ```
-Space_Control_and_Value/
+H1_Space_Control_and_Value/
 ├── README.md
 ├── requirements.txt
 ├── .gitignore
@@ -205,7 +205,7 @@ Space_Control_and_Value/
 
 ```bash
 git clone https://github.com/ArMat-Analytics/Contextual-Football-Scouting
-cd Contextual-Football-Scouting/Space_Control_and_Value
+cd Contextual-Football-Scouting/H1_Space_Control_and_Value
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 

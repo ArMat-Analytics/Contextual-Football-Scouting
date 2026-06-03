@@ -2,7 +2,7 @@
 
 Part of **[Contextual Football Scouting](../README.md)** (Vezzoli & Mio, 2026). For the full framing of the four hypotheses see [`docs/Project_Proposal.pdf`](../docs/Project_Proposal.pdf).
 
-Implementation of **Hypothesis 3**: most of a player's game happens *without the ball*, and the value of that work is invisible to event data. We measure the **dangerous off-ball space a player occupies that his teammates fail to use** — the high-value runs that are made, seen by the freeze frame, and left unserved.
+Implementation of **Hypothesis 3**: most of a player's game happens *without the ball*, and the value of that work is invisible to event data. We measure the **dangerous off-ball space a player occupies that his teammates fail to use**: the high-value runs that are made, seen by the freeze frame, and left unserved.
 
 Built on **StatsBomb 360 open data** for UEFA Euro 2024 (`competition_id=55`, `season_id=282`, 51 matches, 272 players after the minutes filter, the same pool as H1 and H2).
 
@@ -20,7 +20,7 @@ While a teammate has the ball, every other visible teammate is a *candidate targ
 
 The value a player offers but does not get is the *uncapitalised* part. Summed per player and normalised per 90 minutes, it is the headline:
 
-> **URS /90** (Uncapitalized Run Score) `= Σ xEPV · (1 − received) / minutes × 90` — the latent off-ball value the player generated that teammates left on the table. **The headline rating is its within macro-role percentile** (a full-back is benchmarked against other full-backs).
+> **URS /90** (Uncapitalized Run Score) `= Σ xEPV · (1 − received) / minutes × 90`: the latent off-ball value the player generated that teammates left on the table. **The headline rating is its within macro-role percentile** (a full-back is benchmarked against other full-backs).
 
 Quick glossary: **freeze frame** = the StatsBomb 360 snapshot of visible players at the instant the pass is released; **candidate** = a visible teammate (not the carrier, not a goalkeeper) treated as a hypothetical pass target; **confident** = a candidate whose identity the resolver localised within 8 m, the only ones scored; **received** = served by the next touch within 4 s.
 
@@ -80,7 +80,7 @@ StatsBomb 360 frames + events  (live pull)
   Validation                    resolver accuracy + split-half + robustness
 ```
 
-The split mirrors H2: the **xPass model is reused, never retrained** — H3 recomputes it on the fly from the live freeze frames with H2's saved `CalibratedXPass`, because StatsBomb regenerated every event UUID and a merge on H2's frozen alternatives would return nothing. Same model, same 13 features, so the value attached to each candidate is exactly what H2 would attach (median difference 0.000 on the shared events).
+The split mirrors H2: the **xPass model is reused, never retrained**. H3 recomputes it on the fly from the live freeze frames with H2's saved `CalibratedXPass`, because StatsBomb regenerated every event UUID and a merge on H2's frozen alternatives would return nothing. Same model, same 13 features, so the value attached to each candidate is exactly what H2 would attach (median difference 0.000 on the shared events).
 
 ## Key findings
 
@@ -88,7 +88,7 @@ A scout-first read of the Euro 2024 leaderboard on `URS /90`. As with H1 and H2,
 
 ### The shadow runners — high-value runs left unused
 
-- **Pedri** (Spain, CAM, n=185') tops the whole pool at **URS /90 = 2.78**, roughly twice the next name. He exposes more off-ball value than anyone (Potential /90 = 3.30) and is served on only 16% of it: the extreme shadow runner of the tournament. The headline is striking but **fragile** — 185 minutes barely clears the floor, so read it next to the sample.
+- **Pedri** (Spain, CAM, n=185') tops the whole pool at **URS /90 = 2.78**, roughly twice the next name. He exposes more off-ball value than anyone (Potential /90 = 3.30) and is served on only 16% of it: the extreme shadow runner of the tournament. The headline is striking but **fragile**: 185 minutes barely clears the floor, so read it next to the sample.
 - **Jorginho** (Italy, MID, n=219') at **1.41** and **Morten Hjulmand** (Denmark, MID, n=244') at **1.08** are the recognised tempo-setters whose constant between-the-lines availability is only partly used.
 - **Luka Modrić** (Croatia, MID) at **0.92**, on a profile that confirms the public reading: still offering dangerous options at 38, served less than he offers.
 
@@ -115,7 +115,7 @@ The cleanest illustration of what the metric isolates is **Pedri against Kroos**
 
 **Split-half reliability.** Splitting the 51 matches by date into the first 25 and last 26, the URS /90 ranking reproduces at **Spearman ρ = 0.72** (n = 117 players who clear the floor in both blocks). A player's URS over the opening matches predicts his URS over the closing ones, so the order is a stable signal, not a single hot run.
 
-**The three radar axes carry distinct signal.** The matrix below is the **within-role** Spearman correlation of the three axes (each metric ranked inside its macro-role before correlating, the same recipe H2 applies to its radar, so role-level mean differences don't inflate it). Within role the axes are positively but only moderately correlated. Off-Ball Potential and Latency are weakly related (ρ ≈ 0.29): how much space a player exposes is largely independent of whether it gets used, which is why the archetype map below spreads players across two real dimensions rather than one diagonal. xEPV mean carries the most shared signal with Potential (ρ ≈ 0.68) — a player who exposes more value tends to expose *better* frames too — and is weakly tied to Latency (ρ ≈ 0.35). None of the off-diagonal values is high enough to call any axis redundant.
+**The three radar axes carry distinct signal.** The matrix below is the **within-role** Spearman correlation of the three axes (each metric ranked inside its macro-role before correlating, the same recipe H2 applies to its radar, so role-level mean differences don't inflate it). Within role the axes are positively but only moderately correlated. Off-Ball Potential and Latency are weakly related (ρ ≈ 0.29): how much space a player exposes is largely independent of whether it gets used, which is why the archetype map below spreads players across two real dimensions rather than one diagonal. xEPV mean carries the most shared signal with Potential (ρ ≈ 0.68, a player who exposes more value tends to expose *better* frames too) and is weakly tied to Latency (ρ ≈ 0.35). None of the off-diagonal values is high enough to call any axis redundant.
 
 | | Potential /90 | xEPV mean | Latency |
 |---|---:|---:|---:|
@@ -123,7 +123,7 @@ The cleanest illustration of what the metric isolates is **Pedri against Kroos**
 | **xEPV mean** | 0.68 | 1.00 | 0.35 |
 | **Latency** | 0.29 | 0.35 | 1.00 |
 
-**A declared dependency.** Off-Ball Potential correlates with the headline at ρ ≈ 0.97 by construction (`URS = Potential × Latency`, and Potential carries the wider spread). It is kept on the radar as the most readable volume axis rather than treated as an independent signal — the same honesty H2 applies to its Value Impact companion.
+**A declared dependency.** Off-Ball Potential correlates with the headline at ρ ≈ 0.97 by construction (`URS = Potential × Latency`, and Potential carries the wider spread). It is kept on the radar as the most readable volume axis rather than treated as an independent signal, the same honesty H2 applies to its Value Impact companion.
 
 ![Archetype map — Potential vs Latency](docs/figures/archetype_map.png)
 
@@ -132,7 +132,7 @@ The archetype scatter reads the whole pool at once. Pedri sits alone in the top-
 ## Folder structure
 
 ```
-Off_Ball_Movement/
+H3_Off_Ball_Movement/
 ├── README.md
 ├── requirements.txt
 │
@@ -161,7 +161,7 @@ Off_Ball_Movement/
 
 ```bash
 git clone https://github.com/ArMat-Analytics/Contextual-Football-Scouting
-cd Contextual-Football-Scouting/Off_Ball_Movement
+cd Contextual-Football-Scouting/H3_Off_Ball_Movement
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 

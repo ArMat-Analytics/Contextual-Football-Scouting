@@ -131,7 +131,7 @@ The numerical machinery behind the index — rank robustness across the arbitrar
 ## Folder structure
 
 ```
-Decision_Quality/
+H2_Decision_Quality/
 ├── README.md
 ├── requirements.txt
 ├── .gitignore
@@ -166,7 +166,7 @@ Decision_Quality/
 
 ```bash
 git clone https://github.com/ArMat-Analytics/Contextual-Football-Scouting
-cd Contextual-Football-Scouting/Decision_Quality
+cd Contextual-Football-Scouting/H2_Decision_Quality
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
