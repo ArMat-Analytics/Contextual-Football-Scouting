@@ -41,7 +41,9 @@ A 360 freeze frame gives positions but **no identity**: only the player on the b
 2. **Match estimates to dots** with the Hungarian algorithm (optimal one-to-one assignment minimising total distance).
 3. **Keep only confident assignments**, those localised within 8 m, and score only those.
 
-It is validated against the ground truth StatsBomb *does* record on completed passes (`pass_recipient`): we hide it, let the resolver predict, and compare. On the open-play universe the metric runs on, the bracket resolver reaches **93% accuracy on the confident assignments it keeps**, against ~72% for a last-known-location baseline. That clears the bar to rank players individually rather than only by zone.
+There is no ground truth for off-ball runs (nobody touches the ball, so StatsBomb records no name), but there *is* one for completed passes: the `pass_recipient`. So we validate where the truth exists and carry the result over: we hide that recipient, let the resolver predict who the receiving dot is, and check it against the real name. The assumption is that a resolver this accurate at naming the dot a pass *reaches* is just as accurate at naming the dots it *bypasses* — the off-ball candidates H3 actually scores.
+
+On the open-play universe the metric runs on, the bracket resolver reaches **93% accuracy on the confident assignments it keeps**. The honest comparison is against the naive alternative — placing each dot at the player's *last known position* with no interpolation — which manages only ~74%. That gap is what clears the bar to rank players individually rather than only by zone.
 
 ### Website graphic: the 3-axis radar
 
