@@ -14,7 +14,7 @@ const FILTER_OPTIONS: { key: FilterKey; label: string }[] = [
   { key: 'RECEPTION',       label: 'Reception' },
   { key: 'GRAVITY',         label: 'Gravity' },
   { key: 'DECISION_QUALITY',label: 'Decision Quality' },
-  { key: 'OFF_BALL_MOVEMENT',label: 'Uncapitalized Run Score' },
+  { key: 'OFF_BALL_MOVEMENT',label: 'Off-Ball Movement' },
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -142,7 +142,7 @@ export default function Glossary() {
             Glossary
           </h1>
           <p className="mt-3 text-base text-[var(--text-muted)]">
-            Definitions of every metric on the platform. The variables are grouped by hypothesis: Space Control (H1), Decision Quality (H2) and Uncapitalized Run Score (H3). A few premises are shared by all three and are worth reading once before the individual cards below.
+            Definitions of every metric on the platform. The variables are grouped by hypothesis: Space Control (H1), Decision Quality (H2) and Off-Ball Movement (H3). A few premises are shared by all three and are worth reading once before the individual cards below.
           </p>
         </div>
       </div>
@@ -213,7 +213,7 @@ export default function Glossary() {
               />
               <EntryCard
                 label="Open play only"
-                description="All metrics look at open play only. Set pieces, corners, free kicks, throw-ins, kick-offs and goal kicks, are left out, because they are rehearsed situations that follow their own logic and would distort a measure built to read the flow of the game. What each hypothesis then counts underneath differs by design: H1 reads the passes a player attempts, H2 reads the passing decisions he faces, and H3 reads the off-ball positions he takes up while a teammate has the ball."
+                description="All metrics look at open play only. Set pieces (corners, free kicks, throw-ins, kick-offs and goal kicks) are left out, because they are rehearsed situations that follow their own logic and would distort a measure built to read the flow of the game. What each hypothesis then counts underneath differs by design: H1 reads the passes a player attempts, H2 reads the passing decisions he faces, and H3 reads the off-ball positions he takes up while a teammate has the ball."
                 color={CATEGORY_COLORS['COMMON_PREMISES']}
               />
             </div>

@@ -1,47 +1,43 @@
 const LIMITATIONS = [
+  // — The data is a snapshot, not a film —
   {
-    title: 'Single instant per event',
-    body: 'Each metric reads the pitch at the moment the pass is played, not the movement before it or the ball trajectory after. It describes the geometry of the decision, not how it unfolds.',
+    title: 'A single instant, not a film',
+    body: 'Each metric reads the pitch at the moment the pass is played, not the movement before it or the ball trajectory after. It describes the geometry of the decision, not how it unfolds. Speed at reception, acceleration, distance covered and pressing intensity over time cannot be measured, and a player standing in a dangerous zone scores the same as one sprinting into it at that instant.',
   },
+  {
+    title: 'Pressure read from distance alone',
+    body: 'A frame shows where defenders are, not their physical state: a defender 2 m away may be jogging or sprinting in to tackle, and the snapshot cannot tell them apart. Pressure here approximates threat from distance only.',
+  },
+  // — The frame sees little, and names no one —
   {
     title: 'Partial player coverage',
     body: 'A 360 frame usually shows 8 to 12 of the 22 players, those near the ball. Players far from the action are often missing, so anything measured far from the ball is less reliable.',
   },
   {
     title: 'Anonymous opponents and teammates',
-    body: 'Only the player on the ball is named; everyone else carries just a team tag. The model cannot weight opposition by quality, so beating a top defender counts the same as beating a weak one. The same holds going forward: a pass into a dangerous zone is valued by the zone, not by who receives it.',
+    body: 'Only the player on the ball is named; everyone else carries just a team tag. The model cannot weight opposition by quality, so beating a top defender counts the same as beating a weak one, and a pass into a dangerous zone is valued by the zone, not by who would receive it.',
   },
-  {
-    title: 'No continuous tracking',
-    body: 'Frames are snapshots at event time, not continuous motion. Speed at reception, acceleration, distance covered or pressing intensity over time cannot be measured. These metrics describe geometry, not movement.',
-  },
-  {
-    title: 'Pressure intensity not captured',
-    body: 'A frame shows where defenders are, not their physical state. A defender 2 m away may be jogging or sprinting in to tackle, and the camera cannot tell the difference. Pressure metrics here approximate threat from distance alone.',
-  },
-  {
-    title: 'Built on base models',
-    body: 'The indices sit on top of an EPV model (adapted from Friends of Tracking) and a custom pass-completion model (built for H2 and reused by H3). Any error in these base models carries through into the metrics above them.',
-  },
+  // — What the model leaves out —
   {
     title: 'No game state',
     body: 'Decisions are graded on value alone. Score, time left, match importance and manager instructions are ignored, so a deliberately safe choice late in a game reads as conservative rather than smart.',
   },
   {
-    title: 'Counterfactual passes cannot be validated (H2)',
-    body: 'H2 compares the chosen pass against the alternatives the player could have played. Those alternatives were never actually played, so there is no real outcome to check them against. The index limits this by ranking the options within each event, which only needs them ordered roughly right.',
+    title: 'Built on base models, shared across hypotheses',
+    body: 'The indices sit on top of an EPV model (adapted from Friends of Tracking) and a custom pass-completion model (built for H2 and reused by H3). Any error in these base models carries through into the metrics above them. And because H2 and H3 read H1\'s player pool, roles and EPV from the same files, a bias in those shared foundations would show up in all three at once rather than as a disagreement between them.',
   },
-  {
-    title: 'Reconstructed off-ball identities (H3)',
-    body: 'The 360 frames name only the player on the ball, so for off-ball movement we reconstruct who each anonymous teammate is: we estimate their position at the moment of the pass and assign identities by matching them to the players\' recent on-ball events. This is validated against StatsBomb\'s actual pass recipient and is accurate on the high-confidence assignments it keeps, but it remains an estimate, not a certainty. Combined with the per-role minutes threshold, players with few off-ball events carry a noisier ranking.',
-  },
-  {
-    title: 'Position, not the run itself (H3)',
-    body: 'Off-ball value is read from the freeze frame at the instant the pass is played, so it measures how dangerous the space a player occupies is, not whether he actively ran into it. A player standing in a high-value zone and one sprinting into it at that moment score the same. As with the other metrics, this is the geometry of a single snapshot, not tracked movement.',
-  },
+  // — Sample and validation —
   {
     title: 'Single tournament, small samples',
-    body: 'All data come from Euro 2024 alone, so patterns may not carry over to club football or other competitions. Players need at least 135 minutes (about 1.5 matches) to be included, and per-role pools are small: a player with few events has a noisy ranking that can also nudge the players around him. The sample size is always shown so low-sample profiles can be discounted.',
+    body: 'All data come from Euro 2024 alone, so patterns may not carry over to club football or other competitions. Players need at least 135 minutes (about 1.5 matches) to be included, and per-role pools are small: a low-sample player has a noisy ranking that can also nudge the players around him. The sample size is always shown so low-sample profiles can be discounted.',
+  },
+  {
+    title: 'Some things have no ground truth',
+    body: 'H2 compares the chosen pass against the alternatives the player could have played. Those alternatives were never actually played, so there is no real outcome to check them against; the index limits this by only needing the options ordered roughly right. H3 has a similar gap: the off-ball identities are reconstructed by estimating each anonymous teammate\'s position and matching it to their recent on-ball events. That is validated against StatsBomb\'s actual pass recipient and is accurate on the high-confidence assignments it keeps, but it remains an estimate, not a certainty.',
+  },
+  {
+    title: 'Team bias reduced, not removed',
+    body: 'Grading players by the value of what they do rather than the volume, and then ranking them within their role, removes most of the team bias that distorts raw stats. What it cannot remove is exposure: a player in a possession-dominant side still appears in more freeze frames, and gets more chances to add value, than an equal player in a pressed side.',
   },
 ];
 
@@ -55,8 +51,8 @@ const HYPOTHESES = [
     body: 'Aggregate pass completion rates lack analytical value when devoid of contextual factors. This phase will analyze "Passing under Pressure" by measuring the proximity of defending players. The aim is to assess decision-making efficacy: specifically, whether the player selected the optimal passing lane relative to immediate defensive danger. This differentiation facilitates the separation of players who default to conservative actions from those who exhibit tactical astuteness under high cognitive load.',
   },
   {
-    title: 'Uncapitalized Run Score',
-    body: 'The vast majority of a player\'s on-pitch activity occurs out of possession. This investigation seeks to identify players executing highvalue attacking runs that are ultimately not capitalized upon by teammates. Analyzing 360-degree spatial frames enables the detection of players who consistently occupy and attack dangerous areas, thereby quantifying a latent dimension of offensive contribution regardless of ball reception.',
+    title: 'Off-Ball Movement',
+    body: 'The vast majority of a player\'s on-pitch activity occurs out of possession. This investigation seeks to identify players executing high-value attacking runs that are ultimately not capitalized upon by teammates. Analyzing 360-degree spatial frames enables the detection of players who consistently occupy and attack dangerous areas, thereby quantifying a latent dimension of offensive contribution regardless of ball reception.',
   },
 ];
 

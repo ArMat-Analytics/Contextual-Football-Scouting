@@ -14,12 +14,12 @@
 
 Traditional scouting stats reward **volume**: passes played, distance covered, touches taken. They miss the **context** that makes those numbers mean anything. The same pass is brilliant against a compact block and trivial against an open one, and most of what a player does of value happens *without the ball*. Worse, they carry a heavy **team bias**: a midfielder in a possession-dominant side piles up numbers a better player in a pressed side never gets the chance to.
 
-This project reads players from **StatsBomb 360 spatial data** instead of the event log alone. Three completed studies, each with its own metric, notebook and write-up, feed one platform: a contextual, team-bias-corrected scouting tool for UEFA Euro 2024.
+This project reads players from **StatsBomb 360 spatial data** instead of the event log alone. Three completed studies, each with its own metric, notebook and write-up, feed one platform: a contextual scouting tool for UEFA Euro 2024 built to cut through team bias.
 
-Two ideas hold them together:
+Two things tie the studies together:
 
-- **Expected Possession Value (EPV)** is the common currency. Every metric is measured in the same units (probability of scoring), so the three studies stay comparable.
-- **Within-role percentiles** are the common lens. A centre-back is ranked against other centre-backs, never against the whole pitch. That is what strips out the volume and position bias that flatters players in possession-heavy teams.
+- **Expected Possession Value (EPV)** is the common currency. Every metric grades a player by the *value* of what they do, not the *volume*. That is the main channel through which team strength inflates traditional stats: a player no longer looks better just for touching the ball more in a possession-heavy side.
+- **Within-role percentiles** are the common lens. A centre-back is ranked against other centre-backs, never against the whole pitch, so the role effect comes out on top of the volume one.
 
 ## The three hypotheses
 
@@ -29,13 +29,13 @@ Two ideas hold them together:
 | **[H2](H2_Decision_Quality/)** | **Contextual Decision-Making** | Not the value of the pass played, but its value **relative to the options ignored**: among the teammates actually available in the frame, did the player choose the best lane? | DQ index (+ Value Impact) |
 | **[H3](H3_Off_Ball_Movement/)** | **Off-Ball Movement** | The **dangerous off-ball space a player occupies that teammates fail to use**: high-value runs that are made, seen by the freeze frame, and left unserved. | URS /90 (Uncapitalized Run Score) |
 
-Each folder is named with its hypothesis prefix and stands on its own. Open any study and its README walks you through the metric, the validation and the scout-facing findings.
+Each folder is named with its hypothesis prefix and stands on its own. Its README covers the metric, the validation and the scout-facing findings.
 
 ## What the data shows
 
-- **H1.** The contextual ranking parts company with the naive one most on DANGEROUSNESS: more than half the pool shifts by 20+ percentile points moving from "passes /90" to "EPV created /90". Passing volume is a poor proxy for value created.
-- **H2.** It separates the players who default to the safe pass from those who pick the best available lane, on the same 272-player pool as H1.
-- **H3.** It surfaces the shadow runners. Pedri exposes more off-ball value than anyone at the tournament (URS /90 = 2.78) yet is served on barely 16% of it. He and Kroos sit on the same exposure but pull apart on capitalisation: one a threat his team keeps missing, the other a threat his team uses.
+- **H1** moves the leaderboard most on DANGEROUSNESS: more than half the pool shifts by 20+ percentile points going from "passes /90" to "EPV created /90". Passing volume is a poor proxy for value created.
+- **H2** tells apart the players who default to the safe pass from those who pick the best lane actually on offer, on the same 272-player pool as H1.
+- **H3** surfaces the shadow runners. Pedri exposes more off-ball value than anyone at the tournament (URS /90 = 2.78) yet is served on barely 16% of it. He and Kroos sit on the same exposure but split on capitalisation: one a threat his team keeps missing, the other a threat his team uses.
 
 ## The platform
 
@@ -44,7 +44,7 @@ The three studies feed an **interactive web dashboard** ([`webapp/`](webapp/)). 
 - **Read a player's profile**, with the H1, H2 and H3 cards side by side.
 - **Run head-to-heads**, two players of the same macro-role overlaid on the same radars so the comparison stays within role.
 
-Every card follows the same pattern: a magnitude headline next to a within-role percentile radar that breaks down the profile behind it, with the raw scout-facing values shown underneath so a low-sample profile can be read with the right caution.
+Every card follows the same pattern: a magnitude headline next to a within-role percentile radar that breaks down the profile behind it, with the raw scout-facing values shown underneath so low-sample profiles can be discounted.
 
 ## Data
 
