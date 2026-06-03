@@ -75,6 +75,6 @@ export const TOOLTIP_DESCRIPTIONS: Record<string, string> = {
   // Off-Ball Movement Axes & Stats
   'URS /90': 'The raw value behind the Uncapitalized Run Score, in xEPV units per 90 minutes. Shown for transparency, so the reader can see what the index is the percentile of.',
   'Off-Ball Potential /90': 'The total dangerous off-ball value the player offers per 90 minutes, whether or not it is served. Higher means he occupies high-value space more often. In xEPV units (percentage points of scoring probability).',
-  'Capitalisation rate': 'The share of the off-ball value the player generates that teammates actually realise by serving him. A low value is the mark of a shadow runner. Between 0 and 1.',
+  'Capitalisation rate': 'The share of the off-ball value the player generates that teammates actually realise by serving him, shown as a percentage. A low value is the mark of a shadow runner.',
   'xEPV mean': 'The average value of the off-ball positions the player occupies. It separates few great runs from many ordinary ones. In xEPV units (percentage points of scoring probability).',
 };

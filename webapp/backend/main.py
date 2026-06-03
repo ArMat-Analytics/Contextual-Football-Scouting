@@ -194,10 +194,19 @@ def get_player_stats(player_id: int, db: Session = Depends(database.get_db)):
 def get_player_decision_quality(player_id: int, db: Session = Depends(database.get_db)):
     """Return the decision-quality row for a single player, looked up by db_player_id."""
     row = db.execute(text("""
+        WITH CorrectedSC AS (
+            SELECT 
+                sc.*,
+                CASE 
+                    WHEN sc.player = 'Daniel Olmo Carvajal' THEN (SELECT player_id FROM player_profiles WHERE player_name ILIKE '%Olmo%' LIMIT 1)
+                    ELSE sc.db_player_id
+                END as fixed_db_player_id
+            FROM sc_indices sc
+        )
         SELECT dq.*
         FROM player_decision_quality dq
-        JOIN sc_indices sc ON sc.player = dq.player AND sc.team = dq.team
-        WHERE sc.db_player_id = :pid
+        JOIN CorrectedSC sc ON sc.player = dq.player AND sc.team = dq.team
+        WHERE sc.fixed_db_player_id = :pid
         LIMIT 1
     """), {"pid": player_id}).fetchone()
 
@@ -278,21 +287,30 @@ def get_similar_dq(
     """Return all DQ rows for a given macro_role, excluding one player by name."""
     try:
         q = """
-            SELECT dq.*
+            WITH CorrectedSC AS (
+                SELECT 
+                    sc.*,
+                    CASE 
+                        WHEN sc.player = 'Daniel Olmo Carvajal' THEN (SELECT player_id FROM player_profiles WHERE player_name ILIKE '%Olmo%' LIMIT 1)
+                        ELSE sc.db_player_id
+                    END as fixed_db_player_id
+                FROM sc_indices sc
+            )
+            SELECT dq.*, COALESCE(p.player_name, sc.player) as player
             FROM player_decision_quality dq
+            JOIN CorrectedSC sc ON sc.player = dq.player AND sc.team = dq.team
+            LEFT JOIN player_profiles p ON sc.fixed_db_player_id = p.player_id
             WHERE dq.macro_role = :macro_role
         """
         params: dict = {"macro_role": macro_role}
 
         if exclude_player:
-            # exclude_player is the Transfermarkt display name — try to match
-            # via player_profiles to be safe, but also fall back to direct name match
             q += """
-              AND dq.player NOT ILIKE :excl
+              AND COALESCE(p.player_name, sc.player) != :excl
             """
             params["excl"] = exclude_player
 
-        q += " ORDER BY dq.player ASC"
+        q += " ORDER BY COALESCE(p.player_name, sc.player) ASC"
 
         rows = [dict(r._mapping) for r in db.execute(text(q), params)]
         return rows
@@ -406,11 +424,13 @@ def search_space_control(
                 END as fixed_db_player_id
             FROM sc_indices sc
         )
-        SELECT sc.*, COALESCE(p.player_name, sc.player) as player, p.player_id, dq."DQ_index"
+        SELECT sc.*, COALESCE(p.player_name, sc.player) as player, p.player_id, dq."DQ_index", ob.urs_pct_within_role
         FROM CorrectedSC sc
         LEFT JOIN player_profiles p ON sc.fixed_db_player_id = p.player_id
         LEFT JOIN player_decision_quality dq
             ON sc.player = dq.player AND sc.team = dq.team
+        LEFT JOIN player_off_ball ob
+            ON sc.player = ob.player AND sc.team = ob.team
         WHERE 1=1
     """
     params: dict = {}

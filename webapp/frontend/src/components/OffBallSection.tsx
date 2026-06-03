@@ -144,7 +144,7 @@ export default function OffBallSection({ playerName, row, mode, onModeChange }: 
                         Uncapitalized Run Score
                       </p>
                       <p style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>
-                        {TOOLTIP_DESCRIPTIONS['Off-Ball Potential /90'] || 'Quality of decisions relative to available space and pressure.'}
+                        {TOOLTIP_DESCRIPTIONS['Uncapitalized Run Score'] || 'Quality of decisions relative to available space and pressure.'}
                       </p>
                     </div>
                   )}
@@ -272,7 +272,7 @@ export function OBCompareRadar({ sourceRow, compareRow, sourceName, compareName,
                         Uncapitalized Run Score
                       </p>
                       <p style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>
-                        {TOOLTIP_DESCRIPTIONS['Off-Ball Potential /90'] || 'Quality of decisions relative to available space and pressure.'}
+                        {TOOLTIP_DESCRIPTIONS['Uncapitalized Run Score'] || 'Quality of decisions relative to available space and pressure.'}
                       </p>
                     </div>
                   )}

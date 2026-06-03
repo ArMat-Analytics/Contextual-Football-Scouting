@@ -40,6 +40,7 @@ const INDICES = [
   { key: 'idx__RECEPTION',     label: 'Reception',        color: '#2563eb', short: 'RECEP' },
   { key: 'idx__GRAVITY',       label: 'Gravity',          color: '#d97706', short: 'GRAV' },
   { key: 'DQ_index',           label: 'Decision Quality', color: '#7c3aed', short: 'DQ' },
+  { key: 'urs_pct_within_role',label: 'Uncapitalized Run Score', color: '#db2777', short: 'URS' },
 ] as const;
 
 const TABLE_ABBREVIATION_LABELS: Record<string, string> = {
@@ -48,6 +49,7 @@ const TABLE_ABBREVIATION_LABELS: Record<string, string> = {
   RECEP: 'Reception',
   GRAV: 'Gravity',
   DQ: 'Decision Quality',
+  URS: 'Uncapitalized Run Score',
   AVG: 'Average',
   MIN: 'Minutes played',
 };
@@ -79,6 +81,7 @@ interface PlayerRow {
   idx__RECEPTION: number;
   idx__GRAVITY: number;
   DQ_index: number | null;
+  urs_pct_within_role: number | null;
 }
 
 // ── Shared UI ─────────────────────────────────────────────────────────────────
@@ -356,6 +359,7 @@ const DEFAULT_RANGES: Record<IndexKey, IndexRange> = {
   idx__RECEPTION:     { min: '', max: '' },
   idx__GRAVITY:       { min: '', max: '' },
   DQ_index:           { min: '', max: '' },
+  urs_pct_within_role:{ min: '', max: '' },
 };
 
 export default function SearchByAttribute() {
@@ -408,8 +412,8 @@ export default function SearchByAttribute() {
     // Numerical filters: check if player indices fall within selected ranges
     for (const idx of INDICES) {
       const raw = (player as any)[idx.key] as number | null | undefined;
-      // DQ_index may be null — skip when the range is at default (no filter set)
-      if (idx.key === 'DQ_index' && raw == null) continue;
+      // DQ_index and urs_pct_within_role may be null — skip when the range is at default (no filter set)
+      if ((idx.key === 'DQ_index' || idx.key === 'urs_pct_within_role') && raw == null) continue;
       const val = raw == null ? 0 : Math.round(Number(raw));
       const r   = f.ranges[idx.key];
       const min = r.min === '' ? 0   : Number(r.min);
@@ -609,7 +613,7 @@ export default function SearchByAttribute() {
             {sorted.length > 0 && (
               <div
                 className="hidden lg:grid items-center gap-4 py-2 px-5 mb-1.5"
-                style={{ gridTemplateColumns: '28px 48px 1fr repeat(6, 52px) 48px' }}
+                style={{ gridTemplateColumns: '28px 48px 1fr repeat(7, 52px) 48px' }}
               >
                 <span />
                 <button
