@@ -1,7 +1,7 @@
 """H2 paths, thresholds, role maps and pitch geometry.
 
 This module is self-contained: H1's relevant constants and helpers are
-inlined here (rather than imported from `Space_Control_and_Value/src`)
+inlined here (rather than imported from `H1_Space_Control_and_Value/src`)
 so H2 can be reorganised under its own `src/` package without import
 conflicts. Values are kept identical to H1 — same pitch dimensions, same
 pressure radius, same role mapping. 
@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 # =============================================================================
-# Paths — H2 lives under Decision_Quality/, but reads some H1 artefacts
+# Paths — H2 lives under H2_Decision_Quality/, but reads some H1 artefacts
 # =============================================================================
 DQ_ROOT   = Path(__file__).resolve().parent.parent
 DATA_DIR  = DQ_ROOT / "data"
@@ -21,9 +21,9 @@ for _d in (DATA_DIR, CACHE_DIR, FIGS_DIR):
     _d.mkdir(parents=True, exist_ok=True)
 
 # H1 outputs (read-only inputs for H2). The relative path assumes the
-# repository layout `Contextual-Football-Scouting/{Space_Control_and_Value,
-# Decision_Quality}/`. If you reorganise either project root, adjust here.
-H1_DATA_DIR     = DQ_ROOT.parent / "Space_Control_and_Value" / "data"
+# repository layout `Contextual-Football-Scouting/{H1_Space_Control_and_Value,
+# H2_Decision_Quality}/`. If you reorganise either project root, adjust here.
+H1_DATA_DIR     = DQ_ROOT.parent / "H1_Space_Control_and_Value" / "data"
 HULL_EVENTS_LB  = H1_DATA_DIR / "hull_events_lb.csv"
 EPV_GRID_PATH   = H1_DATA_DIR / "EPV_grid.csv"
 # H1's per-player aggregate: authoritative one role per player + minutes,

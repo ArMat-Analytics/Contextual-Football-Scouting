@@ -4,18 +4,18 @@ Global constants, output paths, and H2 package loader for the H3 pipeline.
 
 Path layout assumed on disk:
     Contextual-Football-Scouting/          <- REPO_ROOT
-        Space_Control_and_Value/src/           <- H1_SRC  (epv_pipeline, ...)
-        Decision_Quality/src/              <- H2_SRC  (features, xpass, ...)
-        Off_Ball_Movement/                 <- H3_DIR
+        H1_Space_Control_and_Value/src/    <- H1_SRC  (epv_pipeline, ...)
+        H2_Decision_Quality/src/           <- H2_SRC  (features, xpass, ...)
+        H3_Off_Ball_Movement/              <- H3_DIR
             src/config.py                 <- this file
 
 H2 import strategy
 ------------------
-Decision_Quality uses a package layout: src/ is a sub-package with relative
+H2_Decision_Quality uses a package layout: src/ is a sub-package with relative
 imports (e.g. `from . import config`).  Importing via sys.path would collide
-with Off_Ball_Movement/src/ because both packages are named `src`.
+with H3_Off_Ball_Movement/src/ because both packages are named `src`.
 
-Solution: load_h2_package() registers Decision_Quality/src/ under the private
+Solution: load_h2_package() registers H2_Decision_Quality/src/ under the private
 name `_dq_src` using importlib, resolving relative imports correctly with zero
 sys.path collision.  Usage in any H3 module:
 
@@ -34,8 +34,8 @@ from pathlib import Path
 # ── Repo layout ────────────────────────────────────────────────────────────────
 H3_DIR    = Path(__file__).resolve().parents[1]   # Off_Ball_Movement/
 REPO_ROOT = H3_DIR.parent                         # Contextual-Football-Scouting/
-H1_SRC    = REPO_ROOT / "Space_Control_and_Value" / "src"
-H2_SRC    = REPO_ROOT / "Decision_Quality"    / "src"
+H1_SRC    = REPO_ROOT / "H1_Space_Control_and_Value" / "src"
+H2_SRC    = REPO_ROOT / "H2_Decision_Quality"        / "src"
 
 # ── H1 package loader (collision-safe like H2) ────────────────────────────────
 _H1_PKG_PRIVATE = "_scv_src"
@@ -164,10 +164,10 @@ H2_XPASS_MODEL   = H2_SRC.parent / "data" / "xpass_model_gbm_sigmoid.joblib"
 # label reads as MID. H3 reads this same file with the same columns H2 reads
 # (decision_quality.py: usecols player/team/primary_role/macro_role/minutes),
 # so all three hypotheses share a byte-identical 272-player role assignment.
-H1_PLAYER_AGG    = REPO_ROOT / "Space_Control_and_Value" / "data" / \
+H1_PLAYER_AGG    = REPO_ROOT / "H1_Space_Control_and_Value" / "data" / \
                    "player_space_control_aggregated.csv"
 # Totals file (no macro_role column) — kept only as a fallback minutes source.
-H1_PLAYER_TOTALS = REPO_ROOT / "Space_Control_and_Value" / "data" / \
+H1_PLAYER_TOTALS = REPO_ROOT / "H1_Space_Control_and_Value" / "data" / \
                    "Euro2024_Player_Totals_Distances_Roles.csv"
 
 # ── H2 package loader ──────────────────────────────────────────────────────────
@@ -175,11 +175,11 @@ _H2_PKG_PRIVATE = "_dq_src"          # private name — never conflicts with any
 _H2_SUB_MODULES = ("config", "geometry", "features", "xpass", "xepv")
 
 def load_h2_package():
-    """Load Decision_Quality/src/ as the private package `_dq_src`.
+    """Load H2_Decision_Quality/src/ as the private package `_dq_src`.
 
     Relative imports inside H2 (e.g. `from . import config`) resolve
     correctly because every sub-module is registered under `_dq_src.*`.
-    This avoids any collision with Off_Ball_Movement/src/.
+    This avoids any collision with H3_Off_Ball_Movement/src/.
 
     Returns the package object; access modules as attributes:
         h2 = load_h2_package()
@@ -192,7 +192,7 @@ def load_h2_package():
     if not H2_SRC.exists():
         raise ImportError(
             f"H2 source directory not found: {H2_SRC}\n"
-            "Update H2_SRC in Off_Ball_Movement/src/config.py to match your layout."
+            "Update H2_SRC in H3_Off_Ball_Movement/src/config.py to match your layout."
         )
 
     # Register the package stub so relative imports resolve correctly.

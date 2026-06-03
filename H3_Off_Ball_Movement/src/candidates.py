@@ -3,8 +3,8 @@ candidates.py — H3 Off-Ball Movement
 Receiver resolution (v2, bracket interpolation) + xPass feature building.
 
 H2 modules are loaded via config.load_h2_package() which registers
-Decision_Quality/src/ under the private name `_dq_src`, resolving
-all relative imports without colliding with Off_Ball_Movement/src/.
+H2_Decision_Quality/src/ under the private name `_dq_src`, resolving
+all relative imports without colliding with H3_Off_Ball_Movement/src/.
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import linear_sum_assignment
 
-# ── Ensure Off_Ball_Movement/ is on sys.path ──────────────────────────────────
+# ── Ensure H3_Off_Ball_Movement/ is on sys.path ───────────────────────────────
 _H3_DIR = Path(__file__).resolve().parents[1]
 if str(_H3_DIR) not in sys.path:
     sys.path.insert(0, str(_H3_DIR))
@@ -194,7 +194,7 @@ def resolve_receiver(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# H2 xPass scoring — uses CalibratedXPass from Decision_Quality.src.xpass.
+# H2 xPass scoring — uses CalibratedXPass from H2_Decision_Quality.src.xpass.
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _load_h2_xpass_model():
