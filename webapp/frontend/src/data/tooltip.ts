@@ -5,8 +5,8 @@ export const TOOLTIP_DESCRIPTIONS: Record<string, string> = {
   'Reception': 'How well the player operates between the opposing lines: positioning to receive, exiting the block, holding up under pressure. 0–100 percentile within his role.',
   'Gravity': 'How much the player bends the opposing defence around him when he has the ball. Measured as the displacement of the opposing centroid and the compression of the defensive block. 0–100 percentile within his role.',
   'Experimental': 'The "experimental" badge indicates that Gravity\'s statistical components do not reliably merge into a single score for every player role. Users should therefore evaluate the three signals separately rather than trusting the combined metric.',
-  'Decision Quality': 'How good the player\'s passing decisions are, graded against the options he had available. A 0 to 100 percentile within his role: 100 is the best decision maker of the role, 50 the median.',
-  'Uncapitalized Run Score': 'How much dangerous off-ball value the player creates that teammates leave unused. A 0 to 100 percentile within his role: 100 is the most uncapitalized off-ball threat of the role, 50 the median.',
+  'Decision Quality': 'How well the player ranks his chosen pass against the reachable options the frame actually offered — a relative choice-optimality index within that option set, not an absolute quality score. A 0 to 100 percentile within his role: 100 is the best decision maker of the role, 50 the median.',
+  'Uncapitalized Run Score': 'How much dangerous off-ball value the player creates that teammates leave unused. A 0 to 100 percentile within his role: 100 is the most uncapitalized off-ball threat of the role, 50 the median. Partly conditional on teammate execution: it can be high because teammates keep missing him, so read it as off-ball value in his current context, and read Off-Ball Potential for the player-only signal.',
 
   // Progression Axes & Stats
   'LB Geom /90': 'Geometric line-breakers per 90 minutes. Who breaks through opposing pressure most often per unit of time.',
@@ -68,7 +68,6 @@ export const TOOLTIP_DESCRIPTIONS: Record<string, string> = {
   'Poor reads / 90': 'How often every 90 minutes the player makes a bottom-decile decision for his role. A lower value is better; on the radar it appears mirrored, as the axis Avoids poor / 90.',
   // 'Avoids poor / 90': 'Lorem ',
   'Score': 'The raw score behind the Decision Quality Index, between 0 and 1. Shown for transparency, so the reader can see what the index is the percentile of.',
-  'Score SD': 'How much the player\'s decision quality swings from one pass to the next. It is a consistency reading, not a quality grade.',
   'Avg miss cost': ' When the player does not pick the best option, how much value he leaves on the table on average. Shown in percentage points of scoring probability (the underlying xEPV value is multiplied by 100). It measures how costly a mistake is, not how often it happens.',
   'Worst choice %': 'Share of the player\'s passes where he chose the single worst option available. A lower value is better; on the radar it appears mirrored, as the axis Avoids the worst %.',
 

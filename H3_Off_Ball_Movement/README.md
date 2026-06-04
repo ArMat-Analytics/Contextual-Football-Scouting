@@ -117,15 +117,17 @@ The cleanest illustration of what the metric isolates is **Pedri against Kroos**
 
 **Split-half reliability.** Splitting the 51 matches by date into the first 25 and last 26, the URS /90 ranking reproduces at **Spearman ρ = 0.72** (n = 117 players who clear the floor in both blocks). A player's URS over the opening matches predicts his URS over the closing ones, so the order is a stable signal, not a single hot run.
 
-**The three radar axes carry distinct signal.** The matrix below is the **within-role** Spearman correlation of the three axes (each metric ranked inside its macro-role before correlating, the same recipe H2 applies to its radar, so role-level mean differences don't inflate it). Within role the axes are positively but only moderately correlated. Off-Ball Potential and Latency are weakly related (ρ ≈ 0.29): how much space a player exposes is largely independent of whether it gets used, which is why the archetype map below spreads players across two real dimensions rather than one diagonal. xEPV mean carries the most shared signal with Potential (ρ ≈ 0.68, a player who exposes more value tends to expose *better* frames too) and is weakly tied to Latency (ρ ≈ 0.35). None of the off-diagonal values is high enough to call any axis redundant.
+**The three radar axes carry distinct signal.** The matrix below is the **within-role** Spearman correlation of the three axes (each metric is ranked inside its macro-role, then correlated across the pooled within-role ranks, so role-level mean differences don't inflate it). Within role the axes are positively but only weakly correlated. Off-Ball Potential and Latency are almost unrelated (ρ ≈ 0.08): how much space a player exposes is essentially independent of whether it gets used, which is why the archetype map below spreads players across two real dimensions rather than one diagonal. xEPV mean carries the most shared signal with Potential (ρ ≈ 0.56, a player who exposes more value tends to expose *better* frames too) and is weakly tied to Latency (ρ ≈ 0.15). None of the off-diagonal values is high enough to call any axis redundant — the near-zero Potential–Latency link is the strongest form of that claim.
 
 | | Potential /90 | xEPV mean | Latency |
 |---|---:|---:|---:|
-| **Potential /90** | 1.00 | 0.68 | 0.29 |
-| **xEPV mean** | 0.68 | 1.00 | 0.35 |
-| **Latency** | 0.29 | 0.35 | 1.00 |
+| **Potential /90** | 1.00 | 0.56 | 0.08 |
+| **xEPV mean** | 0.56 | 1.00 | 0.15 |
+| **Latency** | 0.08 | 0.15 | 1.00 |
 
 **A declared dependency.** Off-Ball Potential correlates with the headline at ρ ≈ 0.97 by construction (`URS = Potential × Latency`, and Potential carries the wider spread). It is kept on the radar as the most readable volume axis rather than treated as an independent signal, the same honesty H2 applies to its Value Impact companion.
+
+**Conditional on teammate execution.** A run counts toward URS only when it is *not* served, and whether it is served depends partly on the ball-carrier, not the off-ball player alone — so part of the signal is the surrounding environment. The dependency lives in the **Latency** axis; **Off-Ball Potential** is the player-only half, and the two are nearly independent within role (ρ ≈ 0.08 above). Measured directly, the effect is real but small: a player's Latency correlates with the leave-one-out H2 Decision-Quality of his own teammates at ρ ≈ −0.13 within role (better teammates capitalise more), so URS stays predominantly a player signal. This makes URS a natural **complement to H2** — H2 grades the player as the server, URS's Latency grades how often his off-ball offers go unused by his side.
 
 ![Archetype map — Potential vs Latency](docs/figures/archetype_map.png)
 

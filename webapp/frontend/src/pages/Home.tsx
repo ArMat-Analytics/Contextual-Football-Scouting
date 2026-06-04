@@ -23,6 +23,10 @@ const LIMITATIONS = [
     body: 'Decisions are graded on value alone. Score, time left, match importance and manager instructions are ignored, so a deliberately safe choice late in a game reads as conservative rather than smart.',
   },
   {
+    title: 'Not every visible option is a real choice',
+    body: 'Decision Quality grades a pass against the teammates the player could reach in that frame. It treats every reachable option as part of the decision, but football is messier: some visible options are easy to reach yet tactically pointless, and the metric still counts them as choices the player beat. Options that are hard or impossible to complete are already down-weighted, since each one is scored by how likely the pass is to arrive, so the main gap is tactical: the model sees who was reachable, not whether passing there made sense. Read the score as how well the player ranked his pick among the available options, not as an absolute verdict on the pass.',
+  },
+  {
     title: 'Built on base models, shared across hypotheses',
     body: 'The indices sit on top of an EPV model (adapted from Friends of Tracking) and a custom pass-completion model (built for H2 and reused by H3). Any error in these base models carries through into the metrics above them. And because H2 and H3 read H1\'s player pool, roles and EPV from the same files, a bias in those shared foundations would show up in all three at once rather than as a disagreement between them.',
   },
@@ -34,6 +38,10 @@ const LIMITATIONS = [
   {
     title: 'Some things have no ground truth',
     body: 'H2 compares the chosen pass against the alternatives the player could have played. Those alternatives were never actually played, so there is no real outcome to check them against; the index limits this by only needing the options ordered roughly right. H3 has a similar gap: the off-ball identities are reconstructed by estimating each anonymous teammate\'s position and matching it to their recent on-ball events. That is validated against StatsBomb\'s actual pass recipient and is accurate on the high-confidence assignments it keeps, but it remains an estimate, not a certainty.',
+  },
+  {
+    title: 'Off-ball score depends on teammates too',
+    body: 'The Uncapitalized Run Score counts an off-ball run only when teammates do not serve it, so part of the score reflects how well his teammates see and execute the pass, not the player alone: a good mover surrounded by weaker passers can post a high score because his runs keep going unused. This is by design, not an error. The score splits into Off-Ball Potential — the value he exposes, which is player-only — and Latency, the share left unserved, where teammates enter; the two are nearly independent, so read Potential for the cleanest individual signal and the headline as off-ball value in his current team context. Read this way it complements Decision Quality: one grades him as the passer, the other shows how often his own off-ball offers go unused.',
   },
   {
     title: 'Team bias reduced, not removed',
