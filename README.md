@@ -21,13 +21,16 @@ Two things tie the studies together:
 - **Expected Possession Value (EPV)** is the common currency. Every metric grades a player by the *value* of what they do, not the *volume*. That is the main channel through which team strength inflates traditional stats: a player no longer looks better just for touching the ball more in a possession-heavy side.
 - **Within-role percentiles** are the common lens. A centre-back is ranked against other centre-backs, never against the whole pitch, so the role effect comes out on top of the volume one.
 
-## The three hypotheses
+## The hypotheses
+
+Three studies each measure one facet of a player, and a fourth ties them together into the scouting question.
 
 | | Hypothesis | What it measures | Headline metric |
 |---|---|---|---|
 | **[H1](H1_Space_Control_and_Value/)** | **Space Control & Value** | A player's quality is their **spatial influence**, not their volume: the shape of the block they break (convex hulls), the threat they add (EPV), the pull they exert (gravity). | 4 indices: PROGRESSION · RECEPTION · GRAVITY · DANGEROUSNESS |
 | **[H2](H2_Decision_Quality/)** | **Contextual Decision-Making** | Not the value of the pass played, but its value **relative to the options ignored**: among the teammates actually available in the frame, did the player choose the best lane? | DQ index (+ Value Impact) |
 | **[H3](H3_Off_Ball_Movement/)** | **Off-Ball Movement** | The **dangerous off-ball space a player occupies that teammates fail to use**: high-value runs that are made, seen by the freeze frame, and left unserved. | URS /90 (Uncapitalized Run Score) |
+| **[H4](H4_Player_Similarity/)** | **Player Similarity** | Match players by **how they actually play, not their position label**: an 11-axis "style DNA" from H1+H2+H3, used to find a player's closest stylistic matches within his role — *who plays like this expensive player, but costs less?* | Similarity score (0–100, within-role) |
 
 Each folder is named with its hypothesis prefix and stands on its own. Its README covers the metric, the validation and the scout-facing findings.
 
@@ -62,6 +65,7 @@ Contextual-Football-Scouting/
 ├── H1_Space_Control_and_Value/     # Hypothesis 1: spatial influence (hulls, EPV, gravity)
 ├── H2_Decision_Quality/            # Hypothesis 2: contextual decision-making
 ├── H3_Off_Ball_Movement/           # Hypothesis 3: uncapitalised off-ball runs
+├── H4_Player_Similarity/           # Hypothesis 4: within-role style similarity (meta-study on H1–H3)
 │   └── (each: README.md, notebooks/, src/, data/, docs/figures/)
 │
 ├── EURO2024_Transfermarkt_Scraper/ # market-value scrapers
@@ -88,7 +92,7 @@ The same shape works for H2 and H3. H2/H3 expect H1's outputs to be present firs
 
 <div align="center">
 
-**[H1 — Space Control & Value](H1_Space_Control_and_Value/)** · **[H2 — Decision Quality](H2_Decision_Quality/)** · **[H3 — Off-Ball Movement](H3_Off_Ball_Movement/)**
+**[H1 — Space Control & Value](H1_Space_Control_and_Value/)** · **[H2 — Decision Quality](H2_Decision_Quality/)** · **[H3 — Off-Ball Movement](H3_Off_Ball_Movement/)** · **[H4 — Player Similarity](H4_Player_Similarity/)**
 
 *Matteo Vezzoli & Armando Mio — 2026*
 
