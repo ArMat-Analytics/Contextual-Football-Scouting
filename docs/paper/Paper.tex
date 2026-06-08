@@ -49,17 +49,11 @@
 % ABSTRACT
 % ============================================================
 \begin{abstract}
-Traditional scouting statistics reward volume (passes played, distance covered, and touches taken) and in doing so carry a heavy \textbf{team bias}: a midfielder in a possession-dominant side accumulates numbers that a better player in a pressed side never gets the chance to produce.
-This project reads players from \textbf{StatsBomb~360 spatial data} rather than from the event log alone, and quantifies and demonstrates the \textbf{spatial intelligence} of a player. By analyzing a team and its opponent positioning during specific actions, it becomes possible to distinguish between players who genuinely excel under pressure and those who merely benefit from a favorable tactical framework.
-We present four completed studies, each with its own metric, notebook and validation, unified by two design choices: \textbf{Expected Possession Value~(EPV)} as the common currency, and \textbf{within-role percentiles} as the common lens (e.g. a centre-back is ranked only against other centre-backs).
-The four metrics are:
-(H1)~\textbf{Space Control~\&~Value}, a four-index spatial-influence profile;
-(H2)~\textbf{Decision Quality}, the value of the pass a player chose relative to the in-frame options he ignored;
-(H3)~\textbf{Off-Ball Movement}, the dangerous off-ball space a player occupies that his teammates fail to use;
-and (H4)~\textbf{Player Similarity}, a within-role similarity model that compares players by their contextual ``spatial DNA'' and surfaces cost-effective alternatives.
-All four run on the same 272-player pool from UEFA Euro~2024.
-The four studies feed an interactive web dashboard built as a contextual scouting tool.
-We show that ball volume is a poor proxy for value created: on the EPV-creation index, more than half the pool shifts by $20+$~percentile points when moving from a volume ranking to a contextual one. Furthermore, the off-ball metric isolates a real and previously invisible signal: the ``shadow runner'' who keeps offering dangerous options his team does not use.
+Traditional scouting statistics reward \textbf{volume} (passes played, distance covered, touches taken) and in doing so carry a heavy \textbf{team bias}: a midfielder in a possession-dominant side piles up numbers a better player in a pressed side never gets the chance to produce. The effect is large and easy to miss. On a contextual measure of the value a player actually creates, \textbf{more than half of the Euro~2024 player pool moves by 20 or more percentile points} versus a volume-based ranking. Phil Foden, for instance, sits in the 89th percentile of wingers for passing volume but the 11th for value created, while Tom\'{a}\v{s} Sou\v{c}ek does the opposite (3rd for volume, 83rd for value).
+
+This project reframes player evaluation around \textbf{what a player does with the space around him}, read from \textbf{StatsBomb~360 freeze frames} rather than the event log alone, and graded by the \textbf{value} of each action rather than its frequency. Two design choices unify the work: \textbf{Expected Possession Value~(EPV)} as the common currency, and \textbf{within-role percentiles} as the common lens (a centre-back is ranked only against other centre-backs). One enabler is methodological. A 360 frame shows where players are but \textbf{not who they are}, so we build a resolver that puts identities back on the anonymous dots; it is validated at \textbf{93\% accuracy} against the one place ground truth exists, completed passes, and then carried to the off-ball runs where no ground truth is available.
+
+On this basis we present \textbf{four validated studies} on the same pool of 272 players: (H1)~\textbf{Space Control~\&~Value}, a four-index spatial profile; (H2)~\textbf{Decision Quality}, the value of the pass chosen against the in-frame options ignored; (H3)~\textbf{Off-Ball Movement}, the dangerous off-ball space a player offers that teammates fail to use; and (H4)~\textbf{Player Similarity}, matching players by their contextual ``spatial DNA'' to surface cheaper look-alikes. Beyond confirming what football already knows, the metrics isolate a previously invisible signal, the \textbf{``shadow runner''} who keeps offering dangerous options his team never plays, with Pedri the clearest case of the tournament. The four studies feed an interactive scouting dashboard.
 \end{abstract}
 
 \clearpage
@@ -140,7 +134,7 @@ The research framework is structured around four primary hypotheses, summarised 
 
 \subsection{StatsBomb 360}\label{sec:statsbomb}
 
-The analysis is built on \textbf{StatsBomb Open Data}, specifically the \textbf{360~frames} for \textbf{UEFA Euro~2024} (\texttt{competition\_id\,=\,55}, \texttt{season\_id\,=\,282}), covering \textbf{51~matches}.
+The analysis is built on \textbf{StatsBomb Open Data}~\cite{statsbomb}, specifically the \textbf{360~frames} for \textbf{UEFA Euro~2024} (\texttt{competition\_id\,=\,55}, \texttt{season\_id\,=\,282}), covering \textbf{51~matches}.
 A 360~frame is a freeze-frame snapshot of every visible player at the instant of each event, giving spatial positions that the ordinary event log does not contain.
 This is the raw material of the whole project: every metric reads these frames, not just the event log.
 
@@ -153,7 +147,7 @@ Putting names on those anonymous dots is a problem we solve explicitly (see \cre
 
 \subsection{Transfermarkt}\label{sec:transfermarkt}
 
-To read on-pitch performance against financial cost (the value-arbitrage angle of the business case), we scrape \textbf{market values} from \textbf{Transfermarkt} for the Euro~2024 participants.
+To read on-pitch performance against financial cost (the value-arbitrage angle of the business case), we scrape \textbf{market values} from \textbf{Transfermarkt}~\cite{transfermarkt} for the Euro~2024 participants.
 This is handled by a standalone scraper pipeline that runs in a fixed order (teams $\to$ team data $\to$ squad players $\to$ matches $\to$ player datasets) and updates incrementally: existing rows are never duplicated, existing non-empty values are preserved, and only missing values are filled when new data appears.
 It produces market value, transfer history, market-value history, national-career and absence datasets, used by the platform to set on-pitch contextual output against price.
 
@@ -335,7 +329,7 @@ The global feature-importance ranking, visualised in \cref{fig:xpass-shap}, conf
 A scouting metric needs \emph{probabilities}, not just a good ranking: xEPV multiplies xPass by a value, so a miscalibrated $0.9$ that should be $0.7$ would directly distort every decision score.
 The raw model output is passed through a \textbf{sigmoid calibrator} and then \textbf{clipped to $[0.05,\,0.99]$}:
 \begin{itemize}
-    \item \textbf{Sigmoid calibrator} (chosen over isotonic and beta). The corpus is heavily imbalanced (${\sim}90\%$ completions), so raw probabilities pile up near~1. In that saturated regime, isotonic (a flexible step function) tends to over-fit the extremes, whereas the two-parameter sigmoid fits a smooth, stable monotone correction.
+    \item \textbf{Sigmoid calibrator} (chosen over isotonic and beta). The corpus is heavily imbalanced (${\sim}90\%$ completions), so raw probabilities pile up near~1. In that saturated regime, isotonic (a flexible step function) tends to over-fit the extremes, whereas the two-parameter sigmoid fits a smooth, stable monotone correction. The choice was made on an \textbf{honest 50/50 match holdout}: each calibrator is fit on one half of the matches and scored on the other, so the calibrator never sees its evaluation data. On that holdout the three are \textbf{near-identical on the global metrics} (AUC $\approx 0.92$, Brier $\approx 0.057$ for all), so the decision is not driven by a headline-number gap; the sigmoid is preferred because it behaves the most stably across the saturated upper range, where isotonic's step function is the most fragile. Calibration is about \emph{shape}, not ranking, so a tie on AUC is expected and the tie-breaker is robustness.
     \item \textbf{Asymmetric clip $[0.05,\,0.99]$.} The lower bound protects against rare base-model saturations near~0 that would otherwise make xEPV's turnover term explode. The upper bound reflects that even the easiest decile of passes completes at ${\sim}0.997$, so anything above $0.99$ carries no tactical signal.
 \end{itemize}
 
@@ -386,7 +380,7 @@ Twelve columns by eight rows is fine enough to localise an action to a meaningfu
 
 \subsubsection{EPV on Every Action}\label{sec:epv-action}
 
-Each open-play pass is assigned an EPV value at its start and end location, read from a fixed EPV grid (a $32 \times 50$ lookup from Friends-of-Tracking-Data, values ranging from ${\sim}0.004$ in the own goal area to ${\sim}0.57$ near the opponent goal) by \textbf{bilinear interpolation} (so value varies smoothly across the pitch rather than jumping between grid cells).
+Each open-play pass is assigned an EPV value at its start and end location, read from a fixed EPV grid (a $32 \times 50$ lookup from Friends-of-Tracking-Data~\cite{epv}, values ranging from ${\sim}0.004$ in the own goal area to ${\sim}0.57$ near the opponent goal) by \textbf{bilinear interpolation} (so value varies smoothly across the pitch rather than jumping between grid cells).
 The \textbf{EPV added} by a pass is the increase in scoring probability from its origin to its destination:
 \begin{equation}\label{eq:epv-added}
     \text{EPV}_{\text{added}} = \text{EPV}(x_{\text{end}}, y_{\text{end}}) - \text{EPV}(x_{\text{start}}, y_{\text{start}}).
@@ -475,12 +469,9 @@ One structural regularity serves as a pipeline sanity check: the fourth EPV sub-
 \subsubsection{Progression: Volume of Forward Play}\label{sec:progression}
 
 How often, and how cleanly, a player moves the ball through opponent lines.
-Five mother variables, averaged as within-role percentiles:
+Five mother variables, averaged as within-role percentiles. The first three are the per-90 rates of the three line-breaker lenses defined in \cref{sec:linebreakers} (\textbf{LB Geom\,/\,90} bold-geometry, \textbf{LB Quality\,/\,90} high-value, \textbf{LB EPV\,/\,90} their clean intersection); the last two add block-entry volume and per-pass boldness:
 
 \begin{enumerate}
-    \item \textbf{LB Geom\,/\,90}: geometric line-breakers per 90 (the bold-geometry lens: $\geq 3$ opponents in a $5$\,m corridor).
-    \item \textbf{LB Quality\,/\,90}: quality/EPV line-breakers per 90 (EPV added above role-specific 75th percentile of positive-EPV passes).
-    \item \textbf{LB EPV\,/\,90}: clean line-breakers per 90 (the intersection: bold \emph{and} high value).
     \item \textbf{Hull Penetr.\,/\,90}: per-90 volume of successful passes that \emph{enter} the opposing convex hull.
     \item \textbf{Def.\,Bypassed Avg}: mean number of opponents removed from play per progressive pass.
 \end{enumerate}
@@ -624,6 +615,13 @@ David Strelec (Slovakia, FW) is at the 92nd percentile. He is the only FW at the
 Kenan Y\i{}ld\i{}z (Turkey, WIDE) sits at the 84th percentile, representing a more recognisable name in the group.
 
 A separate read on a famous name shows the value of the four-index profile. \textbf{Joshua Kimmich} (Germany, FB) lands at 83rd Progression, 96th Dangerousness, 72nd Reception, and 57th Gravity. This confirms the public reading on the offensive side but suggests his gravitational pull is only mid-pool inside the FB role, which is something a single number would not reveal.
+\Cref{fig:h1-radar} shows his card: the four panels, one per index, are the website's H1 view, and each panel decomposes the headline percentile into its mother variables.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/h1_radar_kimmich.png}
+    \caption{The H1 four-index card for Joshua Kimmich (Germany, FB), one panel per index. Each panel is a within-role percentile radar over that index's mother variables, and the headline percentile sits in the panel title (Progression 83, Dangerousness 96, Reception 72, Gravity 57). Read together the four panels make the point a single rating cannot: Kimmich is elite going forward but only mid-pool on the gravitational pull he exerts inside the full-back role.}\label{fig:h1-radar}
+\end{figure}
 
 \paragraph{Scouting discoveries: three faces of the test.}
 The disagreement the table measures has names, and each is the top bar of its panel in \cref{fig:scouting-discoveries,fig:naive-overrating}.
@@ -699,6 +697,8 @@ It is built in two steps:
 
 What the index measures, stated precisely: it grades the chosen pass against the menu of options the frame actually offered, not against an absolute notion of the perfect pass.
 It is context-normalised by construction: the comparison lives inside each event, so the pitch-zone value level cancels. Furthermore, it is bounded and interpretable on a single scale.
+
+That there is real signal to grade is an empirical fact, not an assumption: across the events with at least two alternatives, the chosen pass is the single highest-xEPV option only \textbf{15.2\%} of the time, so players take the value-optimal in-frame pass barely one time in seven. If they always picked the optimum the index would be flat and useless; the spread of how \emph{often} a player chooses near the top of his available menu is exactly what the Score, and the DQ percentile built on it, capture.
 
 \paragraph{Why a within-event rank, and not the obvious alternatives.}
 \begin{itemize}
@@ -874,16 +874,17 @@ A 360~frame gives positions but \textbf{no identity}: only the player on the bal
 
 \paragraph{The three-step resolver.}
 \begin{enumerate}
-    \item \textbf{Estimate each teammate's position} at the instant of the pass by \textbf{bracket interpolation}, interpolating between his nearest on-ball event \emph{before} and his nearest \emph{after} the pass, within the staleness window.
-    This ``v2'' bracket method replaced a ``v1'' baseline that used only the player's \textbf{last-known position before the event} (backward-only extrapolation); bracketing is substantially more accurate because it uses the player's trajectory on \textbf{both} sides of the target instant, effectively treating the two nearest events as a linear motion prior rather than a static snapshot.
-    \item \textbf{Match estimates to dots} with the \textbf{Hungarian algorithm}, which is the optimal one-to-one assignment that minimises total distance between estimated positions and observed dots. (A greedy nearest-dot assignment can paint itself into a corner; the Hungarian algorithm finds the globally best matching.)
-    \item \textbf{Keep only confident assignments} (those localised within \textbf{8\,m}) and score only those.
+    \item \textbf{Estimate each teammate's position} at the instant of the pass by \textbf{bracket interpolation}. A 360~frame freezes the dots but does not name them; what \emph{is} named, elsewhere in the event log, is every moment a player touches the ball. So for each teammate we find his nearest on-ball event \emph{before} the pass and his nearest one \emph{after} it, and we read off where he must have been at the pass instant by interpolating linearly between those two known points (in both position and time). The intuition is simple: if a player was at point A two seconds before the pass and at point B one second after, his location at the pass is a weighted point on the segment A--B. This ``v2'' bracket method replaced a ``v1'' baseline that used only his \textbf{last-known position before} the pass (a backward-only guess that goes stale the moment he keeps running); bracketing is far more accurate because it pins the estimate between two real observations rather than extrapolating from one, effectively using the player's own trajectory on \textbf{both} sides of the instant as a short motion prior. Only events inside the staleness window (\cref{sec:sweeps}) are used, so a stale bracket is never trusted.
+    \item \textbf{Match estimates to dots} with the \textbf{Hungarian algorithm}~\cite{hungarian}. We now have a set of estimated teammate positions and a set of anonymous same-team dots in the frame, and we must decide which estimate is which dot. This is a one-to-one assignment problem, and the Hungarian algorithm solves it optimally: it finds the pairing of estimates to dots that minimises the \emph{total} distance over all pairs at once. A simpler greedy rule (give each estimate its nearest free dot, one at a time) can paint itself into a corner, assigning an early dot cheaply and forcing a later estimate onto a far-away wrong dot; minimising the global total avoids that trap.
+    \item \textbf{Keep only confident assignments.} An assignment is kept only if its estimate lands within \textbf{8\,m} of the matched dot; everything looser is discarded and never scored. This is the knob that trades coverage for reliability (\cref{sec:sweeps}): tightening it raises accuracy but drops more candidates.
 \end{enumerate}
 
 \paragraph{Validation.}
 There is no ground truth for off-ball runs, but there \emph{is} ground truth for \textbf{completed passes}: the recipient is named.
 So we validate where truth exists and carry the result over: we hide the recipient, let the resolver predict which dot is the receiver, and check it against the real name.
 On the open-play universe the metric runs on, the bracket resolver reaches \textbf{93.2\% accuracy on the confident assignments it keeps}, far above the ${\sim}74\%$ of the naive last-known-position baseline.
+
+This number is not just descriptive; it is a \textbf{decision gate}. The accuracy sets the granularity at which H3 is allowed to report: if accuracy-on-confident clears an \textbf{85\% bar}, the resolver is trusted to name individual dots and H3 reports a \textbf{per-player} URS ranking (``Tier~1''); below that bar it would fall back to coarser \textbf{zone- and role-level} aggregates (``Tier~2''), where a wrong identity does less damage. At 93.2\% the bar is cleared comfortably, which is what licenses the per-player leaderboards in the rest of this section.
 
 \subsubsection{Parameter Sweeps}\label{sec:sweeps}
 
@@ -931,6 +932,14 @@ The within-role Spearman correlation of the three radar axes (\cref{tab:h3-corr}
 Pedri (Spain, CAM, $n=185'$) tops the whole pool at \textbf{URS\,/\,90 $= 2.78$}, roughly twice the next name.
 He exposes more off-ball value than anyone (Potential\,/\,90 $= 3.30$) and is served on only \textbf{16\%} of it: the extreme shadow runner of the tournament.
 Behind him Jorginho ($1.41$), Hjulmand ($1.08$) and Modric ($0.92$) are the recognised tempo-setters of the tournament, and Kimmich ($0.85$), Wirtz ($0.84$) and Kroos ($0.82$) follow.
+
+\Cref{fig:uncap-pedri} is the on-pitch proof of what URS counts. Each panel is one of Pedri's four highest-URS moments: he (green) has found dangerous space inside or just outside the opponent block (red hull), the ball-carrier (cyan) has the ball and a clear passing lane, yet plays elsewhere, and the run goes unserved. The xEPV of each missed pass is the value left on the table, and summing it is the URS.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/uncapitalised_runs_pedri.png}
+    \caption{Visual proof of the Uncapitalised Run Score: Pedri's four highest-URS off-ball moments at Euro 2024. In each frame Pedri (green) occupies dangerous space relative to the opponent block (red convex hull); the ball-carrier (cyan, with the yellow arrow showing the pass he actually played) has him available but serves a different option, so the run is \emph{not} capitalised. Each panel's xEPV is the net value the unserved pass would have carried; the URS is the sum of these missed values per 90 minutes.}\label{fig:uncap-pedri}
+\end{figure}
 
 \paragraph{Why the absolute board is midfield-heavy.}
 The absolute leaderboard is dominated by midfielders.  This is not a quirk but a structural consequence of three compounding effects:
@@ -1017,7 +1026,7 @@ The dissimilarity of two players is the \textbf{Euclidean distance} between thei
 where $D$ is the largest distance two percentile vectors could ever have (every axis maximally apart).
 Fixing $D$ to this theoretical maximum, rather than to the closest/furthest \emph{observed} pair (a min--max rescaling), makes the score \textbf{stable and absolute}: it depends only on the two players compared, so adding or removing others never shifts it, and a given score always means the same thing.
 The cost is only cosmetic: real pairs occupy roughly the $23$--$88\%$ band rather than the full range, since two real footballers are never identical and never total opposites.
-Combined with the Transfermarkt market values from \cref{sec:transfermarkt}, this operationalises the value-arbitrage use case: for a premium target, the model ranks his cheaper stylistic look-alikes by \textbf{pre-Euro} price (the value \emph{before} the tournament revealed his quality), with the post-Euro value retained only to back-test whether the cheap match's price subsequently rose.
+Combined with the Transfermarkt market values from \cref{sec:transfermarkt}, this operationalises the value-arbitrage use case: for a premium target, the model surfaces his cheaper stylistic look-alikes. The dashboard shows \textbf{both} market values next to each match, the \textbf{pre-Euro} and the \textbf{post-Euro} price, alongside the player's age, so a scout reads the full valuation picture at a glance. The two values answer different questions and are both useful: the pre-Euro price is what a club could have paid \emph{before} the tournament revealed the player's quality (the true arbitrage figure), while the post-Euro price shows where the market moved afterwards, which both updates the asking price today and lets the scout see whether a cheap look-alike has already started to appreciate.
 
 \subsection{Validation}\label{sec:h4-validation}
 
@@ -1111,7 +1120,7 @@ Each hypothesis lives in its own self-contained folder with its own dependencies
 
 The shared artefacts that H2, H3 and H4 inherit from H1 (the 272-player pool and the authoritative role assignment) are read-only, so the studies stay population-aligned.
 
-Alongside the four studies, the market-value data is produced by a standalone \textbf{Transfermarkt scraper} (\cref{sec:transfermarkt}) that runs in a fixed order and updates incrementally, so re-running it never duplicates existing rows. The full repository, comprising the four studies, the Transfermarkt scraper and the interactive dashboard, is the primary deliverable alongside this paper.
+Alongside the four studies, the market-value data is produced by a standalone \textbf{Transfermarkt scraper} (\cref{sec:transfermarkt}) that runs in a fixed order and updates incrementally, so re-running it never duplicates existing rows. The full repository~\cite{repo}, comprising the four studies, the Transfermarkt scraper and the interactive dashboard, is the primary deliverable alongside this paper.
 
 \clearpage
 % ============================================================
@@ -1208,9 +1217,9 @@ UEFA Euro 2024 (\texttt{competition\_id\,=\,55}, \texttt{season\_id\,=\,282}), 5
 \url{https://github.com/statsbomb/open-data}
 
 \bibitem{epv}
-Fern\'{a}ndez, J., Bornn, L., and Cervone, D.
-\emph{Decomposing the Immeasurable Sport: A deep learning expected possession value framework for soccer}.
-MIT Sloan Sports Analytics Conference, 2019.
+Friends of Tracking.
+\emph{Expected Possession Value (EPV) grid and tutorials}.
+\url{https://github.com/Friends-of-Tracking-Data-FoTD}.
 
 \bibitem{transfermarkt}
 Transfermarkt.
@@ -1222,35 +1231,10 @@ Kuhn, H.\,W.
 \emph{The Hungarian method for the assignment problem}.
 Naval Research Logistics Quarterly, 2(1--2):83--97, 1955.
 
-\bibitem{histgbm}
-Ke, G., Meng, Q., Finley, T., et~al.
-\emph{LightGBM: A Highly Efficient Gradient Boosting Decision Tree}.
-Advances in Neural Information Processing Systems, 30, 2017.
-
-\bibitem{platt}
-Platt, J.\,C.
-\emph{Probabilistic Outputs for Support Vector Machines and Comparisons to Regularized Likelihood Methods}.
-Advances in Large Margin Classifiers, pp.~61--74, MIT Press, 1999.
-
-\bibitem{cronbach}
-Cronbach, L.\,J.
-\emph{Coefficient alpha and the internal structure of tests}.
-Psychometrika, 16(3):297--334, 1951.
-
-\bibitem{spearman}
-Spearman, C.
-\emph{The Proof and Measurement of Association between Two Things}.
-The American Journal of Psychology, 15(1):72--101, 1904.
-
 \bibitem{repo}
 Vezzoli, M.\ and Mio, A.
 \emph{Contextual Football Scouting: Full codebase}.
 \url{https://github.com/ArMat-Analytics/Contextual-Football-Scouting}, 2026.
-
-\bibitem{proposal}
-Vezzoli, M.\ and Mio, A.
-\emph{Project Proposal: Contextual Football Scouting: Mitigating Team Bias via 360 Spatial Data Analysis}.
-April 2026.
 
 \end{thebibliography}
 
@@ -1271,6 +1255,7 @@ All figures are stored in \texttt{docs/paper/images/} and originate from the hyp
 \toprule
 \textbf{Figure} & \textbf{File} & \textbf{Origin} & \textbf{Section} \\
 \midrule
+\cref{fig:h1-radar} & \texttt{h1\_radar\_kimmich.png} & H1 card & \cref{sec:h1-findings} \\ \midrule
 \cref{fig:scouting-discoveries} & \texttt{scouting\_discoveries.png} & H1 validation & \cref{sec:h1-findings} \\ \midrule
 \cref{fig:naive-overrating} & \texttt{naive\_overrating.png} & H1 validation & \cref{sec:h1-findings} \\ \midrule
 \cref{fig:kroos-frame}a & \texttt{xpass\_example.png} & H2 xPass & \cref{sec:dq-example} \\ \midrule
@@ -1279,6 +1264,7 @@ All figures are stored in \texttt{docs/paper/images/} and originate from the hyp
 \cref{fig:within-role-top5} & \texttt{within\_role\_top5.png} & H3 roles & \cref{sec:h3-findings} \\ \midrule
 \cref{fig:h2h} & \texttt{h2h\_pedri\_kroos.png} & H3 h2h & \cref{sec:h3-findings} \\ \midrule
 \cref{fig:offball-pedri} & \texttt{offball\_radar\_pedri.png} & H3 radar & \cref{sec:h3-findings} \\ \midrule
+\cref{fig:uncap-pedri} & \texttt{uncapitalised\_runs\_pedri.png} & H3 visual proof & \cref{sec:h3-findings} \\ \midrule
 \cref{fig:archetype-map} & \texttt{archetype\_map.png} & H3 archetypes & \cref{sec:h3-findings} \\ \midrule
 \cref{fig:h4-top-pairs} & \texttt{top\_pairs.png} & H4 validation & \cref{sec:h4-validation} \\ \midrule
 \cref{fig:h4-dna-overlay} & \texttt{dna\_overlay\_by\_role.png} & H4 findings & \cref{sec:h4-findings} \\
