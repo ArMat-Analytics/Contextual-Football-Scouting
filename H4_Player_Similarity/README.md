@@ -162,8 +162,7 @@ sim.build(top_k=None, metric="euclidean", write=True)   # → player_dna.csv + p
 - **`macro_role`**: read straight from H1's pipeline (the per-event role mode), identical to H2 and H3, so the role pools match across all four studies (MID 65 · CB 61 · FB 57 · WIDE 37 · FW 32 · CAM 20).
 - **Within-role only**: every axis is a *within-role* percentile, so a percentile in one role is not comparable to the same percentile in another. Distances, and therefore matches, are computed inside a macro-role; cross-role similarity is undefined by construction.
 - **Distance & score**: Euclidean in the 11-D percentile space; `score = (1 − d / D) × 100` with the fixed `D = sqrt(11) × 100 ≈ 331.7`. Cosine distance is offered in `src/similarity.py` as an alternative for robustness checks.
-- **Shipped artefact**: `player_similarity.csv` stores **every** within-role pair (`build(top_k=None)`), so the website can rank and page through all same-role candidates; the `TOP_K` in `config.py` only trims the compact notebook views.
-- **Market values**: pre-Euro is the value the analysis uses (post-Euro would leak the tournament back into the price); post-Euro is kept solely to back-test the value use-case.
+- **On the website**: the similarity scores are shown next to each player's market value and age, so the page gives one global read on a player's profile, how he plays, what he costs, and how old he is, all in the same view.
 
 ---
 
