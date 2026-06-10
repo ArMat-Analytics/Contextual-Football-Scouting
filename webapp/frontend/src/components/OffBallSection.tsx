@@ -16,7 +16,7 @@ function SimpleRadarTick(props: any) {
   const dx = x - cx;
   const dy = y - cy;
   const dist = Math.sqrt(dx * dx + dy * dy);
-  const offset = 22;
+  const offset = 34;
   const nx = dist === 0 ? x : x + (dx / dist) * offset;
   const ny = dist === 0 ? y : y + (dy / dist) * offset;
   return (
@@ -26,7 +26,7 @@ function SimpleRadarTick(props: any) {
       textAnchor="middle"
       dominantBaseline="middle"
       fill="var(--text-muted)"
-      fontSize={10}
+      fontSize={12}
       fontFamily="Inter, sans-serif"
       fontWeight={600}
     >
@@ -107,7 +107,7 @@ export default function OffBallSection({ playerName, row, mode, onModeChange }: 
           <div className="flex justify-between items-start mb-2">
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-1.5">
-                <span className="font-mono text-[10px] tracking-[0.12em] uppercase font-bold" style={{ color: OB_COLOR }}>Uncapitalized Run Score</span>
+                <span className="font-display text-[10px] tracking-[0.12em] uppercase font-bold" style={{ color: OB_COLOR }}>Uncapitalized Run Score</span>
                 <div className="relative">
                   <button
                     aria-label="Description for Uncapitalized Run Score"
@@ -118,7 +118,7 @@ export default function OffBallSection({ playerName, row, mode, onModeChange }: 
                       border: `1px solid ${hoveredTitle ? OB_COLOR : 'rgba(0,0,0,0.15)'}`,
                       background: hoveredTitle ? `${OB_COLOR}18` : 'rgba(0,0,0,0.03)',
                       color: hoveredTitle ? OB_COLOR : 'rgba(0,0,0,0.35)',
-                      fontSize: 8, fontWeight: 700, fontFamily: 'Barlow, sans-serif',
+                      fontSize: 8, fontWeight: 700, fontFamily: 'Inter, sans-serif',
                       cursor: 'help', display: 'flex', alignItems: 'center', justifyContent: 'center',
                       transition: 'all 0.12s', padding: 0, lineHeight: 1, flexShrink: 0,
                     }}
@@ -140,7 +140,7 @@ export default function OffBallSection({ playerName, row, mode, onModeChange }: 
                         boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
                       }}
                     >
-                      <p style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, fontWeight: 700, color: OB_COLOR, marginBottom: 6, letterSpacing: '0.04em' }}>
+                      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, fontWeight: 700, color: OB_COLOR, marginBottom: 6, letterSpacing: '0.04em' }}>
                         Uncapitalized Run Score
                       </p>
                       <p style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>
@@ -153,7 +153,7 @@ export default function OffBallSection({ playerName, row, mode, onModeChange }: 
             </div>
             
             <div className="text-right">
-              <div className="font-mono text-[9px] tracking-[0.1em] uppercase text-[var(--text-dim)]">INDEX</div>
+              <div className="font-display text-[9px] tracking-[0.1em] uppercase text-[var(--text-dim)]">INDEX</div>
               <div className="font-display font-black text-[26px] leading-none" style={{ color: OB_COLOR }}>
                 {row.urs_pct_within_role?.toFixed(1) ?? '—'}
               </div>
@@ -186,7 +186,7 @@ export default function OffBallSection({ playerName, row, mode, onModeChange }: 
 
           {/* Core stats panel */}
           <div className="mt-4 bg-[var(--surface2)] rounded-xl p-4">
-            <p className="font-mono text-[9px] tracking-[0.1em] uppercase text-[var(--text-dim)] mb-3">Core stats</p>
+             <p className="font-display text-[9px] tracking-[0.1em] uppercase text-[var(--text-dim)] mb-3">Core stats</p>
             {CORE_STATS[mode].length === 0 ? (
               <div className="bg-[var(--bg)] p-3 rounded-md border border-[var(--border)]">
                 <p className="text-[11px] text-[var(--text-muted)] leading-[1.5]">
@@ -235,7 +235,7 @@ export function OBCompareRadar({ sourceRow, compareRow, sourceName, compareName,
       <div className="flex justify-between items-start mb-2">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-1.5">
-              <span className="font-mono text-[10px] tracking-[0.12em] uppercase font-bold" style={{ color: OB_COLOR }}>Uncapitalized Run Score</span>
+              <span className="font-display text-[10px] tracking-[0.12em] uppercase font-bold" style={{ color: OB_COLOR }}>Uncapitalized Run Score</span>
                 <div className="relative">
                   <button
                     aria-label="Description for Uncapitalized Run Score"
@@ -246,7 +246,7 @@ export function OBCompareRadar({ sourceRow, compareRow, sourceName, compareName,
                       border: `1px solid ${hoveredTitle ? OB_COLOR : 'rgba(0,0,0,0.15)'}`,
                       background: hoveredTitle ? `${OB_COLOR}18` : 'rgba(0,0,0,0.03)',
                       color: hoveredTitle ? OB_COLOR : 'rgba(0,0,0,0.35)',
-                      fontSize: 8, fontWeight: 700, fontFamily: 'Barlow, sans-serif',
+                      fontSize: 8, fontWeight: 700, fontFamily: 'Inter, sans-serif',
                       cursor: 'help', display: 'flex', alignItems: 'center', justifyContent: 'center',
                       transition: 'all 0.12s', padding: 0, lineHeight: 1, flexShrink: 0,
                     }}
@@ -268,7 +268,7 @@ export function OBCompareRadar({ sourceRow, compareRow, sourceName, compareName,
                         boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
                       }}
                     >
-                      <p style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, fontWeight: 700, color: OB_COLOR, marginBottom: 6, letterSpacing: '0.04em' }}>
+                      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, fontWeight: 700, color: OB_COLOR, marginBottom: 6, letterSpacing: '0.04em' }}>
                         Uncapitalized Run Score
                       </p>
                       <p style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>
@@ -281,7 +281,7 @@ export function OBCompareRadar({ sourceRow, compareRow, sourceName, compareName,
           </div>
           
           <div className="text-right">
-            <div className="font-mono text-[9px] tracking-[0.1em] uppercase text-[var(--text-dim)]">Index</div>
+            <div className="font-display text-[9px] tracking-[0.1em] uppercase text-[var(--text-dim)]">Index</div>
             <div className="font-mono text-lg font-black leading-none">
               <span style={{ color: C_SOURCE }}>{sourceRow.urs_pct_within_role?.toFixed(1) ?? '—'}</span>
               <span className="text-[var(--text-dim)] text-xs mx-1">vs</span>
@@ -329,9 +329,9 @@ export function OBCompareRadar({ sourceRow, compareRow, sourceName, compareName,
 
         <div className="mt-4 bg-[var(--surface2)] rounded-xl p-4">
           <div className="grid gap-2 pb-1 mb-1 border-b border-[var(--border)]" style={{ gridTemplateColumns: '1fr auto auto' }}>
-            <span className="font-mono text-[9px] text-[var(--text-dim)] uppercase">Core Stats</span>
-            <span className="font-mono text-[9px] uppercase text-right min-w-[52px]" style={{ color: C_SOURCE }}>{sName}</span>
-            <span className="font-mono text-[9px] uppercase text-right min-w-[52px]" style={{ color: C_COMPARE }}>{cName}</span>
+            <span className="font-display text-[9px] text-[var(--text-dim)] uppercase">Core Stats</span>
+            <span className="font-display text-[9px] uppercase text-right min-w-[52px]" style={{ color: C_SOURCE }}>{sName}</span>
+            <span className="font-display text-[9px] uppercase text-right min-w-[52px]" style={{ color: C_COMPARE }}>{cName}</span>
           </div>
           {CORE_STATS[mode].length === 0 ? (
             <div className="bg-[var(--bg)] p-3 rounded-md border border-[var(--border)]">
@@ -388,7 +388,7 @@ function StatRow({ label, val, color }: { label: string; val: string | number | 
             className="absolute bottom-[calc(100%+8px)] left-0 max-w-[240px] bg-[var(--surface)] rounded-[10px] px-3.5 py-2.5 z-[60] pointer-events-none"
             style={{ border: `1px solid ${color}33`, borderLeft: `3px solid ${color}`, boxShadow: 'var(--shadow-lg)' }}
           >
-            <p className="font-mono text-[10px] font-bold mb-1.5 tracking-wide" style={{ color }}>
+            <p className="font-display text-[10px] font-bold mb-1.5 tracking-wide" style={{ color }}>
               {label}
             </p>
             <p className="text-[11px] text-[var(--text-muted)] leading-[1.55]">
@@ -433,7 +433,7 @@ function DualStatRow({ label, valS, valC }: { label: string; valS: string | numb
             className="absolute bottom-[calc(100%+8px)] left-0 max-w-[240px] bg-[var(--surface)] rounded-[10px] px-3.5 py-2.5 z-[60] pointer-events-none"
             style={{ border: `1px solid ${OB_COLOR}33`, borderLeft: `3px solid ${OB_COLOR}`, boxShadow: 'var(--shadow-lg)' }}
           >
-            <p className="font-mono text-[10px] font-bold mb-1.5 tracking-wide" style={{ color: OB_COLOR }}>
+            <p className="font-display text-[10px] font-bold mb-1.5 tracking-wide" style={{ color: OB_COLOR }}>
               {label}
             </p>
             <p className="text-[11px] text-[var(--text-muted)] leading-[1.55]">

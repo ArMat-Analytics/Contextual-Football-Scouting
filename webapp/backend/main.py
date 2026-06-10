@@ -6,6 +6,42 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 import database
 import os
+import csv
+
+SIMILARITY_CACHE = None
+
+def get_similarity_score(source_sb_name: str, neighbour_sb_name: str) -> Optional[float]:
+    global SIMILARITY_CACHE
+    if SIMILARITY_CACHE is None:
+        SIMILARITY_CACHE = {}
+        backend_dir = os.path.dirname(os.path.abspath(__file__))
+        csv_path = os.path.abspath(os.path.join(backend_dir, "..", "..", "H4_Player_Similarity", "data", "player_similarity.csv"))
+        if os.path.exists(csv_path):
+            try:
+                with open(csv_path, mode="r", encoding="utf-8") as f:
+                    reader = csv.DictReader(f)
+                    for row in reader:
+                        src = row["source_player"].strip()
+                        neigh = row["neighbour_player"].strip()
+                        score = float(row["similarity"])
+                        if src not in SIMILARITY_CACHE:
+                            SIMILARITY_CACHE[src] = {}
+                        SIMILARITY_CACHE[src][neigh] = score
+            except Exception as e:
+                print(f"Error loading similarity CSV: {e}")
+        else:
+            print(f"Similarity CSV not found at {csv_path}")
+
+    if not source_sb_name or not neighbour_sb_name:
+        return None
+
+    if source_sb_name in SIMILARITY_CACHE and neighbour_sb_name in SIMILARITY_CACHE[source_sb_name]:
+        return SIMILARITY_CACHE[source_sb_name][neighbour_sb_name]
+    if neighbour_sb_name in SIMILARITY_CACHE and source_sb_name in SIMILARITY_CACHE[neighbour_sb_name]:
+        return SIMILARITY_CACHE[neighbour_sb_name][source_sb_name]
+
+    return None
+
 
 app = FastAPI(title="Football Scouting API")
 
@@ -251,7 +287,8 @@ def get_player_space_control(player_id: int, db: Session = Depends(database.get_
                 END as fixed_db_player_id
             FROM sc_indices sc
         )
-        SELECT sc.*, COALESCE(p.player_name, sc.player) as tm_player_name 
+        SELECT sc.*, COALESCE(p.player_name, sc.player) as tm_player_name,
+               p.age, p.market_value_before_euros, p.market_value_after_euros
         FROM CorrectedSC sc
         LEFT JOIN player_profiles p ON sc.fixed_db_player_id = p.player_id
         WHERE sc.fixed_db_player_id = :pid LIMIT 1
@@ -328,6 +365,24 @@ def get_similar_players(
     db: Session = Depends(database.get_db)
 ):
     try:
+        # Get the StatsBomb name for the exclude_player (which is a Transfermarkt name)
+        source_sb_name = None
+        if exclude_player:
+            sb_row = db.execute(text("""
+                SELECT DISTINCT sc.player 
+                FROM sc_indices sc
+                LEFT JOIN player_profiles p ON (
+                    CASE 
+                        WHEN sc.player = 'Daniel Olmo Carvajal' THEN (SELECT player_id FROM player_profiles WHERE player_name ILIKE '%Olmo%' LIMIT 1)
+                        ELSE sc.db_player_id
+                    END
+                ) = p.player_id
+                WHERE p.player_name = :excl OR sc.player = :excl
+                LIMIT 1
+            """), {"excl": exclude_player}).fetchone()
+            if sb_row:
+                source_sb_name = sb_row[0]
+
         q = """
             WITH CorrectedSC AS (
                 SELECT 
@@ -338,7 +393,8 @@ def get_similar_players(
                     END as fixed_db_player_id
                 FROM sc_indices sc
             )
-            SELECT sc.*, COALESCE(p.player_name, sc.player) as player, p.player_id 
+            SELECT sc.*, COALESCE(p.player_name, sc.player) as player, sc.player as sb_player_name, p.player_id,
+                   p.age, p.market_value_before_euros, p.market_value_after_euros
             FROM CorrectedSC sc
             LEFT JOIN player_profiles p ON sc.fixed_db_player_id = p.player_id
             WHERE sc.macro_role = :macro_role
@@ -354,7 +410,10 @@ def get_similar_players(
         
         rows = [dict(r._mapping) for r in db.execute(text(q), params)]
         for r in rows:
-            r["similarity_score"] = None
+            r["similarity_score"] = get_similarity_score(source_sb_name, r["sb_player_name"])
+            
+        # Sort by similarity score descending, placing None at the end
+        rows.sort(key=lambda x: x["similarity_score"] if x["similarity_score"] is not None else -1.0, reverse=True)
         return rows
     except Exception as e:
         return JSONResponse(

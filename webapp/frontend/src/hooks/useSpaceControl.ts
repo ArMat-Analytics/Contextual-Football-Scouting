@@ -18,6 +18,9 @@ export interface SpaceControlIndex {
   pct__pressure_resistance_pct: number; pct__gravity_proximity_pct: number;
   pct__gravity_hull_pct: number; pct__gravity_abs_m: number;
   similarity_score?: number | null;
+  age?: number | null;
+  market_value_before_euros?: string | null;
+  market_value_after_euros?: string | null;
 }
 
 export interface SpaceControlAggregated {

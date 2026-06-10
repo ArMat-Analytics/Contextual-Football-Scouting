@@ -246,7 +246,7 @@ function MotherStatRow({
             className="absolute bottom-[calc(100%+8px)] left-0 max-w-[240px] bg-[var(--surface)] rounded-[10px] px-3.5 py-2.5 z-[60] pointer-events-none"
             style={{ border: `1px solid ${color}33`, borderLeft: `3px solid ${color}`, boxShadow: 'var(--shadow-lg)' }}
           >
-            <p className="font-mono text-[10px] font-bold mb-1.5 tracking-wide" style={{ color }}>
+            <p className="font-display text-[10px] font-bold mb-1.5 tracking-wide" style={{ color }}>
               {label}
             </p>
             <p className="text-[11px] text-[var(--text-muted)] leading-[1.55]">
@@ -278,7 +278,7 @@ function SimpleRadarTick({
   const dx = x - cx;
   const dy = y - cy;
   const length = Math.sqrt(dx * dx + dy * dy) || 1;
-  const offset = 22; // push outward
+  const offset = 34; // push outward
   const nx = x + (dx / length) * offset;
   const ny = y + (dy / length) * offset;
 
@@ -288,7 +288,7 @@ function SimpleRadarTick({
       textAnchor="middle"
       dominantBaseline="middle"
       fill="var(--text-muted)"
-      fontSize={10}
+      fontSize={12}
       fontFamily="Inter, sans-serif"
       fontWeight={600}
     >
@@ -311,7 +311,7 @@ function IndexLabelWithTooltip({ def }: { def: typeof RADAR_DEFS[number] }) {
       {/* Label row: text + "?" */}
       <div className="flex items-center gap-1.5">
         <span
-          className="font-mono text-[10px] tracking-[0.12em] uppercase font-bold"
+          className="font-display text-[10px] tracking-[0.12em] uppercase font-bold"
           style={{ color: def.color }}
         >
           {def.label}
@@ -327,7 +327,7 @@ function IndexLabelWithTooltip({ def }: { def: typeof RADAR_DEFS[number] }) {
               border: `1px solid ${hovered ? def.color : 'rgba(0,0,0,0.15)'}`,
               background: hovered ? `${def.color}18` : 'rgba(0,0,0,0.03)',
               color: hovered ? def.color : 'rgba(0,0,0,0.35)',
-              fontSize: 8, fontWeight: 700, fontFamily: 'Barlow, sans-serif',
+              fontSize: 8, fontWeight: 700, fontFamily: 'Inter, sans-serif',
               cursor: 'help', display: 'flex', alignItems: 'center', justifyContent: 'center',
               transition: 'all 0.12s', padding: 0, lineHeight: 1, flexShrink: 0,
             }}
@@ -351,7 +351,7 @@ function IndexLabelWithTooltip({ def }: { def: typeof RADAR_DEFS[number] }) {
             >
               {/* Index name */}
               <p style={{
-                fontFamily: 'JetBrains Mono, monospace', fontSize: 10,
+                fontFamily: 'Inter, sans-serif', fontSize: 10,
                 fontWeight: 700, color: def.color, marginBottom: 6, letterSpacing: '0.04em',
               }}>
                 {def.label}
@@ -436,7 +436,7 @@ function RadarCard({
       <div className="flex justify-between items-start mb-2">
         <IndexLabelWithTooltip def={def} />
         <div className="text-right">
-          <div className="font-mono text-[9px] tracking-[0.1em] uppercase text-[var(--text-dim)]">Index</div>
+          <div className="font-display text-[9px] tracking-[0.1em] uppercase text-[var(--text-dim)]">Index</div>
           <div className="font-display font-black text-[26px] leading-none" style={{ color: def.color }}>
             {idxValue != null ? idxValue.toFixed(1) : '—'}
           </div>
@@ -466,7 +466,7 @@ function RadarCard({
 
       {/* Mother stats card */}
       <div className="mt-4 bg-[var(--surface2)] rounded-xl p-4">
-        <p className="font-mono text-[9px] tracking-[0.1em] uppercase text-[var(--text-dim)] mb-3">
+        <p className="font-display text-[9px] tracking-[0.1em] uppercase text-[var(--text-dim)] mb-3">
           Core stats
         </p>
 

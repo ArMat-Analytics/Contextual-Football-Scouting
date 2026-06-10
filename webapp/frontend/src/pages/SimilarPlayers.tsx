@@ -18,20 +18,20 @@ import { OBCompareRadar } from '../components/OffBallSection';
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 
-const C_SOURCE  = '#0891b2';
+const C_SOURCE = '#0891b2';
 const C_SIMILAR = '#df4d14';
 
 // ── Radar dimension definitions ───────────────────────────────────────────────
 
 const RADAR_DEFS = [
   {
-    key: 'PROGRESSION',   label: 'Progression',   color: '#16a34a',
+    key: 'PROGRESSION', label: 'Progression', color: '#16a34a',
     axes: [
-      { k: 'pct__lb_geom_per90'                      as keyof SpaceControlIndex, label: 'LB Geom /90' },
-      { k: 'pct__lb_quality_per90'                   as keyof SpaceControlIndex, label: 'LB Quality /90' },
-      { k: 'pct__lb_epv_per90'                       as keyof SpaceControlIndex, label: 'LB EPV /90' },
+      { k: 'pct__lb_geom_per90' as keyof SpaceControlIndex, label: 'LB Geom /90' },
+      { k: 'pct__lb_quality_per90' as keyof SpaceControlIndex, label: 'LB Quality /90' },
+      { k: 'pct__lb_epv_per90' as keyof SpaceControlIndex, label: 'LB EPV /90' },
       { k: 'pct__successful_hull_penetrations_per90' as keyof SpaceControlIndex, label: 'Hull Penetr. /90' },
-      { k: 'pct__defenders_bypassed_mean'            as keyof SpaceControlIndex, label: 'Def. Bypassed Avg' },
+      { k: 'pct__defenders_bypassed_mean' as keyof SpaceControlIndex, label: 'Def. Bypassed Avg' },
     ],
   },
   {
@@ -39,24 +39,24 @@ const RADAR_DEFS = [
     axes: [
       { k: 'pct__epv_penetration_per90' as keyof SpaceControlIndex, label: 'EPV Penetr. /90' },
       { k: 'pct__epv_inside_circ_per90' as keyof SpaceControlIndex, label: 'EPV In-Circ /90' },
-      { k: 'pct__epv_exit_per90'        as keyof SpaceControlIndex, label: 'EPV Exit /90' },
+      { k: 'pct__epv_exit_per90' as keyof SpaceControlIndex, label: 'EPV Exit /90' },
       { k: 'pct__epv_outside_circ_per90' as keyof SpaceControlIndex, label: 'EPV Out-Circ /90' },
     ],
   },
   {
-    key: 'RECEPTION',     label: 'Reception',     color: '#2563eb',
+    key: 'RECEPTION', label: 'Reception', color: '#2563eb',
     axes: [
-      { k: 'pct__between_lines_pct'          as keyof SpaceControlIndex, label: 'Between Lines %' },
+      { k: 'pct__between_lines_pct' as keyof SpaceControlIndex, label: 'Between Lines %' },
       { k: 'pct__successful_hull_exits_per90' as keyof SpaceControlIndex, label: 'Hull Exits /90' },
-      { k: 'pct__pressure_resistance_pct'    as keyof SpaceControlIndex, label: 'Press. Resist %' },
+      { k: 'pct__pressure_resistance_pct' as keyof SpaceControlIndex, label: 'Press. Resist %' },
     ],
   },
   {
-    key: 'GRAVITY',       label: 'Gravity',       color: '#d97706',
+    key: 'GRAVITY', label: 'Gravity', color: '#d97706',
     axes: [
       { k: 'pct__gravity_proximity_pct' as keyof SpaceControlIndex, label: 'Space Attraction %' },
-      { k: 'pct__gravity_hull_pct'      as keyof SpaceControlIndex, label: 'Gravity Hull %' },
-      { k: 'pct__gravity_abs_m'         as keyof SpaceControlIndex, label: 'Def. Pull |m|' },
+      { k: 'pct__gravity_hull_pct' as keyof SpaceControlIndex, label: 'Gravity Hull %' },
+      { k: 'pct__gravity_abs_m' as keyof SpaceControlIndex, label: 'Def. Pull |m|' },
     ],
   },
 ] as const;
@@ -92,33 +92,33 @@ const MOTHER: Record<string, Record<StatViewMode, StatDef[]>> = {
   DANGEROUSNESS: {
     raw: [
       { col: 'epv_penetration_sum', label: 'EPV Penetr. (sum)' },
-      { col: 'epv_inside_circ_sum',  label: 'EPV In-Circ (sum)' },
-      { col: 'epv_exit_sum',         label: 'EPV Exit (sum)' },
+      { col: 'epv_inside_circ_sum', label: 'EPV In-Circ (sum)' },
+      { col: 'epv_exit_sum', label: 'EPV Exit (sum)' },
       { col: 'epv_outside_circ_sum', label: 'EPV Out-Circ (sum)' },
     ],
     per90: [
-      { col: 'epv_added_per90',        label: 'EPV Added /90' },
-      { col: 'epv_penetration_per90',  label: 'EPV Penetr. /90' },
-      { col: 'epv_inside_circ_per90',  label: 'EPV In-Circ /90' },
-      { col: 'epv_exit_per90',         label: 'EPV Exit /90' },
+      { col: 'epv_added_per90', label: 'EPV Added /90' },
+      { col: 'epv_penetration_per90', label: 'EPV Penetr. /90' },
+      { col: 'epv_inside_circ_per90', label: 'EPV In-Circ /90' },
+      { col: 'epv_exit_per90', label: 'EPV Exit /90' },
       { col: 'epv_outside_circ_per90', label: 'EPV Out-Circ /90' },
     ],
     percentages: [],
   },
   RECEPTION: {
     raw: [
-      { col: 'between_lines_n',       label: 'Block Receipts (n)' },
+      { col: 'between_lines_n', label: 'Block Receipts (n)' },
       { col: 'pressure_resistance_n', label: 'Press. Resist (n)' },
-      { col: 'inside_circ_n',         label: 'In-Circ (n)' },
+      { col: 'inside_circ_n', label: 'In-Circ (n)' },
     ],
     per90: [
-      { col: 'between_lines_per90',          label: 'Between Lines /90' },
-      { col: 'successful_hull_exits_per90',  label: 'Hull Exits /90' },
-      { col: 'inside_circ_per90',            label: 'In-Circ /90' },
+      { col: 'between_lines_per90', label: 'Between Lines /90' },
+      { col: 'successful_hull_exits_per90', label: 'Hull Exits /90' },
+      { col: 'inside_circ_per90', label: 'In-Circ /90' },
     ],
     percentages: [
-      { col: 'between_lines_pct',     label: 'Between Lines %' },
-      { col: 'hull_exit_pct',        label: 'Hull Exits %' },
+      { col: 'between_lines_pct', label: 'Between Lines %' },
+      { col: 'hull_exit_pct', label: 'Hull Exits %' },
       { col: 'pressure_resistance_pct', label: 'Press. Resist %' },
     ],
   },
@@ -145,16 +145,26 @@ function fmt(v: unknown): string {
   return String(v);
 }
 
-function ScoreBadge() {
-  return (
+function ScoreBadge({ score }: { score?: number | null }) {
+  if (score == null) return (
     <span className="font-mono font-bold text-[11px] py-0.5 px-2.5 rounded-full bg-[var(--surface2)] text-[var(--text-dim)]">
       N/A
     </span>
   );
+  return (
+    <span className="font-mono font-bold text-[11px] py-0.5 px-2.5 rounded-full bg-[var(--accent-dim)] text-[var(--accent)]">
+      {score.toFixed(1)}% Sim
+    </span>
+  );
 }
 
-function ScoreBar() {
-  return <div className="w-full h-[3px] rounded-full bg-[var(--surface2)]" />;
+function ScoreBar({ score }: { score?: number | null }) {
+  if (score == null) return <div className="w-full h-[3px] rounded-full bg-[var(--surface2)]" />;
+  return (
+    <div className="w-full h-[3px] rounded-full bg-[var(--surface2)] overflow-hidden">
+      <div className="h-full bg-[var(--accent)]" style={{ width: `${score}%` }} />
+    </div>
+  );
 }
 
 function RadarTooltip({ active, payload }: any) {
@@ -189,14 +199,14 @@ function CustomRadarTick({
 }: CustomRadarTickProps) {
   if (!payload) return null;
 
-  const label       = payload.value;
+  const label = payload.value;
 
   const halfW = label.length * 3.5;
 
   const dx = x - cx;
   const dy = y - cy;
   const length = Math.sqrt(dx * dx + dy * dy) || 1;
-  const offset = 22; // push outward
+  const offset = 34; // push outward
   const nx = x + (dx / length) * offset;
   const ny = y + (dy / length) * offset;
 
@@ -215,7 +225,7 @@ function CustomRadarTick({
         textAnchor="middle"
         dominantBaseline="middle"
         fill="var(--text-muted)"
-        fontSize={10}
+        fontSize={12}
         fontFamily="Inter, sans-serif"
         fontWeight={600}
         style={{ pointerEvents: 'none' }}
@@ -281,7 +291,7 @@ function DualMotherStatRow({
             className="absolute bottom-[calc(100%+8px)] left-0 w-[240px] bg-[var(--surface)] rounded-[10px] px-3.5 py-2.5 z-[60] pointer-events-none"
             style={{ border: `1px solid ${color}33`, borderLeft: `3px solid ${color}`, boxShadow: 'var(--shadow-lg)' }}
           >
-            <p className="font-mono text-[10px] font-bold mb-1.5 tracking-wide" style={{ color }}>
+            <p className="font-display text-[10px] font-bold mb-1.5 tracking-wide" style={{ color }}>
               {label}
             </p>
             <p className="text-[11px] text-[var(--text-muted)] leading-[1.55]">
@@ -360,7 +370,7 @@ function DualRadarCard({
       <div className="flex justify-between items-start mb-2">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-1.5">
-            <span className="font-mono text-[10px] tracking-[0.12em] uppercase font-bold" style={{ color: def.color }}>
+            <span className="font-display text-[10px] tracking-[0.12em] uppercase font-bold" style={{ color: def.color }}>
               {def.label}
             </span>
 
@@ -384,7 +394,7 @@ function DualRadarCard({
                 className="absolute bottom-[calc(100%+8px)] left-0 w-[240px] bg-[var(--surface)] rounded-[10px] px-3.5 py-2.5 z-[60] pointer-events-none"
                 style={{ border: `1px solid ${def.color}33`, borderLeft: `3px solid ${def.color}`, boxShadow: 'var(--shadow-lg)' }}
               >
-                <p className="font-mono text-[10px] font-bold mb-1.5 tracking-wide" style={{ color: def.color }}>
+                <p className="font-display text-[10px] font-bold mb-1.5 tracking-wide" style={{ color: def.color }}>
                   {def.label}
                 </p>
                 <p className="text-[11px] text-[var(--text-muted)] leading-[1.55]">
@@ -411,7 +421,7 @@ function DualRadarCard({
           .filter(k => k === `idx__${def.key}`)
           .map(k => (
             <div key={String(k)} className="text-right">
-              <div className="font-mono text-[9px] tracking-[0.1em] uppercase text-[var(--text-dim)]">Index</div>
+              <div className="font-display text-[9px] tracking-[0.1em] uppercase text-[var(--text-dim)]">Index</div>
               <div className="font-mono text-lg font-black leading-none">
                 <span style={{ color: C_SOURCE }}>{fmt(sourceIdx[k])}</span>
                 <span className="text-[var(--text-dim)] text-xs mx-1">vs</span>
@@ -458,14 +468,14 @@ function DualRadarCard({
           <div className="flex flex-col gap-1.5">
             {/* Column headers */}
             <div className="grid gap-2 pb-1 mb-1 border-b border-[var(--border)]" style={{ gridTemplateColumns: '1fr auto auto' }}>
-              <span className="font-mono text-[9px] text-[var(--text-dim)] uppercase">Core Stats</span>
-              <span className="font-mono text-[9px] uppercase text-right min-w-[52px]" style={{ color: C_SOURCE }}>{sName}</span>
-              <span className="font-mono text-[9px] uppercase text-right min-w-[52px]" style={{ color: C_SIMILAR }}>{mName}</span>
+              <span className="font-display text-[9px] text-[var(--text-dim)] uppercase">Core Stats</span>
+              <span className="font-display text-[9px] uppercase text-right min-w-[52px]" style={{ color: C_SOURCE }}>{sName}</span>
+              <span className="font-display text-[9px] uppercase text-right min-w-[52px]" style={{ color: C_SIMILAR }}>{mName}</span>
             </div>
 
             {statList.map(s => {
-              const sv   = sourceAgg  ? (sourceAgg[s.col]  as number) : null;
-              const mv   = similarAgg ? (similarAgg[s.col] as number) : null;
+              const sv = sourceAgg ? (sourceAgg[s.col] as number) : null;
+              const mv = similarAgg ? (similarAgg[s.col] as number) : null;
               return (
                 <DualMotherStatRow
                   key={s.col}
@@ -484,13 +494,89 @@ function DualRadarCard({
   );
 }
 
+// ── Market Value parsing & rendering helpers ─────────────────────────────────
+
+export function parseMarketValue(val: string | null | undefined): number | null {
+  if (!val) return null;
+  const clean = val.replace(/[^0-9.,km]/gi, '').replace(',', '.');
+  let factor = 1;
+  if (clean.toLowerCase().includes('m')) {
+    factor = 1000000;
+  } else if (clean.toLowerCase().includes('k')) {
+    factor = 1000;
+  }
+  const num = parseFloat(clean.replace(/[km]/gi, ''));
+  return isNaN(num) ? null : num * factor;
+}
+
+function renderMarketValue(pre: string | null | undefined, post: string | null | undefined) {
+  if (!pre) return null;
+  const preNum = parseMarketValue(pre);
+  const postNum = parseMarketValue(post);
+  let arrow = null;
+  let arrowColor = '';
+
+  if (preNum && postNum) {
+    if (postNum > preNum) {
+      arrow = '▲';
+      arrowColor = 'text-green-600 font-bold ml-1';
+    } else if (postNum < preNum) {
+      arrow = '▼';
+      arrowColor = 'text-red-600 font-bold ml-1';
+    }
+  }
+
+  return (
+    <span className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--surface)] shadow-sm text-xs font-semibold text-[var(--text-muted)] flex flex-wrap items-center gap-1">
+      <span>Pre-Euro: <strong className="text-[var(--text)]">{pre}</strong></span>
+      {post && (
+        <span className="text-[11px] text-[var(--text-dim)] flex items-center">
+          (Post: {post}
+          {arrow && <span className={arrowColor}>{arrow}</span>})
+        </span>
+      )}
+    </span>
+  );
+}
+
+function renderPriceDelta(sourcePreStr: string | null | undefined, comparePreStr: string | null | undefined) {
+  const sVal = parseMarketValue(sourcePreStr);
+  const cVal = parseMarketValue(comparePreStr);
+  if (!sVal || !cVal) return null;
+  const diff = cVal - sVal;
+  if (diff === 0) return null;
+
+  const formattedDiff = formatDiffValue(diff);
+  const isCheaper = diff < 0;
+  const colorClass = isCheaper
+    ? 'text-green-700 bg-green-50/50 border-green-200'
+    : 'text-red-700 bg-red-50/50 border-red-200';
+
+  return (
+    <span className={`px-2.5 py-1 rounded border text-xs font-semibold ${colorClass}`}>
+      {isCheaper ? 'Cheaper:' : 'More expensive:'} {formattedDiff}
+    </span>
+  );
+}
+
+function formatDiffValue(diff: number): string {
+  const abs = Math.abs(diff);
+  if (abs >= 1000000) {
+    return `€${(abs / 1000000).toFixed(1)}m`;
+  }
+  if (abs >= 1000) {
+    return `€${(abs / 1000).toFixed(0)}k`;
+  }
+  return `€${abs}`;
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function SimilarPlayers() {
   const [searchParams] = useSearchParams();
   const playerName = searchParams.get('playerName') || 'Player';
-  const playerId   = searchParams.get('playerId');
-  const macroRole  = searchParams.get('macroRole') || '';
+  const playerId = searchParams.get('playerId');
+  const macroRole = searchParams.get('macroRole') || '';
 
   const dropdownId = useId();
   const [selectedIdx, setSelectedIdx] = useState(0);
@@ -628,18 +714,18 @@ export default function SimilarPlayers() {
 
           {/* Symmetric comparison header */}
           <div className="card p-0 mb-8 overflow-hidden shadow-sm">
-            <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-[var(--border)]">
-              
+            <div className="relative grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-[var(--border)]">
+
               {/* Left — Source Player */}
               <div className="relative flex flex-col p-6 md:p-8 bg-[var(--surface2)] overflow-hidden">
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] pointer-events-none opacity-40 mix-blend-multiply" style={{ background: `radial-gradient(circle at top right, ${C_SOURCE}15 0%, transparent 60%)` }} />
-                
+
                 <div className="relative z-10 flex flex-col h-full">
                   {/* Header row */}
                   <div className="flex items-center justify-between mb-6 h-10">
-                     <span className="px-3 py-1.5 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider bg-[var(--surface)] border border-[var(--border)] shadow-sm" style={{ color: C_SOURCE }}>
-                       Source Player
-                     </span>
+                    <span className="px-3 py-1.5 rounded-md text-[10px] font-display font-bold uppercase tracking-wider bg-[var(--surface)] border border-[var(--border)] shadow-sm" style={{ color: C_SOURCE }}>
+                      Source Player
+                    </span>
                   </div>
 
                   {/* Avatar & Name */}
@@ -648,7 +734,7 @@ export default function SimilarPlayers() {
                       <h1 className="font-display font-black text-2xl sm:text-3xl leading-tight tracking-tight text-[var(--text)] mb-2">
                         {playerName}
                       </h1>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-2 items-center">
                         {searchParams.get('playerTeam') && (
                           <span className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--surface)] shadow-sm text-xs font-bold text-[var(--text-muted)] flex items-center gap-2">
                             {getFlagUrl(searchParams.get('playerTeam')!) && <img src={getFlagUrl(searchParams.get('playerTeam')!)!} alt="" className="w-4 h-3 object-cover rounded-[2px]" aria-hidden />}
@@ -665,12 +751,18 @@ export default function SimilarPlayers() {
                             {searchParams.get('primaryRole')!.replace(/_/g, ' ')}
                           </span>
                         )}
+                        {sourceIdx?.age != null && (
+                          <span className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--surface)] shadow-sm text-xs font-bold text-[var(--text-muted)]">
+                            Age: {sourceIdx.age}
+                          </span>
+                        )}
+                        {renderMarketValue(sourceIdx?.market_value_before_euros, sourceIdx?.market_value_after_euros)}
                       </div>
                     </div>
                   </div>
 
                   {/* Meta stats */}
-                  <div className="grid grid-cols-2 gap-3 mb-6">
+                  <div className="grid grid-cols-2 gap-3 mt-auto mb-0">
                     <div className="flex flex-col gap-1 p-3 bg-[var(--surface)] rounded-[12px] border border-[var(--border)] shadow-sm">
                       <span className="font-mono text-[9px] tracking-[0.12em] uppercase text-[var(--text-dim)]">Minutes played</span>
                       <span className="font-display font-black text-xl text-[var(--text)]">
@@ -685,7 +777,7 @@ export default function SimilarPlayers() {
                     </div>
                   </div>
 
-                  <div className="mt-auto pt-4">
+                  <div className="pt-4">
                     {playerId ? (
                       <Link
                         to={`/player/${playerId}`}
@@ -703,37 +795,42 @@ export default function SimilarPlayers() {
               {/* Right — Comparison Player */}
               <div className="relative flex flex-col p-6 md:p-8 bg-[var(--surface2)] overflow-hidden">
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] pointer-events-none opacity-40 mix-blend-multiply" style={{ background: `radial-gradient(circle at top right, ${C_SIMILAR}15 0%, transparent 60%)` }} />
-                
+
                 <div className="relative z-10 flex flex-col h-full">
                   {/* Header row with dropdown */}
-                  <div className="flex items-center justify-between mb-6 h-10 gap-4">
-                     <span className="shrink-0 px-3 py-1.5 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider bg-[var(--surface)] border border-[var(--border)] shadow-sm hidden sm:inline-block" style={{ color: C_SIMILAR }}>
-                       Compare With
-                     </span>
-                     <div className="relative flex-1 max-w-[280px]">
-                        <select
-                          id={dropdownId}
-                          value={selectedIdx}
-                          onChange={e => setSelectedIdx(Number(e.target.value))}
-                          className="w-full appearance-none bg-[var(--surface)] border border-[var(--border)] shadow-sm font-semibold text-sm h-10 px-4 pr-10 rounded-lg cursor-pointer focus:outline-none focus:border-[var(--accent)] transition-colors"
-                        >
-                          {similarList.map((p, i) => (
-                            <option key={`${p.player}-${p.team}`} value={i}>{p.player} ({p.team})</option>
-                          ))}
-                        </select>
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-dim)] pointer-events-none">▾</span>
-                     </div>
+                  <div className="flex items-center justify-between lg:justify-end mb-6 h-10 gap-4">
+                    <span className="px-3 py-1.5 rounded-md text-[10px] font-display font-bold uppercase tracking-wider bg-[var(--surface)] border border-[var(--border)] shadow-sm" style={{ color: C_SIMILAR }}>
+                      Compare With
+                    </span>
+                    <div className="relative flex-1 max-w-[280px] lg:hidden">
+                      <select
+                        id={dropdownId}
+                        value={selectedIdx}
+                        onChange={e => setSelectedIdx(Number(e.target.value))}
+                        className="w-full appearance-none bg-[var(--surface)] border border-[var(--border)] shadow-sm font-semibold text-sm h-10 px-4 pr-10 rounded-lg cursor-pointer focus:outline-none focus:border-[var(--accent)] transition-colors"
+                      >
+                        {similarList.map((p, i) => {
+                          const simStr = p.similarity_score != null ? `${p.similarity_score.toFixed(1)}%` : 'N/A';
+                          return (
+                            <option key={`${p.player}-${p.team}`} value={i}>
+                              {simStr} | {p.player}
+                            </option>
+                          );
+                        })}
+                      </select>
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-dim)] pointer-events-none">▾</span>
+                    </div>
                   </div>
 
                   {selectedPlayer ? (
                     <>
                       {/* Avatar & Name */}
-                      <div className="flex items-center gap-5 mb-6">
-                        <div>
-                          <h1 className="font-display font-black text-2xl sm:text-3xl leading-tight tracking-tight text-[var(--text)] mb-2">
+                      <div className="flex items-center justify-end mb-6 w-full">
+                        <div className="text-right flex flex-col items-end w-full">
+                          <h1 className="font-display font-black text-2xl sm:text-3xl leading-tight tracking-tight text-[var(--text)] mb-2 text-right">
                             {selectedPlayer.player}
                           </h1>
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-wrap justify-end gap-2 items-center">
                             {selectedPlayer.team && (
                               <span className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--surface)] shadow-sm text-xs font-bold text-[var(--text-muted)] flex items-center gap-2">
                                 {getFlagUrl(selectedPlayer.team) && <img src={getFlagUrl(selectedPlayer.team)!} alt="" className="w-4 h-3 object-cover rounded-[2px]" aria-hidden />}
@@ -750,12 +847,19 @@ export default function SimilarPlayers() {
                                 {selectedPlayer.primary_role.replace(/_/g, ' ')}
                               </span>
                             )}
+                            {selectedPlayer.age != null && (
+                              <span className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--surface)] shadow-sm text-xs font-bold text-[var(--text-muted)]">
+                                Age: {selectedPlayer.age}
+                              </span>
+                            )}
+                            {renderMarketValue(selectedPlayer.market_value_before_euros, selectedPlayer.market_value_after_euros)}
+                            {renderPriceDelta(sourceIdx?.market_value_before_euros, selectedPlayer.market_value_before_euros)}
                           </div>
                         </div>
                       </div>
 
                       {/* Meta stats */}
-                      <div className="grid grid-cols-2 gap-3 mb-6">
+                      <div className="grid grid-cols-2 gap-3 mt-auto mb-0">
                         <div className="flex flex-col gap-1 p-3 bg-[var(--surface)] rounded-[12px] border border-[var(--border)] shadow-sm">
                           <span className="font-mono text-[9px] tracking-[0.12em] uppercase text-[var(--text-dim)]">Minutes played</span>
                           <span className="font-display font-black text-xl text-[var(--text)]">
@@ -770,7 +874,7 @@ export default function SimilarPlayers() {
                         </div>
                       </div>
 
-                      <div className="mt-auto pt-4">
+                      <div className="pt-4">
                         <Link
                           to={`/player/${selectedPlayer.player_id}`}
                           className="btn btn-primary w-full justify-center rounded-xl py-3"
@@ -786,6 +890,44 @@ export default function SimilarPlayers() {
                   )}
                 </div>
               </div>
+
+              {/* Centered Dropdown (Desktop only) */}
+              <div className="hidden lg:block absolute top-[32px] left-1/2 -translate-x-1/2 z-30 w-[280px]">
+                <div className="relative">
+                  <select
+                    id={`${dropdownId}-centered`}
+                    value={selectedIdx}
+                    onChange={e => setSelectedIdx(Number(e.target.value))}
+                    className="w-full appearance-none bg-[var(--surface)] border border-[var(--border2)] shadow-md font-semibold text-sm h-10 px-4 pr-10 rounded-lg cursor-pointer focus:outline-none focus:border-[var(--accent)] transition-colors"
+                  >
+                    {similarList.map((p, i) => {
+                      const simStr = p.similarity_score != null ? `${p.similarity_score.toFixed(1)}%` : 'N/A';
+                      return (
+                        <option key={`${p.player}-${p.team}-centered`} value={i}>
+                          {simStr} | {p.player}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-dim)] pointer-events-none">▾</span>
+                </div>
+              </div>
+
+              {/* Centered Similarity Badge */}
+              {selectedPlayer && selectedPlayer.similarity_score != null && (
+                <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none">
+                  <div
+                    className="flex flex-col items-center justify-center w-16 h-16 rounded-full bg-[var(--surface)] border border-[var(--border2)]"
+                    style={{
+                      boxShadow: '0 0 0 6px var(--surface2), 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1), 0 0 12px var(--accent-dim)',
+                    }}
+                  >
+                    <span className="font-display font-black text-base text-[var(--accent)] leading-none">
+                      {selectedPlayer.similarity_score.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+              )}
 
             </div>
           </div>
@@ -896,7 +1038,7 @@ export default function SimilarPlayers() {
           <div className="space-y-3" role="list">
             {similarList.map((player, idx) => {
               const isSelected = idx === selectedIdx;
-              const flagUrl    = getFlagUrl(player.team);
+              const flagUrl = getFlagUrl(player.team);
               return (
                 <div
                   key={`${player.player}-${player.team}`}
@@ -918,17 +1060,28 @@ export default function SimilarPlayers() {
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span className="font-display font-black text-xl" style={{ color: isSelected ? 'var(--accent)' : 'var(--text)' }}>{player.player}</span>
-                      <ScoreBadge />
+                      <ScoreBadge score={player.similarity_score} />
                     </div>
-                    <p className="text-xs flex items-center gap-2 text-[var(--text-muted)]">
+                    <p className="text-xs flex flex-wrap items-center gap-x-2 gap-y-1 text-[var(--text-muted)]">
                       <span>{player.team}</span><span aria-hidden>·</span>
                       <span>{player.primary_role}</span><span aria-hidden>·</span>
+                      {player.age != null && (
+                        <>
+                          <span>Age: {player.age}</span><span aria-hidden>·</span>
+                        </>
+                      )}
                       <span>{player.minutes_played}' played</span>
+                      {player.market_value_before_euros && (
+                        <>
+                          <span aria-hidden>·</span>
+                          <span>Value Pre/Post: {player.market_value_before_euros} / {player.market_value_after_euros ?? '—'}</span>
+                        </>
+                      )}
                     </p>
-                    <div className="mt-2 max-w-xs"><ScoreBar /></div>
+                    <div className="mt-2"><ScoreBar score={player.similarity_score} /></div>
                   </div>
                   <button
-                    className={`btn text-xs px-3 py-1.5 shrink-0 ${isSelected ? 'bg-[var(--accent-dim)] text-[var(--accent)] border-[var(--accent)]' : 'bg-[var(--surface2)] text-[var(--text-muted)] border-[var(--border)]'}`}
+                    className={`btn text-xs px-3 py-1.5 shrink-0 w-[110px] justify-center ${isSelected ? 'bg-[var(--accent-dim)] text-[var(--accent)] border-[var(--accent)]' : 'bg-[var(--surface2)] text-[var(--text-muted)] border-[var(--border)]'}`}
                     style={isSelected ? { borderColor: 'var(--accent)' } : undefined}
                     onClick={e => { e.stopPropagation(); setSelectedIdx(idx); }}
                     aria-pressed={isSelected}
