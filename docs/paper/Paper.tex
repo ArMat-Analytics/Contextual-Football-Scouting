@@ -29,6 +29,15 @@
     urlcolor=blue!60!black,
 }
 
+% Table of contents goes down to subsubsection only; \paragraph titles
+% stay out of the ToC (they are in-text headings, not navigable sections).
+\setcounter{tocdepth}{3}
+% Belt-and-braces: make the \paragraph ToC line a no-op so paragraph
+% headings never appear in the table of contents regardless of tocdepth.
+\makeatletter
+\renewcommand*\l@paragraph[2]{}
+\makeatother
+
 % --- Document Information ---
 \title{%
     Contextual Football Scouting\\[4pt]
@@ -49,11 +58,14 @@
 % ABSTRACT
 % ============================================================
 \begin{abstract}
-Traditional scouting statistics reward volume (passes played, distance covered, touches taken) and in doing so carry a heavy \textbf{team bias}: a midfielder in a possession-dominant side piles up numbers a better player in a pressed side never gets the chance to produce. The effect is large and easy to miss. On a contextual measure of the value a player actually creates, more than half of the Euro~2024 player pool moves by 20 or more percentile points versus a volume-based ranking. Phil Foden, for instance, sits in the 89th percentile of wingers for passing volume but the 11th for value created, while Tom\'{a}\v{s} Sou\v{c}ek does the opposite (3rd for volume, 83rd for value).
+Traditional scouting statistics reward volume (passes played, distance covered, touches taken) and in doing so carry a heavy \textbf{team bias}: a midfielder in a possession-dominant side piles up numbers a better player in a pressed side never gets the chance to produce. The effect is large and easy to miss: on a contextual measure of the value a player actually creates, more than half of the Euro~2024 player pool shifts by 20 or more percentile points against a volume-based ranking, and players who look elite by volume can rank low by value created, and vice versa.
 
 This project reframes player evaluation around \emph{what a player does with the space around him}, read from \textbf{StatsBomb~360 freeze frames} rather than the event log alone, and graded by the value of each action rather than its frequency. Two design choices unify the work: \textbf{Expected Possession Value~(EPV)} as the common currency, and \textbf{within-role percentiles} as the common lens (a centre-back is ranked only against other centre-backs). One enabler is methodological. A 360 frame shows where players are but \textbf{not who they are}, so we build a resolver that puts identities back on the anonymous dots; it is validated at 93\% accuracy against the one place ground truth exists, completed passes, and then carried to the off-ball runs where no ground truth is available.
 
-On this basis we present four validated studies on the same pool of 272 players: (H1)~\textbf{Space Control~\&~Value}, a four-index spatial profile; (H2)~\textbf{Decision Quality}, the value of the pass chosen against the in-frame options ignored; (H3)~\textbf{Off-Ball Movement}, the dangerous off-ball space a player offers that teammates fail to use; and (H4)~\textbf{Player Similarity}, matching players by their contextual ``spatial DNA'' to surface cheaper look-alikes. Beyond confirming what football already knows, the metrics isolate a previously invisible signal, the ``shadow runner'' who keeps offering dangerous options his team never plays, with Pedri the clearest case of the tournament. The four studies feed an interactive scouting dashboard.
+On this basis we present four validated studies on the same pool of 272 players: (H1)~\textbf{Space Control~\&~Value}, a four-index spatial profile; (H2)~\textbf{Decision Quality}, the value of the pass chosen against the in-frame options ignored; (H3)~\textbf{Off-Ball Movement}, the dangerous off-ball space a player offers that teammates fail to use; and (H4)~\textbf{Player Similarity}, matching players by their contextual ``spatial DNA'' to surface cheaper look-alikes. Beyond confirming what football already knows, the metrics isolate a previously invisible signal, the ``shadow runner'' who keeps offering dangerous options his team never plays, with Pedri the clearest case of the tournament. The four studies feed an interactive scouting dashboard. We conclude that grading players by the value of what they do, and only against others in their role, removes much of the team-bias inflation in raw statistics and surfaces undervalued players that volume-based scouting overlooks.
+
+\medskip
+\noindent\textbf{Keywords:} football analytics; player scouting; Expected Possession Value; StatsBomb 360 spatial data; team bias.
 \end{abstract}
 
 \vfill
@@ -66,6 +78,64 @@ On this basis we present four validated studies on the same pool of 272 players:
 \end{tabular}
 \end{center}
 \vspace{2em}
+
+\clearpage
+% ============================================================
+% FRONT MATTER: navigation aids (TFM guide §19)
+% ============================================================
+\tableofcontents
+\clearpage
+\listoffigures
+\listoftables
+\clearpage
+
+% ------------------------------------------------------------
+% List of Abbreviations and Acronyms (TFM guide §19)
+% ------------------------------------------------------------
+\section*{List of Abbreviations and Acronyms}
+\addcontentsline{toc}{section}{List of Abbreviations and Acronyms}
+
+\renewcommand{\arraystretch}{1.25}
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}lL@{}}
+\toprule
+Acronym & Meaning \\
+\midrule
+\multicolumn{2}{@{}l}{\textit{Core metrics and models}} \\
+\midrule
+EPV   & Expected Possession Value: the value of having the ball at a given pitch location, the project's common currency (\cref{sec:epv}). \\
+xEPV  & Expected Net Possession Value: the pass-probability-weighted EPV gain of an action, $xPass \times \Delta EPV$ (\cref{sec:xepv}). \\
+xPass & Expected Pass: the model-estimated probability that a given pass is completed (\cref{sec:xpass}). \\
+DQ    & Decision Quality: H2's relative choice-optimality index over a player's in-frame passing options (\cref{sec:h2}). \\
+URS   & Unrealised Reception Score: H3's index of dangerous off-ball space a player offers but never receives (\cref{sec:urs}). \\
+DNA   & The 11-axis ``spatial DNA'' vector used in H4 to match players by playing style (\cref{sec:h4-features}). \\
+VAEP  & Valuing Actions by Estimating Probabilities: a prior possession-value model cited in related work (\cref{sec:related}). \\
+xT    & Expected Threat: a zone-based possession-value model cited in related work (\cref{sec:related}). \\
+\midrule
+\multicolumn{2}{@{}l}{\textit{Macro-roles (the within-role lens)}} \\
+\midrule
+CB    & Centre-back. \\
+FB    & Full-back. \\
+MID   & Central midfielder (absorbs the CDM and CM fine roles). \\
+CAM   & Attacking midfielder. \\
+WIDE  & Wide attacker (absorbs the W and WM fine roles). \\
+FW    & Forward. \\
+\midrule
+\multicolumn{2}{@{}l}{\textit{Method and data}} \\
+\midrule
+LB    & Line-break: a pass that bypasses the defensive line (H1 building block, \cref{sec:linebreakers}). Not a positional label. \\
+LOO   & Leave-One-Out: the baseline used to measure a player's Gravity by removing him from the frame (\cref{sec:gravity-block}). \\
+SHAP  & SHapley Additive exPlanations: the feature-attribution method used to read the xPass model (\cref{sec:model-selection}). \\
+GBM   & Gradient Boosting Machine: the model chosen for xPass (\cref{sec:model-selection}). \\
+AUC   & Area Under the ROC Curve: the ranking metric used in xPass model selection (\cref{sec:model-selection}). \\
+EDA   & Exploratory Data Analysis. \\
+StatsBomb 360 & The freeze-frame data source giving the positions of off-ball players (\cref{sec:statsbomb}). \\
+\bottomrule
+\end{tabularx}
+\end{table}
+\renewcommand{\arraystretch}{1.0}
 
 \clearpage
 % ============================================================
@@ -84,6 +154,8 @@ The fundamental task is to isolate a player's intrinsic ability from the systemi
 This matters because most clubs still rely heavily on decontextualised event data, such as aggregate passes, goals, and touches.
 The same pass can be brilliant against a compact defensive block but trivial against an open one, and most of what a player does of value happens \emph{without the ball}, which is exactly the part the event log cannot see.
 
+Team bias has two parts. The first is \emph{how each action is valued}: a strong team lets a player make many easy, low-value passes, and raw counts reward them all the same. The second is \emph{how many chances a player gets}: the same team gives him the ball more often, so he has more chances to do something useful than an equally good player in a weaker side. We tackle the first part directly, by grading actions on their value instead of their count and comparing players only within their role. The second part, the extra chances a strong team gives, is harder to remove; we come back to it in \cref{sec:limitations}.
+
 \subsection{The Business Case}\label{sec:business}
 
 The football industry is one where recruitment errors translate into very large financial losses.
@@ -94,22 +166,35 @@ A contextual scouting framework offers a clear economic rationale along two axes
     \item \textbf{Operational efficiency.} Rather than having scouts manually review extensive video, an analytical tool can rapidly shortlist top candidates on quantitative, context-aware grounds.
 \end{itemize}
 
-\subsection{Related Work and Positioning}\label{sec:related}
+\subsection{State of the Art and Positioning}\label{sec:related}
 
-Valuing player actions by space rather than volume is an established line in football analytics, and it helps to state where this project sits. Possession-value models such as Expected Threat~\cite{xt} and VAEP~\cite{vaep} lay a value surface over the pitch and credit a player for moving the ball into more dangerous zones; pitch-control models~\cite{pitchcontrol} estimate, from tracking data, the area a team would control if the ball arrived there; and the packing metric~\cite{packing} counts how many defenders a pass bypasses. Our EPV layer is in the same family as the first group, and our geometric line-breaker is a packing-style count.
+Valuing player actions by space rather than volume is an established line in football analytics, and it helps to state where this project sits. Possession-value models such as Expected Threat~\cite{xt} and VAEP~\cite{vaep} lay a value surface over the pitch and credit a player for moving the ball into more dangerous zones; pitch-control models~\cite{pitchcontrol} estimate, from tracking data, the area a team would control if the ball arrived there; and Rein, Raabe and Memmert~\cite{packing} count how many defenders a pass outplays (the academic form of the ``packing'' idea). The most complete academic treatment of possession value is the Expected Possession Value framework of Fern\'{a}ndez, Bornn and Cervone~\cite{epvframework}, who decompose EPV into separately estimated subcomponents and learn pass-value surfaces with deep networks from full spatiotemporal tracking data. Our EPV layer is in the same conceptual family, but works from the static information in a single 360~freeze frame rather than continuous tracking, trading their temporal richness for openly available data; our geometric line-breaker is, in turn, a packing-style count.
 
-Three choices set this work apart. First, every value is read from StatsBomb 360 freeze frames rather than continuous proprietary tracking, so the method runs on openly available data. Second, we grade not only the action played but the action \emph{relative to the options ignored} (H2) and the off-ball value a player offers but never receives (H3); standard possession-value models score the on-ball event and have no notion of either the unchosen alternative or the unserved run. Third, where packing counts bodies, we weight by EPV and separate the bold-geometry, high-value and clean line-breaks, so a frequent but cheap line-breaker is told apart from one whose every break is dangerous.
+Closest in spirit to our off-ball study (H3) is the space-valuation line: Fern\'{a}ndez and Bornn~\cite{wideopenspaces} quantify, from continuous tracking, the value of the space a player occupies for himself (Space Occupation Gain) and generates for teammates (Space Generation Gain), and explicitly leave the notion of \emph{potential space}, the valuable space a player could reach but does not yet occupy, as an open direction. Our Off-Ball Movement metric is in this family, but reads the space a player offers from the single 360~frame and scores specifically the dangerous space his teammates fail to use.
+
+Two further lines are close to specific parts of our pipeline. Anzer and Bauer~\cite{xpasspaper} model the difficulty of a pass (its completion probability) from spatio-temporal data, the same quantity our xPass model estimates and uses inside xEPV. Dick, Link and Brefeld~\cite{availability} model player \emph{availability}, the probability that a pass to a given teammate would arrive without being intercepted, which is close both to how we reconstruct off-ball receivers (H3) and to how we build the in-frame option set a pass is judged against (H2). Where these works rely on continuous tracking or proprietary feeds, our versions run on the single freeze frame the open 360 data provides.
+
+Three choices set this work apart. First, every value is read from StatsBomb 360 freeze frames rather than continuous proprietary tracking, so the method runs on openly available data. Second, we grade not only the action played but the action \emph{relative to the options ignored} (H2) and the off-ball value a player offers but never receives (H3); standard possession-value models score the on-ball event and have no notion of either the unchosen alternative or the unserved run. Third, rather than simply counting the defenders a pass outplays, we weight each line-break by EPV and separate the bold-geometry, high-value and clean cases, so a frequent but cheap line-breaker is told apart from one whose every break is dangerous.
 
 \subsection{Thesis and Iterative Approach}\label{sec:thesis}
 
 The thesis of this project is that a player's quality can be read from \emph{what he does with the space around him}, measured by the value of those actions rather than their volume, and that doing so removes a large part of the team-bias inflation that distorts traditional comparisons.
+
+From this thesis follows our \textbf{general objective}: to build, from StatsBomb~360 spatial data, a within-role contextual evaluation framework that grades Euro~2024 players by the value they create rather than the volume they accumulate, and to deliver it as a usable scouting tool. We break this into four \textbf{specific objectives}, one per study, each with a measurable, validated outcome:
+\begin{itemize}
+    \item \textbf{(H1)} Quantify a player's spatial influence (block broken, threat added, defensive pull) from each freeze frame, and verify the resulting indices rank players differently from volume-based statistics.
+    \item \textbf{(H2)} Grade the value of the pass a player chooses against the in-frame alternatives he ignored, and confirm the resulting index tracks the value actually created within role.
+    \item \textbf{(H3)} Measure the dangerous off-ball space a player offers but does not receive, which first requires resolving anonymous off-ball identities at validated accuracy, and test that the score is internally reliable.
+    \item \textbf{(H4)} Match players within role by their contextual ``spatial DNA'' on a fixed $0$--$100$ scale, and check that the matches read as style rather than team or position.
+\end{itemize}
+Each specific objective is the measurable target that the corresponding study (\crefrange{sec:h1}{sec:h4}) sets out to meet; the headline metric and validation of each are summarised in \cref{tab:hypotheses}.
 
 A note on method, because it shaped everything that follows.
 The hard part of this project was engineering metrics that are football-true: that a non-technical staff member would recognise as describing a real on-pitch behaviour.
 We therefore worked iteratively, starting from a robust, feasible version of each metric, validating it against football knowledge and against a naive baseline, and only then refining it.
 Several design choices in this paper are the \emph{surviving} version of an idea that was tried, tested and changed.
 
-The research framework is structured around four primary hypotheses, summarised in \cref{tab:hypotheses}.
+Each specific objective is pursued as a testable hypothesis; the four are summarised in \cref{tab:hypotheses}.
 
 \begin{table}[H]
 \centering
@@ -138,7 +223,7 @@ H4 & Player Similarity &
 \subsection{Main Contributions}\label{sec:contributions}
 
 \begin{enumerate}
-    \item A contextual, team-bias-corrected scouting framework that grades players by EPV value, not event volume, and benchmarks every player within his macro-role rather than against the whole pitch.
+    \item A contextual, team-bias-adjusted scouting framework that grades players by EPV value, not event volume, and benchmarks every player within his macro-role rather than against the whole pitch.
     \item Four novel, independently validated metrics: Space Control, Decision Quality, Off-Ball Movement, and Player Similarity, built entirely from 360 freeze-frame spatial data.
     \item A \textbf{receiver resolver} that puts identities on the anonymous off-ball dots of a 360~frame, validated at 93\% accuracy against ground-truth pass recipients, which is what makes per-player off-ball rating possible at all.
     \item An interactive scouting platform (web dashboard) that presents the metric families side by side on a single player card, with within-role head-to-head comparison and a similarity-powered player search.
@@ -167,6 +252,59 @@ Putting names on those anonymous dots is a problem we solve explicitly (see \cre
 To read on-pitch performance against financial cost (the value-arbitrage angle of the business case), we scrape market values from Transfermarkt~\cite{transfermarkt} for the Euro~2024 participants.
 This is handled by a standalone scraper pipeline that runs in a fixed order (teams $\to$ team data $\to$ squad players $\to$ matches $\to$ player datasets) and updates incrementally: existing rows are never duplicated, existing non-empty values are preserved, and only missing values are filled when new data appears.
 It produces market value, transfer history, market-value history, national-career and absence datasets, used by the platform to set on-pitch contextual output against price.
+
+\subsection{Exploratory Data Analysis}\label{sec:eda}
+
+Before building any metric, we describe the raw data: its scale, how we filter the analysis pool from it, how it distributes across roles, and where it is incomplete. We compute all figures below directly from the committed player tables and frame data. This section covers only the shared raw data; the contextual variables this project actually studies (EPV, xPass, the within-role indices) are built later, so we describe and explore each one where it is defined, in \crefrange{sec:h1}{sec:h4}, with its distribution, typical values and leaderboards shown alongside its construction.
+
+\paragraph{Scale and on-ball volume.} Across the 51 matches, the event log holds \textbf{51{,}534} attempted passes by the 357 players who reach the 90-minute data-collection floor. Of these, \textbf{39{,}013} passes belong to the 272-player analysis pool and carry a usable 360~freeze frame; these are the passes every spatial metric reads. A share of on-ball events therefore has no spatial snapshot attached, and any metric that needs the frame uses only the passes that have one.
+
+\paragraph{Pool construction.} We filter the analysis pool in two stages, summarised in \cref{tab:eda-construction}. The raw collection keeps every player with at least 90~minutes (357~players). We then raise the bar to a 135-minute floor ($\approx 1.5$ matches) and remove the 28~goalkeepers (excluded for the reason given above). What remains is the 272-player pool we share across all four studies.
+
+\begin{table}[H]
+\centering
+\caption[Analysis-pool construction]{From the raw collection floor to the shared analysis pool.}\label{tab:eda-construction}
+\small
+\begin{tabularx}{\textwidth}{@{}Lr@{}}
+\toprule
+Stage & Players \\
+\midrule
+Raw collection floor ($\geq 90$~min, all positions) & 357 \\
+Remove goalkeepers & $-28$ \\
+Remove outfield players below the 135-minute analysis floor & $-57$ \\
+\midrule
+\textbf{Shared analysis pool} ($\geq 135$~min, outfield) & \textbf{272} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Role distribution.} We collapse StatsBomb's 23~fine positions into six macro-roles (\cref{sec:roles}); the resulting pool has more midfielders and defenders than attackers, and the six pools are uneven in size (\cref{tab:eda-roles}). The unevenness has a direct effect on the metrics: a within-role percentile in the 20-player CAM pool is a coarser rank than one in the 65-player MID pool, so we carry role-pool size as a declared limit (\cref{sec:limitations}).
+
+\begin{table}[H]
+\centering
+\caption[Macro-role distribution of the pool]{Macro-role distribution of the 272-player analysis pool.}\label{tab:eda-roles}
+\small
+\begin{tabularx}{\textwidth}{@{}Lrr@{}}
+\toprule
+Macro-role & Players & Share \\
+\midrule
+MID (central midfielder)        & 65 & 23.9\% \\
+CB (centre-back)                & 61 & 22.4\% \\
+FB (full-back)                  & 57 & 21.0\% \\
+WIDE (wide attacker)            & 37 & 13.6\% \\
+FW (forward)                    & 32 & 11.8\% \\
+CAM (attacking midfielder)      & 20 & \phantom{0}7.4\% \\
+\midrule
+\textbf{Total}                  & \textbf{272} & 100\% \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Minutes played.} Within the pool, minutes played run from the 135-minute floor to 691, with a median of 282 ($\approx$ three matches). Players near the floor have a noisier ranking, and on a 272-player board a noisy entry can also shift the players ranked next to it. Rather than raise the floor (which would drop group-stage players relevant to the tournament), we display the raw values and the sample size next to every headline, so a high percentile on few minutes can be discounted.
+
+\paragraph{Frame coverage and missing data.} Missingness here takes the form of \emph{partial frames} rather than blank cells: a 360~snapshot typically captures only the 8--12 players nearest the ball, so a fraction of each player's passes cannot be spatially analysed. Per player, the share of passes that carry a usable frame (\texttt{coverage\_pct}) has a median of \textbf{87.5\%} and ranges from \textbf{62.6\%} to \textbf{98.2\%}. Coverage is high but never total, and a player at the lower end ($\approx 63\%$) rests on a thinner spatial sample. The effect is larger for off-ball work, which is why the H3 resolver keeps only confident, ball-proximate identity assignments (\cref{sec:resolver}).
+
+\paragraph{Raw pass completion.} Before any contextual layer, the raw pass-completion rate across the pool spans \textbf{51\% to 97\%} (median 83\%). Part of this spread reflects how dominant a player's side is rather than the player's own quality: an easy ball in a possession-heavy team is completed more often than a hard one in a pressed side. This is the team-bias problem the project targets, and grading by value and ranking within role (\cref{sec:common}) is the response to it.
 
 \clearpage
 % ============================================================
@@ -256,6 +394,7 @@ We state the shared machinery in full here, then each study.
     \text{xPass} = P(\text{complete} \mid \text{sender, target, freeze frame}).
 \end{equation}
 It is a calibrated gradient-boosted model trained on 30,913 real open-play passes (27,901~completed, 3,012~failed), reaching AUC $\approx 0.92$ under match-grouped cross-validation.
+This is the same quantity studied by Anzer and Bauer~\cite{xpasspaper}; their model draws on continuous tracking data, whereas ours reads only the static freeze frame at the moment the pass starts, since that is what the 360~data provides.
 
 \subsubsection{The 12 Features}\label{sec:xpass-features}
 
@@ -314,7 +453,7 @@ The results are in \cref{tab:model-selection}.
 
 \begin{table}[H]
 \centering
-\caption{xPass model selection (5-fold \texttt{GroupKFold} on \texttt{match\_id}; mean over folds, lower is better for log-loss and Brier).}\label{tab:model-selection}
+\caption[xPass model selection]{xPass model selection (5-fold \texttt{GroupKFold} on \texttt{match\_id}; mean over folds, lower is better for log-loss and Brier).}\label{tab:model-selection}
 \small
 \begin{tabularx}{\textwidth}{@{}Lrrr@{}}
 \toprule
@@ -338,7 +477,7 @@ The global feature-importance ranking, visualised in \cref{fig:xpass-shap}, conf
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.85\textwidth]{images/xpass_shap.png}
-    \caption{SHAP bee-swarm plot showing feature impact on the xPass model output. Positive SHAP values indicate that a feature pushes the prediction towards completion, while negative values push towards failure. Features are ordered by global importance, with the distance to the receiver (\texttt{min\_dist\_def\_to\_receiver}) and pass distance being the strongest drivers.}\label{fig:xpass-shap}
+    \caption[xPass feature impact (SHAP bee-swarm)]{SHAP bee-swarm plot showing feature impact on the xPass model output. Positive SHAP values indicate that a feature pushes the prediction towards completion, while negative values push towards failure. Features are ordered by global importance, with the distance to the receiver (\texttt{min\_dist\_def\_to\_receiver}) and pass distance being the strongest drivers.}\label{fig:xpass-shap}
 \end{figure}
 
 \subsubsection{Calibration}\label{sec:calibration}
@@ -358,7 +497,7 @@ The raw model output is passed through a sigmoid calibrator and then clipped to 
 \end{equation}
 where $\text{EPV}(x, y)$ is read from the same fixed EPV grid used in H1 (\cref{sec:epv-action}), so a location is worth exactly the same here as in the space-control study.
 The first term is the \emph{reward}: the value at the target if the pass arrives.
-The second term is the mirrored failure cost, and the mirroring is the key idea.
+The second term is the mirrored failure cost, and this mirroring is deliberate.
 If possession is turned over at the target, the \emph{opponent} now attacks in the opposite direction; so the danger to us is the value of that point read from his side of the pitch.
 On a $105$\,m-long pitch, reflecting the $x$-coordinate to $105 - x$ flips the location onto the opponent's attacking frame (the $y$-coordinate is unchanged, because only the attacking direction reverses, not the side of the pitch).
 A turnover deep in the opponent's half therefore costs little (the mirrored point $105 - x$ is then near \emph{our} goal-line, a low-EPV zone for him), while a turnover in our own build-up is punished heavily.
@@ -397,7 +536,7 @@ Twelve columns by eight rows is fine enough to localise an action to a meaningfu
 
 \subsubsection{EPV on Every Action}\label{sec:epv-action}
 
-Each open-play pass is assigned an EPV value at its start and end location, read from a fixed EPV grid (a $32 \times 50$ lookup from Friends-of-Tracking-Data~\cite{epv}, values ranging from ${\sim}0.004$ in the own goal area to ${\sim}0.57$ near the opponent goal) by bilinear interpolation (so value varies smoothly across the pitch rather than jumping between grid cells).
+Each open-play pass is assigned an EPV value at its start and end location, read from a fixed EPV grid (a $32 \times 50$ lookup adapted from Friends-of-Tracking-Data~\cite{epv}, values ranging from ${\sim}0.004$ in the own goal area to ${\sim}0.57$ near the opponent goal) by bilinear interpolation (so value varies smoothly across the pitch rather than jumping between grid cells).
 The EPV added by a pass is the increase in scoring probability from its origin to its destination:
 \begin{equation}\label{eq:epv-added}
     \text{EPV}_{\text{added}} = \text{EPV}(x_{\text{end}}, y_{\text{end}}) - \text{EPV}(x_{\text{start}}, y_{\text{start}}).
@@ -481,7 +620,7 @@ A centre-back who never receives inside the opposing hull has no \texttt{pressur
 These are structural missing values; they arise because the player's role naturally excludes certain geometric situations, not because of data error.
 When a mother variable is NaN for a given player, that variable is excluded from his percentile average and the composite is computed over the remaining variables.
 This is the correct treatment: imputing a value (e.g.\ zero or median) would inject false signal, while dropping the player entirely would discard a valid profile on the axes that \emph{are} observed.
-One structural regularity serves as a pipeline sanity check: the fourth EPV sub-component, \texttt{epv\_outside\_circ}, has zero NaN\,s across the 272-player pool, because every outfield player in open play makes at least one pass that both starts and ends outside the opponent hull. Indeed, outside-block circulation is the universal baseline of possession football.
+One structural regularity serves as a pipeline sanity check: the fourth EPV sub-component, \texttt{epv\_outside\_circ}, has zero NaN\,s across the 272-player pool, because every outfield player in open play makes at least one pass that both starts and ends outside the opponent hull. Outside-block circulation is the baseline of possession football, so this component is never empty.
 
 \subsubsection{Progression: Volume of Forward Play}\label{sec:progression}
 
@@ -541,14 +680,14 @@ Gravity measures the \emph{union} of these pulling behaviours, not a single cohe
 
 \subsection{Validation}\label{sec:h1-validation}
 
-\subsubsection{Internal Consistency (Cronbach's $\alpha$)}\label{sec:cronbach}
+\subsubsection[Internal Consistency (Cronbach's alpha)]{Internal Consistency (Cronbach's $\alpha$)}\label{sec:cronbach}
 
-Cronbach's~$\alpha$ asks whether the mother variables of a composite move together (whether they measure ``one thing'').
-We report it per index in \cref{tab:alpha}, but crucially we interpret it differently depending on what the index is meant to be.
+Cronbach's~$\alpha$~\cite{cronbach} asks whether the mother variables of a composite move together (whether they measure ``one thing'').
+We report it per index in \cref{tab:alpha}, but we interpret it differently depending on what the index is meant to be.
 
 \begin{table}[H]
 \centering
-\caption{Internal consistency (Cronbach's $\alpha$, averaged over the 6 roles).}\label{tab:alpha}
+\caption[Internal consistency (Cronbach's alpha)]{Internal consistency (Cronbach's $\alpha$, averaged over the 6 roles).}\label{tab:alpha}
 \small
 \begin{tabularx}{\textwidth}{@{}lrL@{}}
 \toprule
@@ -638,7 +777,7 @@ A separate read on a famous name shows the value of the four-index profile. Josh
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.9\textwidth]{images/h1_radar_kimmich.png}
-    \caption{The H1 four-index card for Joshua Kimmich (Germany, FB), one panel per index. Each panel is a within-role percentile radar over that index's mother variables, and the headline percentile sits in the panel title (Progression 83, Dangerousness 96, Reception 72, Gravity 57). Read together the four panels make the point a single rating cannot: Kimmich is elite going forward but only mid-pool on the gravitational pull he exerts inside the full-back role.}\label{fig:h1-radar}
+    \caption[H1 four-index card (Kimmich)]{The H1 four-index card for Joshua Kimmich (Germany, FB), one panel per index. Each panel is a within-role percentile radar over that index's mother variables, and the headline percentile sits in the panel title (Progression 83, Dangerousness 96, Reception 72, Gravity 57). Read together the four panels make the point a single rating cannot: Kimmich is elite going forward but only mid-pool on the gravitational pull he exerts inside the full-back role.}\label{fig:h1-radar}
 \end{figure}
 
 \paragraph{Scouting discoveries: three faces of the test.}
@@ -651,7 +790,7 @@ This visualises exactly how the Progression index filters out the volume bias an
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.92\textwidth]{images/linebreaking_pass_1.png}
-    \caption{Visualisation of a clean line-breaking pass by Bendeg\'{u}z Bolla (Hungary, FB) during Euro 2024. Bolla (blue circle at the top-right) plays a diagonal pass that bypasses three opponents inside the opposing defensive block's convex hull (shaded red region). The pass generates an EPV added of $0.0766$, far exceeding the Full-Back role-specific threshold of $0.0061$ for quality line-breakers.}\label{fig:bolla-linebreaker}
+    \caption[Clean line-breaking pass (Bolla)]{Visualisation of a clean line-breaking pass by Bendeg\'{u}z Bolla (Hungary, FB) during Euro 2024. Bolla (blue circle at the top-right) plays a diagonal pass that bypasses three opponents inside the opposing defensive block's convex hull (shaded red region). The pass generates an EPV added of $0.0766$, far exceeding the Full-Back role-specific threshold of $0.0061$ for quality line-breakers.}\label{fig:bolla-linebreaker}
 \end{figure}
 
 Tom\'{a}\v{s} Sou\v{c}ek (Czech Republic, MID) shows the same phenomenon on threat rather than progression: he is in the 3rd percentile of midfielders by passes\,/\,90 but the 83rd by EPV created, representing one of the largest Dangerousness gains in the pool ($\Delta = +80$). He has almost no passing volume, yet every involvement moves the value needle.
@@ -661,13 +800,13 @@ Two players the volume ranking buries and one it inflates: exactly the re-orderi
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth,height=0.6\textheight,keepaspectratio]{images/scouting_discoveries.png}
-    \caption{Scouting discoveries and naive overrating (see also \cref{fig:naive-overrating}). One panel per index. Each bar is a player's $\Delta$~percentile $=$ contextual index $-$ naive proxy, computed within his macro-role and coloured by role; the naive proxy is passes\,/\,90 for Progression and Dangerousness, between-lines\,\% for Reception, and gravity-proximity\,\% for Gravity. The discoveries figure shows the twelve largest positive~$\Delta$ per index, representing players a naive ranking buries but the contextual index lifts (Bolla heads Progression at $+66$, Sou\v{c}ek Dangerousness at $+80$, and G\"{u}ler Reception at $+60$).}\label{fig:scouting-discoveries}
+    \caption[Scouting discoveries (contextual vs.\ naive)]{Scouting discoveries and naive overrating (see also \cref{fig:naive-overrating}). One panel per index. Each bar is a player's $\Delta$~percentile $=$ contextual index $-$ naive proxy, computed within his macro-role and coloured by role; the naive proxy is passes\,/\,90 for Progression and Dangerousness, between-lines\,\% for Reception, and gravity-proximity\,\% for Gravity. The discoveries figure shows the twelve largest positive~$\Delta$ per index, representing players a naive ranking buries but the contextual index lifts (Bolla heads Progression at $+66$, Sou\v{c}ek Dangerousness at $+80$, and G\"{u}ler Reception at $+60$).}\label{fig:scouting-discoveries}
 \end{figure}
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.95\textwidth]{images/naive_overrating.png}
-    \caption{Naive overrating: the mirror of \cref{fig:scouting-discoveries}. The twelve largest negative~$\Delta$ per index, showing players whose naive (volume-based) rank is inflated by team context but whose contextual contribution is lower (such as Foden at $-78$ on Dangerousness). Together the two figures represent the visual form of the \cref{sec:ctx-vs-naive} headline test: the table shows how many players move and by how much, while the figures specify which players and in which direction.}\label{fig:naive-overrating}
+    \caption[Naive overrating per index]{Naive overrating: the mirror of \cref{fig:scouting-discoveries}. The twelve largest negative~$\Delta$ per index, showing players whose naive (volume-based) rank is inflated by team context but whose contextual contribution is lower (such as Foden at $-78$ on Dangerousness). Together the two figures represent the visual form of the \cref{sec:ctx-vs-naive} headline test: the table shows how many players move and by how much, while the figures specify which players and in which direction.}\label{fig:naive-overrating}
 \end{figure}
 
 \clearpage
@@ -716,7 +855,7 @@ It is built in two steps:
 \end{enumerate}
 
 What the index measures, stated precisely: it grades the chosen pass against the menu of options the frame actually offered, not against an absolute notion of the perfect pass.
-It is context-normalised by construction: the comparison lives inside each event, so the pitch-zone value level cancels. Furthermore, it is bounded and interpretable on a single scale.
+It is context-normalised by construction: the comparison lives inside each event, so the pitch-zone value level cancels. It is also bounded and easy to read on a single scale.
 
 That there is real signal to grade is an empirical fact, not an assumption: across the events with at least two alternatives, the chosen pass is the single highest-xEPV option only 15.2\% of the time, so players take the value-optimal in-frame pass barely one time in seven. If they always picked the optimum the index would be flat and useless; the spread of how \emph{often} a player chooses near the top of his available menu is exactly what the Score, and the DQ percentile built on it, capture.
 
@@ -733,12 +872,12 @@ As plotted in \cref{fig:dq-vs-value-impact}, Value Impact correlates with the DQ
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.9\textwidth]{images/dq_vs_value_impact.png}
-    \caption{Scatter plot of DQ Index (within-role percentile) against Value Impact (mean net value added vs.\ alternatives) grouped and coloured by macro role. The two metrics are strongly correlated ($\rho \approx 0.76$) by construction, showing that high relative choice accuracy translates directly to higher quantitative expected possession value.}\label{fig:dq-vs-value-impact}
+    \caption[DQ Index vs.\ Value Impact]{Scatter plot of DQ Index (within-role percentile) against Value Impact (mean net value added vs.\ alternatives) grouped and coloured by macro role. The two metrics are strongly correlated ($\rho \approx 0.76$) by construction, showing that high relative choice accuracy translates directly to higher quantitative expected possession value.}\label{fig:dq-vs-value-impact}
 \end{figure}
 
 \subsection{Worked Example}\label{sec:dq-example}
 
-The same Kroos event (Germany vs.\ Scotland, minute~16) is shown twice: first, the eight in-frame candidates coloured by \textbf{xPass}; then the same eight coloured by \textbf{xEPV}, showing how the ranking changes.
+The same Kroos event (Germany vs.\ Scotland, minute~16) is shown twice in \cref{fig:kroos-frame}: first, the eight in-frame candidates coloured by \textbf{xPass}; then the same eight coloured by \textbf{xEPV}, showing how the ranking changes.
 A medium-probability candidate in an advanced zone can beat a near-certain pass in a low-value zone, because xEPV multiplies probability by destination value and subtracts the mirrored failure cost.
 In this frame Kroos picks the candidate with chosen xPass $= 0.68$ (ranked 4th of 8 on completion probability), which carries xEPV $= +0.63$ (ranked 4th of 8 on value).
 The best alternative on xEPV is at $+1.26$, a more vertical option Kroos did not take.
@@ -756,7 +895,7 @@ The best alternative on xEPV is at $+1.26$, a more vertical option Kroos did not
         \includegraphics[width=\textwidth]{images/xepv_example.png}
         \caption{Same candidates coloured by xEPV.}
     \end{subfigure}
-    \caption{The Kroos frame (Germany vs.\ Scotland, min~16): xPass vs.\ xEPV ranking reversal.  On the left the eight in-frame candidates are coloured by completion probability (red~=~low, blue~=~high); on the right the same candidates are coloured by xEPV (red~=~negative net value, green~=~positive).  The ranking changes because xEPV multiplies probability by destination value and subtracts the mirrored failure cost.}\label{fig:kroos-frame}
+    \caption[The Kroos frame: xPass vs.\ xEPV reversal]{The Kroos frame (Germany vs.\ Scotland, min~16): xPass vs.\ xEPV ranking reversal.  On the left the eight in-frame candidates are coloured by completion probability (red~=~low, blue~=~high); on the right the same candidates are coloured by xEPV (red~=~negative net value, green~=~positive).  The ranking changes because xEPV multiplies probability by destination value and subtracts the mirrored failure cost.}\label{fig:kroos-frame}
 \end{figure}
 
 \subsection{The 4-Axis Radar}\label{sec:dq-radar}
@@ -768,13 +907,13 @@ The DQ card mirrors the H1 family pattern: a magnitude headline (DQ index) next 
     \item Elite reads\,/\,90: volume of top-decile decisions per 90.
     \item Avoids poor\,/\,90: volume of bottom-decile decisions per 90, mirrored.
 \end{itemize}
-These four split the single Score into the two things a scout actually wants separated: how good the picks are (accuracy and avoid-worst rates) and how often they happen (elite\,/\,90 and avoid-poor\,/\,90 volumes).
+These four split the single Score into the two things a scout actually wants separated: how good the picks are (accuracy and avoid-worst rates) and how often they happen (elite\,/\,90 and avoid-poor\,/\,90 volumes); \cref{fig:dq-radar} shows the radar for Toni Kroos as a worked example.
 A core-stats table under the radar exposes the raw scout-facing values (Score, Value Impact, the four radar sources in raw units, average miss cost, and the number of decisions with minutes), so low-sample profiles can be discounted. (The ``average miss cost'' is the mean xEPV left on the table \emph{on the events that were sub-optimal}, representing the severity of a mistake, separate from its frequency.)
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\textwidth]{images/dq_radar_example.png}
-    \caption{Toni Kroos DQ radar.  Kroos sits at the 88th~percentile among MIDs on 379 decision events over 485~minutes.  The radar reads as the metronome profile: high Elite reads\,/\,90 (volume of top-decile picks), strong Avoids-the-worst (rarely the value-bottom alternative), solid Picks-the-best, more modest Avoids-poor\,/\,90 because the per-90 rate of bottom-decile decisions also carries his involvement volume.}\label{fig:dq-radar}
+    \caption[Toni Kroos DQ radar]{Toni Kroos DQ radar.  Kroos sits at the 88th~percentile among MIDs on 379 decision events over 485~minutes.  The radar reads as the metronome profile: high Elite reads\,/\,90 (volume of top-decile picks), strong Avoids-the-worst (rarely the value-bottom alternative), solid Picks-the-best, more modest Avoids-poor\,/\,90 because the per-90 rate of bottom-decile decisions also carries his involvement volume.}\label{fig:dq-radar}
 \end{figure}
 
 \subsection{Validation}\label{sec:h2-validation}
@@ -872,7 +1011,7 @@ We are honest about one dependency: Off-Ball Potential correlates with the URS h
 \paragraph{Declared dependency: conditional on teammate execution.}
 URS carries a structural interpretation constraint that we state plainly: it is conditional on teammate execution.
 A candidate counts toward URS only when the run is not served. Whether a run is served depends partly on the ball-carrier (their vision and execution) and not on the off-ball player alone.
-Crucially, the constraint does not spread evenly across the metric:
+This constraint does not spread evenly across the metric:
 \begin{itemize}
     \item \textbf{Off-Ball Potential} is the player-only half: it depends on where he moves and the danger of the space he occupies, not on whether anyone serves him.
     \item \textbf{Latency} is the half where teammate execution enters.
@@ -906,7 +1045,7 @@ There is no ground truth for off-ball runs, but there is ground truth for comple
 So we validate where truth exists and carry the result over: we hide the recipient, let the resolver predict which dot is the receiver, and check it against the real name.
 On the open-play universe the metric runs on, the bracket resolver reaches 93.2\% accuracy on the confident assignments it keeps, far above the ${\sim}74\%$ of the naive last-known-position baseline.
 
-This number is not just descriptive; it is a decision gate. The accuracy sets the granularity at which H3 is allowed to report: if accuracy-on-confident clears an 85\% bar, the resolver is trusted to name individual dots and H3 reports a per-player URS ranking (``Tier~1''); below that bar it would fall back to coarser zone- and role-level aggregates (``Tier~2''), where a wrong identity does less damage. At 93.2\% the bar is cleared comfortably, which is what licenses the per-player leaderboards in the rest of this section.
+This number is more than descriptive: it is a decision gate. The accuracy sets the granularity at which H3 is allowed to report: if accuracy-on-confident clears an 85\% bar, the resolver is trusted to name individual dots and H3 reports a per-player URS ranking (``Tier~1''); below that bar it would fall back to coarser zone- and role-level aggregates (``Tier~2''), where a wrong identity does less damage. At 93.2\% the bar is cleared comfortably, which is what licenses the per-player leaderboards in the rest of this section.
 
 \subsubsection{Parameter Sweeps}\label{sec:sweeps}
 
@@ -927,7 +1066,7 @@ A player's URS over the opening matches predicts his URS over the closing ones, 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.85\textwidth]{images/urs_split_half.png}
-    \caption{Split-half reliability of the Uncapitalised Run Score (URS\,/\,90) across Euro 2024. The 51 matches were split chronologically (first 25 vs.\ last 26), and player rankings were compared for the $n=117$ players who played at least 90 minutes in both halves. The high Spearman correlation ($\rho \approx 0.72$) confirms the index captures a stable on-pitch signal rather than random variation.}\label{fig:urs-split-half}
+    \caption[URS split-half reliability]{Split-half reliability of the Uncapitalised Run Score (URS\,/\,90) across Euro 2024. The 51 matches were split chronologically (first 25 vs.\ last 26), and player rankings were compared for the $n=117$ players who played at least 90 minutes in both halves. The high Spearman correlation ($\rho \approx 0.72$) confirms the index captures a stable on-pitch signal rather than random variation.}\label{fig:urs-split-half}
 \end{figure}
 
 \paragraph{Axis independence.}
@@ -960,7 +1099,7 @@ Behind him Jorginho ($1.41$), Hjulmand ($1.08$) and Modri\'{c} ($0.92$) are the 
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{images/uncapitalised_runs_pedri.png}
-    \caption{Visual proof of the Uncapitalised Run Score: Pedri's four highest-URS off-ball moments at Euro 2024. In each frame Pedri (green) occupies dangerous space relative to the opponent block (red convex hull); the ball-carrier (cyan, with the yellow arrow showing the pass he actually played) has him available but serves a different option, so the run is not capitalised. Each panel's xEPV is the net value the unserved pass would have carried; the URS is the sum of these missed values per 90 minutes.}\label{fig:uncap-pedri}
+    \caption[URS visual proof (Pedri)]{Visual proof of the Uncapitalised Run Score: Pedri's four highest-URS off-ball moments at Euro 2024. In each frame Pedri (green) occupies dangerous space relative to the opponent block (red convex hull); the ball-carrier (cyan, with the yellow arrow showing the pass he actually played) has him available but serves a different option, so the run is not capitalised. Each panel's xEPV is the net value the unserved pass would have carried; the URS is the sum of these missed values per 90 minutes.}\label{fig:uncap-pedri}
 \end{figure}
 
 \paragraph{Why the absolute board is midfield-heavy.}
@@ -973,7 +1112,7 @@ The absolute leaderboard is dominated by midfielders.  This is not a quirk but a
 All three effects compound and concentrate URS\,/\,90 in the MID role.  The reading position by position is therefore the honest one, comparing a forward against a forward, a centre-back against a centre-back.
 
 \paragraph{Within-role tops: where football already expects them.}
-The role pools surface the right archetypes (none need the index to be recognised, which is itself a face-validity check):
+The role pools surface the right archetypes (\cref{fig:within-role-top5}; none need the index to be recognised, which is itself a face-validity check):
 \begin{itemize}
     \item CB: Tah, R\"{u}diger, Calafiori, R\'{u}ben Dias, Bastoni: the ball-playing centre-backs who step out and offer a forward option.
     \item FB: Kimmich, Dalot, Mittelst\"{a}dt, Di Lorenzo, Trippier: the attacking full-backs.
@@ -986,31 +1125,31 @@ The role pools surface the right archetypes (none need the index to be recognise
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{images/within_role_top5.png}
-    \caption{Within-role top-5 by URS\,/\,90.  Each bar shows the URS\,/\,90 value for the top-5 players inside each macro-role, confirming that the right archetypes surface in every role pool: ball-playing CBs, attacking FBs, creative midfielders, between-the-lines tens, inside-drifting wingers, and dropping forwards.}\label{fig:within-role-top5}
+    \caption[Within-role top-5 by URS\,/\,90]{Within-role top-5 by URS\,/\,90.  Each bar shows the URS\,/\,90 value for the top-5 players inside each macro-role, confirming that the right archetypes surface in every role pool: ball-playing CBs, attacking FBs, creative midfielders, between-the-lines tens, inside-drifting wingers, and dropping forwards.}\label{fig:within-role-top5}
 \end{figure}
 
 \paragraph{Trusted threat vs.\ shadow runner.}
 The cleanest illustration is Pedri against Kroos.
 Both are near the top on Off-Ball Potential, so on the volume axis they look alike.
 The difference is Latency: Pedri is served on 16\% of the value he offers, Kroos on 50\%.
-Same exposure, opposite outcome: one a threat his team keeps missing, the other a threat his team uses.
+Same exposure, opposite outcome: one a threat his team keeps missing, the other a threat his team uses (\cref{fig:h2h}). Pedri's own off-ball radar (\cref{fig:offball-pedri}) shows the extreme shadow-runner fingerprint in isolation, and the archetype map (\cref{fig:archetype-map}) places the whole pool on the Potential--Latency plane, with Pedri alone in the high-exposure, high-latency corner.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth,height=0.82\textheight,keepaspectratio]{images/h2h_pedri_kroos.png}
-    \caption{Pedri vs.\ Kroos head-to-head radar.  Both polygons overlap on Off-Ball Potential (volume axis) but pull apart on Latency: Pedri is served on only 16\% of his offered value (high latency, polygon stretched to the edge), Kroos on 50\% (lower latency, polygon pulled inward).  Same exposure, opposite team outcome.}\label{fig:h2h}
+    \caption[Pedri vs.\ Kroos head-to-head]{Pedri vs.\ Kroos head-to-head radar.  Both polygons overlap on Off-Ball Potential (volume axis) but pull apart on Latency: Pedri is served on only 16\% of his offered value (high latency, polygon stretched to the edge), Kroos on 50\% (lower latency, polygon pulled inward).  Same exposure, opposite team outcome.}\label{fig:h2h}
 \end{figure}
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth,height=0.78\textheight,keepaspectratio]{images/offball_radar_pedri.png}
-    \caption{Pedri's off-ball radar.  He sits at the 100th~percentile of CAMs: maximum Off-Ball Potential, near-maximum xEPV mean, and the highest Latency of his role.  The shape is the extreme shadow-runner fingerprint, representing a player who exposes more dangerous space than anyone and is served on barely 16\% of it.}\label{fig:offball-pedri}
+    \caption[Pedri off-ball radar]{Pedri's off-ball radar.  He sits at the 100th~percentile of CAMs: maximum Off-Ball Potential, near-maximum xEPV mean, and the highest Latency of his role.  The shape is the extreme shadow-runner fingerprint, representing a player who exposes more dangerous space than anyone and is served on barely 16\% of it.}\label{fig:offball-pedri}
 \end{figure}
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth,height=0.78\textheight,keepaspectratio]{images/archetype_map.png}
-    \caption{Archetype map: Off-Ball Potential vs.\ Latency. Each point is a player, colour encodes macro-role. The product $\text{Potential} \times \text{Latency}$ gives URS\,/\,90 directly; iso-URS curves are drawn as reference hyperbolas. Pedri sits alone in the top-right corner (high Potential, high Latency, representing the shadow runner); Jorginho, Hjulmand and Modri\'{c} form the next cluster at middling Latency near 0.55; most players live below Potential $1.0$ with Latency in a narrow band, so the axis that moves a player out of the pack is exposure, not capitalisation.}\label{fig:archetype-map}
+    \caption[Off-ball archetype map]{Archetype map: Off-Ball Potential vs.\ Latency. Each point is a player, colour encodes macro-role. The product $\text{Potential} \times \text{Latency}$ gives URS\,/\,90 directly; iso-URS curves are drawn as reference hyperbolas. Pedri sits alone in the top-right corner (high Potential, high Latency, representing the shadow runner); Jorginho, Hjulmand and Modri\'{c} form the next cluster at middling Latency near 0.55; most players live below Potential $1.0$ with Latency in a narrow band, so the axis that moves a player out of the pack is exposure, not capitalisation.}\label{fig:archetype-map}
 \end{figure}
 
 \clearpage
@@ -1018,10 +1157,10 @@ Same exposure, opposite outcome: one a threat his team keeps missing, the other 
 \section{H4: Player Similarity}\label{sec:h4}
 % ============================================================
 
-H1, H2 and H3 each rate a player; together they leave him described by a rich, team-bias-corrected feature vector. H4 stops rating and starts \emph{comparing}: it uses that vector to ask which players resemble each other.
+H1, H2 and H3 each rate a player; together they leave him described by a rich, team-bias-adjusted feature vector. H4 stops rating and starts \emph{comparing}: it uses that vector to ask which players resemble each other.
 
 \textbf{Hypothesis~4.}
-With the three contextual metrics now in place, a player is already represented as a rich, team-bias-corrected feature vector.
+With the three contextual metrics now in place, a player is already represented as a rich, team-bias-adjusted feature vector.
 H4 compares players by their intrinsic ``spatial DNA'' and behavioural playing style, rather than by nominal positional label, and powers a within-role similarity model that surfaces cost-effective alternatives with comparable tactical intelligence to premium assets.
 This is the direct realisation of the value-arbitrage business case stated in \cref{sec:business}.
 
@@ -1059,26 +1198,26 @@ Four checks confirm the similarity reads style rather than an artefact of the ro
     \item \textbf{Axes are not double-counting.} The within-role $|$Spearman$|$ matrix of the eleven axes peaks at $0.66$ (Avoids-poor\,/\,90 vs.\ Off-Ball Potential) with most pairs far lower; the few that stand out are football-sensible (a player who avoids poor decisions and reads space well tends to have high off-ball potential). None is high enough to be redundant, so all eleven are kept and the overlap is flagged, the same approach H2 and H3 apply to their own radars.
     \item \textbf{Style, not team.} Only $10.3\%$ of nearest matches are teammates; were the metric reading ``same side'' this share would be high.
     \item \textbf{No single axis carries it.} Dropping each axis in turn and re-checking the top-5 matches, the matches survive $83.5\%$ of the time. (The leaner 6-axis alternative, one number per headline concept, drops to $72.8\%$ and pairs players who reach the same overall level in very different ways, which is why the full 11-axis DNA is kept.)
-    \item \textbf{It separates players.} Best-match scores spread properly (median $79$, range $65$--$88$): $14$~players have a strong stylistic twin ($>85$) while $47$ are more one-of-a-kind ($<75$), exactly the shape a discriminating metric should produce.
+    \item \textbf{It separates players.} Best-match scores spread properly (median $79$, range $65$--$88$): $14$~players have a strong stylistic twin ($>85$) while $47$ are more one-of-a-kind ($<75$), exactly the shape a discriminating metric should produce. \Cref{fig:h4-top-pairs} shows the strongest within-role pairs in the pool.
 \end{enumerate}
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.92\textwidth]{images/top_pairs.png}
-    \caption{The strongest within-role pairs in the pool, coloured by macro-role.  The scores top out near $88$ rather than at $100$, because two real footballers are never identical: a fixed maximum distance keeps the score absolute and comparable across pairs.  Every top pair is football-sensible (ball-playing centre-backs, attacking full-backs, elite wide dribblers), a direct face-validity check on the similarity metric.}\label{fig:h4-top-pairs}
+    \caption[Strongest within-role pairs]{The strongest within-role pairs in the pool, coloured by macro-role.  The scores top out near $88$ rather than at $100$, because two real footballers are never identical: a fixed maximum distance keeps the score absolute and comparable across pairs.  Every top pair is football-sensible (ball-playing centre-backs, attacking full-backs, elite wide dribblers), a direct face-validity check on the similarity metric.}\label{fig:h4-top-pairs}
 \end{figure}
 
 \subsection{Key Findings}\label{sec:h4-findings}
 
 Each player's neighbour list reads as his stylistic family rather than merely his position.
 Rodri (Spain, MID) sits next to other deep, controlling midfielders (Jorginho, Hjulmand, Kova\v{c}i\'{c}, Xhaka); Toni Kroos next to the metronomic passers (Tchou\'{a}meni, Zubimendi, Vitinha); Pedri and Bellingham next to the creative eights/tens (K\"{o}k\c{c}\"{u}, Eriksen, De Bruyne, G\"{u}ndoğan); R\"{u}diger and Bastoni next to the ball-playing centre-backs (Tah, Laporte, Andersen); Lamine Yamal next to the elite wide dribblers (Saka, Le\~{a}o, Williams, Dembélé).
-The strongest pairs in the pool are all sensible (John Stones~$\leftrightarrow$~Marc Gu\'{e}hi at $87.7$, Kyle Walker~$\leftrightarrow$~Di Lorenzo at $87.2$, Lamine Yamal~$\leftrightarrow$~Saka at $86.8$).
+The strongest pairs in the pool are all sensible (John Stones~$\leftrightarrow$~Marc Gu\'{e}hi at $87.7$, Kyle Walker~$\leftrightarrow$~Di Lorenzo at $87.2$, Lamine Yamal~$\leftrightarrow$~Saka at $86.8$); \cref{fig:h4-dna-overlay} overlays the closest pair in each role, whose DNA polygons sit almost on top of each other.
 On the value-arbitrage query, the cheaper look-alikes of Rodri (pre-Euro EUR\,120M) include Jorginho (similarity $82$, EUR\,12M), Granit Xhaka ($78$, EUR\,20M) and Morten Hjulmand ($81$, EUR\,40M), exactly the deep-lying alternatives a club could sign for a fraction of the price.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{images/dna_overlay_by_role.png}
-    \caption{DNA overlays: the closest stylistic pair in each macro-role, each player's 11-axis DNA drawn on the same radar.  The two polygons sit almost on top of each other, which is what a high similarity score looks like: the metric pairs John Stones with Marc Gu\'{e}hi (CB), Kyle Walker with Di Lorenzo (FB), Lamine Yamal with Saka (WIDE), and so on, recovering each player's stylistic family rather than merely his position.}\label{fig:h4-dna-overlay}
+    \caption[DNA overlays: closest pair per role]{DNA overlays: the closest stylistic pair in each macro-role, each player's 11-axis DNA drawn on the same radar.  The two polygons sit almost on top of each other, which is what a high similarity score looks like: the metric pairs John Stones with Marc Gu\'{e}hi (CB), Kyle Walker with Di Lorenzo (FB), Lamine Yamal with Saka (WIDE), and so on, recovering each player's stylistic family rather than merely his position.}\label{fig:h4-dna-overlay}
 \end{figure}
 
 \subsection{Integration with the Platform}\label{sec:h4-platform}
@@ -1232,97 +1371,103 @@ The four metrics are unified in an interactive scouting dashboard that lets a sc
 The framework is built to be honest about its own limits, and each sets up a clear next step: game-state-aware value models, cross-tournament validation, defensive off-ball value, richer cross-league similarity, and AI-generated scouting reports.
 
 % ============================================================
+% ACKNOWLEDGEMENTS
+% ============================================================
+\clearpage
+\section*{Acknowledgements}
+\addcontentsline{toc}{section}{Acknowledgements}
+
+We are grateful to our project advisor, Pol Mar\'{\i}n, for his guidance and feedback throughout the development of this work. His input on the framing of the decision-quality metric, the off-ball movement study and the player-similarity approach helped shape the final form of the four studies.
+
+% ============================================================
 % REFERENCES
 % ============================================================
 
 \clearpage
-\begin{thebibliography}{9}
+\begin{thebibliography}{99}
 \sloppy
 
-\bibitem{statsbomb}
-StatsBomb.
-\emph{StatsBomb Open Data}.
-UEFA Euro 2024 (\texttt{competition\_id\,=\,55}, \texttt{season\_id\,=\,282}), 51 matches.
-\url{https://github.com/statsbomb/open-data}
+\bibitem{xpasspaper}
+Anzer, G., \& Bauer, P. (2022).
+Expected passes: Determining the difficulty of a pass in football (soccer) using spatio-temporal data.
+\emph{Data Mining and Knowledge Discovery}, \emph{36}(1), 295--317.
+\url{https://doi.org/10.1007/s10618-021-00810-3}
 
-\bibitem{epv}
-Friends of Tracking.
-\emph{Expected Possession Value (EPV) grid and tutorials}.
-\url{https://github.com/Friends-of-Tracking-Data-FoTD}.
-
-\bibitem{transfermarkt}
-Transfermarkt.
-\emph{Market values for UEFA Euro 2024 participants}.
-Scraped via the project's own incremental pipeline.
-
-\bibitem{hungarian}
-Kuhn, H.\,W.
-\emph{The Hungarian method for the assignment problem}.
-Naval Research Logistics Quarterly, 2(1--2):83--97, 1955.
-
-\bibitem{shap}
-Lundberg, S.\,M.\ and Lee, S.-I.
-\emph{A Unified Approach to Interpreting Model Predictions}.
-Advances in Neural Information Processing Systems, 30, 2017.
-
-\bibitem{xt}
-Singh, K.
-\emph{Introducing Expected Threat (xT)}.
-2019. \url{https://karun.in/blog/expected-threat.html}
-
-\bibitem{pitchcontrol}
-Spearman, W.
-\emph{Beyond Expected Goals}.
-MIT Sloan Sports Analytics Conference, 2018.
+\bibitem{cronbach}
+Cronbach, L.\,J. (1951).
+Coefficient alpha and the internal structure of tests.
+\emph{Psychometrika}, \emph{16}(3), 297--334.
+\url{https://doi.org/10.1007/BF02310555}
 
 \bibitem{vaep}
-Decroos, T., Bransen, L., Van Haaren, J., and Davis, J.
-\emph{Actions Speak Louder than Goals: Valuing Player Actions in Soccer (VAEP)}.
-ACM SIGKDD International Conference on Knowledge Discovery \& Data Mining, 2019.
+Decroos, T., Bransen, L., Van Haaren, J., \& Davis, J. (2019).
+Actions speak louder than goals: Valuing player actions in soccer.
+In \emph{Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery \& Data Mining} (pp.\ 1851--1861). ACM.
+\url{https://doi.org/10.1145/3292500.3330758}
+
+\bibitem{availability}
+Dick, U., Link, D., \& Brefeld, U. (2022).
+Who can receive the pass? A computational model for quantifying availability in soccer.
+\emph{Data Mining and Knowledge Discovery}, \emph{36}(3), 987--1014.
+\url{https://doi.org/10.1007/s10618-022-00827-2}
+
+\bibitem{wideopenspaces}
+Fern\'{a}ndez, J., \& Bornn, L. (2018).
+Wide open spaces: A statistical technique for measuring space creation in professional soccer.
+In \emph{12th MIT Sloan Sports Analytics Conference}.
+
+\bibitem{epvframework}
+Fern\'{a}ndez, J., Bornn, L., \& Cervone, D. (2021).
+A framework for the fine-grained evaluation of the instantaneous expected value of soccer possessions.
+\emph{Machine Learning}, \emph{110}(6), 1389--1427.
+\url{https://doi.org/10.1007/s10994-021-05989-6}
+
+\bibitem{hungarian}
+Kuhn, H.\,W. (1955).
+The Hungarian method for the assignment problem.
+\emph{Naval Research Logistics Quarterly}, \emph{2}(1--2), 83--97.
+\url{https://doi.org/10.1002/nav.3800020109}
+
+\bibitem{shap}
+Lundberg, S.\,M., \& Lee, S.-I. (2017).
+A unified approach to interpreting model predictions.
+In \emph{Advances in Neural Information Processing Systems} (Vol.\ 30, pp.\ 4765--4774). Curran Associates.
 
 \bibitem{packing}
-Reinartz, S.\ and Hegeler, J.
-\emph{Packing: a metric for defenders bypassed by a pass}.
-IMPECT GmbH.
+Rein, R., Raabe, D., \& Memmert, D. (2017).
+``Which pass is better?'' Novel approaches to assess passing effectiveness in elite soccer.
+\emph{Human Movement Science}, \emph{55}, 172--181.
+\url{https://doi.org/10.1016/j.humov.2017.07.010}
+
+\bibitem{epv}
+Shaw, L. (2020).
+\emph{Expected Possession Value (EPV) model and tutorials} [Computer software and tutorial series].
+Friends of Tracking.
+\url{https://github.com/Friends-of-Tracking-Data-FoTD/LaurieOnTracking}
+
+\bibitem{xt}
+Singh, K. (2019).
+\emph{Introducing Expected Threat (xT)} [Blog post].
+\url{https://karun.in/blog/expected-threat.html}
+
+\bibitem{pitchcontrol}
+Spearman, W. (2018).
+Beyond expected goals.
+In \emph{12th MIT Sloan Sports Analytics Conference}.
+
+\bibitem{statsbomb}
+StatsBomb. (2024).
+\emph{StatsBomb Open Data: UEFA Euro 2024} [Data set].
+\texttt{competition\_id\,=\,55}, \texttt{season\_id\,=\,282}; 51 matches.
+\url{https://github.com/statsbomb/open-data}
+
+\bibitem{transfermarkt}
+Transfermarkt. (n.d.).
+\emph{Market values for UEFA Euro 2024 participants} [Data set].
+Retrieved 2024, from \url{https://www.transfermarkt.com/}
 
 \end{thebibliography}
 
 % ============================================================
 % FIGURE INDEX (Appendix)
-% ============================================================
-\clearpage
-\appendix
-\section{Figure Index}\label{app:figures}
-
-All figures are stored in \texttt{docs/paper/images/} and originate from the hypothesis pipelines' \texttt{docs/figures/} folders.
-
-\begin{table}[H]
-\centering
-\caption{Figures used in this paper.}\label{tab:figures}
-\small
-\begin{tabularx}{\textwidth}{@{}lLll@{}}
-\toprule
-Figure & File & Origin & Section \\
-\midrule
-\cref{fig:xpass-shap} & \texttt{xpass\_shap.png} & H2 xPass (SHAP) & \cref{sec:model-selection} \\ \midrule
-\cref{fig:h1-radar} & \texttt{h1\_radar\_kimmich.png} & H1 card & \cref{sec:h1-findings} \\ \midrule
-\cref{fig:bolla-linebreaker} & \texttt{linebreaking\_pass\_1.png} & H1 line-breaker & \cref{sec:h1-findings} \\ \midrule
-\cref{fig:scouting-discoveries} & \texttt{scouting\_discoveries.png} & H1 validation & \cref{sec:h1-findings} \\ \midrule
-\cref{fig:naive-overrating} & \texttt{naive\_overrating.png} & H1 validation & \cref{sec:h1-findings} \\ \midrule
-\cref{fig:dq-vs-value-impact} & \texttt{dq\_vs\_value\_impact.png} & H2 validation & \cref{sec:dq-index} \\ \midrule
-\cref{fig:kroos-frame}a & \texttt{xpass\_example.png} & H2 xPass & \cref{sec:dq-example} \\ \midrule
-\cref{fig:kroos-frame}b & \texttt{xepv\_example.png} & H2 xEPV & \cref{sec:dq-example} \\ \midrule
-\cref{fig:dq-radar} & \texttt{dq\_radar\_example.png} & H2 radar & \cref{sec:dq-radar} \\ \midrule
-\cref{fig:urs-split-half} & \texttt{urs\_split\_half.png} & H3 validation & \cref{sec:h3-validation} \\ \midrule
-\cref{fig:within-role-top5} & \texttt{within\_role\_top5.png} & H3 roles & \cref{sec:h3-findings} \\ \midrule
-\cref{fig:h2h} & \texttt{h2h\_pedri\_kroos.png} & H3 h2h & \cref{sec:h3-findings} \\ \midrule
-\cref{fig:offball-pedri} & \texttt{offball\_radar\_pedri.png} & H3 radar & \cref{sec:h3-findings} \\ \midrule
-\cref{fig:uncap-pedri} & \texttt{uncapitalised\_runs\_pedri.png} & H3 visual proof & \cref{sec:h3-findings} \\ \midrule
-\cref{fig:archetype-map} & \texttt{archetype\_map.png} & H3 archetypes & \cref{sec:h3-findings} \\ \midrule
-\cref{fig:h4-top-pairs} & \texttt{top\_pairs.png} & H4 validation & \cref{sec:h4-validation} \\ \midrule
-\cref{fig:h4-dna-overlay} & \texttt{dna\_overlay\_by\_role.png} & H4 findings & \cref{sec:h4-findings} \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
 \end{document}
