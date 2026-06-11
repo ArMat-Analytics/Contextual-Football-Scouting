@@ -21,6 +21,7 @@ export interface SpaceControlIndex {
   age?: number | null;
   market_value_before_euros?: string | null;
   market_value_after_euros?: string | null;
+  preferred_foot?: string | null;
 }
 
 export interface SpaceControlAggregated {

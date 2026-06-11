@@ -751,6 +751,11 @@ export default function SimilarPlayers() {
                             {searchParams.get('primaryRole')!.replace(/_/g, ' ')}
                           </span>
                         )}
+                        {sourceIdx?.preferred_foot && (
+                          <span className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--surface)] shadow-sm text-xs font-bold text-[var(--text-muted)]">
+                            {sourceIdx.preferred_foot === 'both' ? 'Both Feet' : `${sourceIdx.preferred_foot.charAt(0).toUpperCase() + sourceIdx.preferred_foot.slice(1)} Foot`}
+                          </span>
+                        )}
                         {sourceIdx?.age != null && (
                           <span className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--surface)] shadow-sm text-xs font-bold text-[var(--text-muted)]">
                             Age: {sourceIdx.age}
@@ -845,6 +850,11 @@ export default function SimilarPlayers() {
                             {selectedPlayer.primary_role && (
                               <span className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--surface)] shadow-sm text-xs font-bold text-[var(--text)]">
                                 {selectedPlayer.primary_role.replace(/_/g, ' ')}
+                              </span>
+                            )}
+                            {selectedPlayer.preferred_foot && (
+                              <span className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--surface)] shadow-sm text-xs font-bold text-[var(--text-muted)]">
+                                {selectedPlayer.preferred_foot === 'both' ? 'Both Feet' : `${selectedPlayer.preferred_foot.charAt(0).toUpperCase() + selectedPlayer.preferred_foot.slice(1)} Foot`}
                               </span>
                             )}
                             {selectedPlayer.age != null && (

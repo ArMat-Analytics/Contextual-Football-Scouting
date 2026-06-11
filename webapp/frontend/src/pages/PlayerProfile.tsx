@@ -147,14 +147,19 @@ export default function PlayerProfile() {
                       {flagUrl && <img src={flagUrl} alt="" className="w-7 h-5 object-cover rounded-[3px] shadow-sm" aria-hidden />}
                       {stats.source_team_name}
                     </p>
+                    {scData?.indices?.macro_role && (
+                      <span className="tag bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] font-bold shadow-sm">
+                        {scData.indices.macro_role}
+                      </span>
+                    )}
                     {stats.primary_role && (
                       <span className="tag bg-[var(--surface)] border border-[var(--border)] text-[var(--accent)] font-bold shadow-sm">
                         {stats.primary_role.replace(/_/g, ' ')}
                       </span>
                     )}
-                    {scData?.indices?.macro_role && (
-                      <span className="tag bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] font-bold shadow-sm">
-                        {scData.indices.macro_role}
+                    {stats.preferred_foot && (
+                      <span className="tag bg-[var(--surface)] border border-[var(--border)] text-[var(--text-muted)] font-bold shadow-sm">
+                        {stats.preferred_foot === 'both' ? 'Both Feet' : `${stats.preferred_foot.charAt(0).toUpperCase() + stats.preferred_foot.slice(1)} Foot`}
                       </span>
                     )}
                     {stats.age != null && (

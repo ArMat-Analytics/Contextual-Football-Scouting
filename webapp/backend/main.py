@@ -311,7 +311,7 @@ def get_player_space_control(player_id: int, db: Session = Depends(database.get_
             FROM sc_indices sc
         )
         SELECT sc.*, COALESCE(p.player_name, sc.player) as tm_player_name,
-               p.age, p.market_value_before_euros, p.market_value_after_euros
+               p.age, p.preferred_foot, p.market_value_before_euros, p.market_value_after_euros
         FROM CorrectedSC sc
         LEFT JOIN player_profiles p ON sc.fixed_db_player_id = p.player_id
         WHERE sc.fixed_db_player_id = :pid LIMIT 1
@@ -417,7 +417,7 @@ def get_similar_players(
                 FROM sc_indices sc
             )
             SELECT sc.*, COALESCE(p.player_name, sc.player) as player, sc.player as sb_player_name, p.player_id,
-                   p.age, p.market_value_before_euros, p.market_value_after_euros
+                   p.age, p.preferred_foot, p.market_value_before_euros, p.market_value_after_euros
             FROM CorrectedSC sc
             LEFT JOIN player_profiles p ON sc.fixed_db_player_id = p.player_id
             WHERE sc.macro_role = :macro_role
