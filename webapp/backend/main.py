@@ -14,23 +14,44 @@ def get_similarity_score(source_sb_name: str, neighbour_sb_name: str) -> Optiona
     global SIMILARITY_CACHE
     if SIMILARITY_CACHE is None:
         SIMILARITY_CACHE = {}
-        backend_dir = os.path.dirname(os.path.abspath(__file__))
-        csv_path = os.path.abspath(os.path.join(backend_dir, "..", "..", "H4_Player_Similarity", "data", "player_similarity.csv"))
-        if os.path.exists(csv_path):
+        # 1. Try to load from database first
+        try:
+            db = database.SessionLocal()
             try:
-                with open(csv_path, mode="r", encoding="utf-8") as f:
-                    reader = csv.DictReader(f)
-                    for row in reader:
-                        src = row["source_player"].strip()
-                        neigh = row["neighbour_player"].strip()
-                        score = float(row["similarity"])
-                        if src not in SIMILARITY_CACHE:
-                            SIMILARITY_CACHE[src] = {}
-                        SIMILARITY_CACHE[src][neigh] = score
-            except Exception as e:
-                print(f"Error loading similarity CSV: {e}")
-        else:
-            print(f"Similarity CSV not found at {csv_path}")
+                result = db.execute(text("SELECT source_player, neighbour_player, similarity FROM player_similarity")).fetchall()
+                for row in result:
+                    src = row[0].strip()
+                    neigh = row[1].strip()
+                    score = float(row[2])
+                    if src not in SIMILARITY_CACHE:
+                        SIMILARITY_CACHE[src] = {}
+                    SIMILARITY_CACHE[src][neigh] = score
+                print(f"Loaded {len(SIMILARITY_CACHE)} players' similarity from database.")
+            finally:
+                db.close()
+        except Exception as db_err:
+            print(f"Failed to load similarity from database: {db_err}. Falling back to CSV...")
+            SIMILARITY_CACHE = {}
+
+        # 2. Fallback to CSV if database was empty or failed
+        if not SIMILARITY_CACHE:
+            backend_dir = os.path.dirname(os.path.abspath(__file__))
+            csv_path = os.path.abspath(os.path.join(backend_dir, "..", "..", "H4_Player_Similarity", "data", "player_similarity.csv"))
+            if os.path.exists(csv_path):
+                try:
+                    with open(csv_path, mode="r", encoding="utf-8") as f:
+                        reader = csv.DictReader(f)
+                        for row in reader:
+                            src = row["source_player"].strip()
+                            neigh = row["neighbour_player"].strip()
+                            score = float(row["similarity"])
+                            if src not in SIMILARITY_CACHE:
+                                SIMILARITY_CACHE[src] = {}
+                            SIMILARITY_CACHE[src][neigh] = score
+                except Exception as e:
+                    print(f"Error loading similarity CSV: {e}")
+            else:
+                print(f"Similarity CSV not found at {csv_path}")
 
     if not source_sb_name or not neighbour_sb_name:
         return None
@@ -217,7 +238,9 @@ def get_players(
 @app.get("/players/{player_id}/stats")
 def get_player_stats(player_id: int, db: Session = Depends(database.get_db)):
     query_str = """
-        SELECT p.player_name, p.source_team_name, pt.* FROM player_profiles p
+        SELECT p.player_name, p.source_team_name, p.age, p.preferred_foot, 
+               p.market_value_before_euros, p.market_value_after_euros, 
+               pt.* FROM player_profiles p
         JOIN player_totals pt ON p.truth_player_id = pt.player_id
         WHERE p.player_id = :pid
     """

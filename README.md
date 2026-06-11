@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/logo.png" alt="Contextual Football Scouting" width="160"/>
+<img src="docs/barca-innovation-hub-logo.jpg" alt="Contextual Football Scouting" width="160"/>
 
 # Contextual Football Scouting
 

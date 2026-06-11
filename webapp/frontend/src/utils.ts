@@ -84,3 +84,38 @@ export interface PlayerStats {
   interceptions?: number;
   aerials_won?: number;
 }
+
+/** Formats a market value string to be clean, e.g. €12.00M instead of €12,00M */
+export function formatMarketValue(val?: string | null): string {
+  if (!val) return '—';
+  let cleaned = val.trim().replace(',', '.');
+  if (!cleaned.startsWith('€')) {
+    cleaned = cleaned.replace(/^[^\d]+/, '');
+    cleaned = '€' + cleaned;
+  }
+  return cleaned;
+}
+
+/** Parses a market value string like €12.00M or €400.00K to a numeric value */
+export function parseMarketValueToNum(val?: string | null): number {
+  if (!val) return 0;
+  const cleaned = val.replace(/[^0-9,.]/g, '').replace(',', '.');
+  const num = parseFloat(cleaned);
+  if (isNaN(num)) return 0;
+  if (val.toLowerCase().includes('m')) {
+    return num * 1000000;
+  } else if (val.toLowerCase().includes('k')) {
+    return num * 1000;
+  }
+  return num;
+}
+
+/** Returns ▲ or ▼ depending on whether the post-euro value is higher or lower than pre-euro */
+export function getMarketTrendArrow(before?: string | null, after?: string | null): string {
+  if (!before || !after) return '';
+  const numBefore = parseMarketValueToNum(before);
+  const numAfter = parseMarketValueToNum(after);
+  if (numAfter > numBefore) return '▲';
+  if (numAfter < numBefore) return '▼';
+  return '';
+}

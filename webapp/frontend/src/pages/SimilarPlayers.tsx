@@ -4,7 +4,7 @@ import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
-import { getFlagUrl } from '../utils';
+import { getFlagUrl, formatMarketValue, getMarketTrendArrow } from '../utils';
 import {
   useSimilarPlayers, usePlayerSpaceControl,
   type SpaceControlIndex, type SpaceControlAggregated,
@@ -1074,7 +1074,23 @@ export default function SimilarPlayers() {
                       {player.market_value_before_euros && (
                         <>
                           <span aria-hidden>·</span>
-                          <span>Value Pre/Post: {player.market_value_before_euros} / {player.market_value_after_euros ?? '—'}</span>
+                          <span>
+                            Pre-Euro: {formatMarketValue(player.market_value_before_euros)}
+                            {player.market_value_after_euros ? (
+                              <>
+                                {' '}(Post: {formatMarketValue(player.market_value_after_euros)}
+                                {(() => {
+                                  const arrow = getMarketTrendArrow(player.market_value_before_euros, player.market_value_after_euros);
+                                  if (!arrow) return null;
+                                  const color = arrow === '▲' ? 'var(--win)' : 'var(--lose)';
+                                  return <span className="ml-1 font-bold" style={{ color }}>{arrow}</span>;
+                                })()}
+                                )
+                              </>
+                            ) : (
+                              ' (Post: —)'
+                            )}
+                          </span>
                         </>
                       )}
                     </p>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { getFlagUrl, ALL_STATS, CAT_ACCENT, type PlayerStats } from '../utils';
+import { getFlagUrl, ALL_STATS, CAT_ACCENT, type PlayerStats, formatMarketValue, getMarketTrendArrow } from '../utils';
 import { usePlayerSpaceControl } from '../hooks/useSpaceControl';
 import SpaceControlSection, { type StatViewMode } from '../components/SpaceControlSection';
 import { usePlayerDecisionQuality } from '../hooks/useDecisionQuality';
@@ -157,6 +157,31 @@ export default function PlayerProfile() {
                         {scData.indices.macro_role}
                       </span>
                     )}
+                    {stats.age != null && (
+                      <span className="tag bg-[var(--surface)] border border-[var(--border)] text-[var(--text-muted)] font-bold shadow-sm">
+                        Age: {stats.age}
+                      </span>
+                    )}
+                    {stats.market_value_before_euros && (
+                      <span className="tag bg-[var(--surface)] border border-[var(--border)] text-[var(--text-muted)] font-semibold shadow-sm flex items-center gap-1">
+                        Pre-Euro: <strong className="text-[var(--text)]">{formatMarketValue(stats.market_value_before_euros)}</strong>
+                        {stats.market_value_after_euros ? (
+                          <>
+                            <span className="ml-1">(Post:</span>
+                            <strong className="text-[var(--text)]">{formatMarketValue(stats.market_value_after_euros)}</strong>
+                            {(() => {
+                              const arrow = getMarketTrendArrow(stats.market_value_before_euros, stats.market_value_after_euros);
+                              if (!arrow) return null;
+                              const color = arrow === '▲' ? 'var(--win)' : 'var(--lose)';
+                              return <span className="ml-0.5 font-bold" style={{ color }}>{arrow}</span>;
+                            })()}
+                            <span>)</span>
+                          </>
+                        ) : (
+                          <span className="ml-1">(Post: —)</span>
+                        )}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -179,12 +204,8 @@ export default function PlayerProfile() {
               <p className="font-mono text-[10px] tracking-[0.14em] uppercase text-[var(--text-dim)] mb-6 font-bold">Player Info</p>
               <div className="grid grid-cols-2 xl:grid-cols-1 gap-3" role="list">
                 {([
-                  { label: 'Age',             value: stats.age },
-                  { label: 'Preferred Foot',  value: stats.preferred_foot },
                   { label: 'Minutes',         value: minutesPlayed != null ? `${minutesPlayed}'` : null },
                   { label: 'Passes Analysed', value: passesAnalysed },
-                  { label: 'Pre-Euros Value', value: stats.market_value_before_euros },
-                  { label: 'Post-Euros Value',value: stats.market_value_after_euros },
                 ] as { label: string; value: string | number | null | undefined }[])
                   .filter(d => d.value != null && d.value !== '')
                   .map((d, i) => (
