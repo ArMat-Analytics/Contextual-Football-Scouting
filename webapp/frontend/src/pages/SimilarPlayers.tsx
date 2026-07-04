@@ -797,6 +797,16 @@ export default function SimilarPlayers() {
                 </div>
               </div>
 
+              {/* Mobile Similarity Row (between source and comparison players) */}
+              {selectedPlayer && selectedPlayer.similarity_score != null && (
+                <div className="lg:hidden flex items-center justify-center py-3.5 bg-[var(--surface)] text-sm">
+                  <span className="font-display font-bold text-[var(--text-muted)] mr-2">Stylistic Similarity</span>
+                  <span className="font-display font-black text-[var(--accent)] px-2.5 py-1 rounded-full bg-[var(--accent-dim)] border border-[rgba(37,99,235,0.15)] leading-none text-xs">
+                    {selectedPlayer.similarity_score.toFixed(1)}%
+                  </span>
+                </div>
+              )}
+
               {/* Right — Comparison Player */}
               <div className="relative flex flex-col p-6 md:p-8 bg-[var(--surface2)] overflow-hidden">
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] pointer-events-none opacity-40 mix-blend-multiply" style={{ background: `radial-gradient(circle at top right, ${C_SIMILAR}15 0%, transparent 60%)` }} />
@@ -830,12 +840,12 @@ export default function SimilarPlayers() {
                   {selectedPlayer ? (
                     <>
                       {/* Avatar & Name */}
-                      <div className="flex items-center justify-end mb-6 w-full">
-                        <div className="text-right flex flex-col items-end w-full">
-                          <h1 className="font-display font-black text-2xl sm:text-3xl leading-tight tracking-tight text-[var(--text)] mb-2 text-right">
+                      <div className="flex items-center justify-start lg:justify-end mb-6 w-full">
+                        <div className="text-left lg:text-right flex flex-col items-start lg:items-end w-full">
+                          <h1 className="font-display font-black text-2xl sm:text-3xl leading-tight tracking-tight text-[var(--text)] mb-2 text-left lg:text-right">
                             {selectedPlayer.player}
                           </h1>
-                          <div className="flex flex-wrap justify-end gap-2 items-center">
+                          <div className="flex flex-wrap justify-start lg:justify-end gap-2 items-center">
                             {selectedPlayer.team && (
                               <span className="px-2.5 py-1 rounded border border-[var(--border)] bg-[var(--surface)] shadow-sm text-xs font-bold text-[var(--text-muted)] flex items-center gap-2">
                                 {getFlagUrl(selectedPlayer.team) && <img src={getFlagUrl(selectedPlayer.team)!} alt="" className="w-4 h-3 object-cover rounded-[2px]" aria-hidden />}
@@ -923,9 +933,9 @@ export default function SimilarPlayers() {
                 </div>
               </div>
 
-              {/* Centered Similarity Badge */}
+              {/* Centered Similarity Badge (Desktop only) */}
               {selectedPlayer && selectedPlayer.similarity_score != null && (
-                <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none">
+                <div className="hidden lg:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none">
                   <div
                     className="flex flex-col items-center justify-center w-16 h-16 rounded-full bg-[var(--surface)] border border-[var(--border2)]"
                     style={{
