@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import PlayerList from './components/PlayerList';
 import TeamList from './components/TeamList';
 import SearchBar from './components/SearchBar';
@@ -9,6 +9,45 @@ import SimilarPlayers from './pages/SimilarPlayers';
 import SearchByAttribute from './pages/SearchByAttribute';
 import Home from './pages/Home';
 import Glossary from './pages/Glossary';
+import { useDebounce } from './hooks/useDebounce';
+
+// ── API base URL ──────────────────────────────────────────────────────────────
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+
+// ── Player cache for command palette ──────────────────────────────────────────
+
+interface PalettePlayer {
+  player_id: number;
+  player_name: string;
+  source_team_name?: string;
+  primary_role?: string;
+}
+
+let _paletteCache: PalettePlayer[] | null = null;
+let _paletteFetching = false;
+
+async function fetchPalettePlayers(): Promise<PalettePlayer[]> {
+  if (_paletteCache) return _paletteCache;
+  if (_paletteFetching) {
+    // Wait for the in-progress fetch
+    return new Promise((resolve) => {
+      const id = setInterval(() => {
+        if (_paletteCache) { clearInterval(id); resolve(_paletteCache); }
+      }, 50);
+    });
+  }
+  _paletteFetching = true;
+  try {
+    const res = await fetch(`${API_BASE_URL}/players/?search=&sort_by=player_name&sort_order=asc`);
+    const data: PalettePlayer[] = await res.json();
+    _paletteCache = Array.isArray(data) ? data : [];
+  } catch {
+    _paletteCache = [];
+  }
+  _paletteFetching = false;
+  return _paletteCache;
+}
 
 // ── Nav link that highlights when active ──────────────────────────────────────
 
@@ -27,14 +66,218 @@ function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
   );
 }
 
+// ── Command Palette ───────────────────────────────────────────────────────────
+
+const SHORTCUTS = [
+  { label: 'Search by Player', path: '/players', icon: '👤' },
+  { label: 'Search by Attribute', path: '/search', icon: '📊' },
+  { label: 'Glossary', path: '/glossary', icon: '📖' },
+];
+
+function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const navigate = useNavigate();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [query, setQuery] = useState('');
+  const [players, setPlayers] = useState<PalettePlayer[]>([]);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const debouncedQuery = useDebounce(query, 150);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  // Fetch players on open
+  useEffect(() => {
+    if (open) {
+      setQuery('');
+      setActiveIdx(0);
+      fetchPalettePlayers().then(setPlayers);
+      // Focus input after render
+      requestAnimationFrame(() => inputRef.current?.focus());
+    }
+  }, [open]);
+
+  // Fuzzy filter
+  const lowerQ = debouncedQuery.toLowerCase().trim();
+  const filtered = lowerQ
+    ? players.filter(p =>
+        p.player_name.toLowerCase().includes(lowerQ) ||
+        (p.source_team_name ?? '').toLowerCase().includes(lowerQ) ||
+        (p.primary_role ?? '').toLowerCase().includes(lowerQ)
+      ).slice(0, 12)
+    : [];
+
+  // Reset active index when results change
+  useEffect(() => { setActiveIdx(0); }, [debouncedQuery]);
+
+  // Scroll active item into view
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    const item = list.children[activeIdx] as HTMLElement | undefined;
+    item?.scrollIntoView({ block: 'nearest' });
+  }, [activeIdx]);
+
+  const totalItems = filtered.length + SHORTCUTS.length;
+
+  const handleSelect = useCallback((idx: number) => {
+    if (idx < filtered.length) {
+      navigate(`/player/${filtered[idx].player_id}`);
+    } else {
+      const si = idx - filtered.length;
+      navigate(SHORTCUTS[si].path);
+    }
+    onClose();
+  }, [filtered, navigate, onClose]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIdx(i => (i + 1) % totalItems);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIdx(i => (i - 1 + totalItems) % totalItems);
+    } else if (e.key === 'Enter' && totalItems > 0) {
+      e.preventDefault();
+      handleSelect(activeIdx);
+    } else if (e.key === 'Escape') {
+      onClose();
+    }
+  };
+
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh] px-4"
+      onClick={onClose}
+    >
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+
+      {/* Panel */}
+      <div
+        className="relative w-full max-w-[540px] bg-[var(--surface)] border border-[var(--border2)] rounded-2xl shadow-2xl overflow-hidden"
+        style={{ animation: 'palette-in 0.15s ease-out' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Search input */}
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-[var(--border)]">
+          <svg className="w-5 h-5 text-[var(--text-dim)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
+          </svg>
+          <input
+            ref={inputRef}
+            type="text"
+            placeholder="Search for a player…"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="flex-1 bg-transparent text-base font-semibold text-[var(--text)] placeholder:text-[var(--text-dim)] outline-none"
+            autoComplete="off"
+            spellCheck={false}
+          />
+          <kbd className="hidden sm:inline-flex items-center gap-0.5 px-2 py-1 rounded-md bg-[var(--surface2)] border border-[var(--border)] text-[10px] font-mono font-bold text-[var(--text-dim)] select-none">
+            ESC
+          </kbd>
+        </div>
+
+        {/* Results */}
+        <div ref={listRef} className="max-h-[340px] overflow-y-auto py-2" role="listbox">
+          {/* Player results */}
+          {filtered.length > 0 && (
+            <>
+              <p className="px-5 py-1.5 font-mono text-[9px] tracking-[0.14em] uppercase text-[var(--text-dim)] select-none">Players</p>
+              {filtered.map((p, i) => (
+                <button
+                  key={p.player_id}
+                  role="option"
+                  aria-selected={activeIdx === i}
+                  className={`w-full flex items-center gap-3 px-5 py-2.5 text-left transition-colors cursor-pointer ${
+                    activeIdx === i ? 'bg-[var(--accent)] text-white' : 'hover:bg-[var(--surface2)] text-[var(--text)]'
+                  }`}
+                  onClick={() => handleSelect(i)}
+                  onMouseEnter={() => setActiveIdx(i)}
+                >
+                  <span className="text-sm">⚽</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-display font-bold text-sm leading-tight truncate">{p.player_name}</p>
+                    <p className={`text-[11px] truncate ${
+                      activeIdx === i ? 'text-white/70' : 'text-[var(--text-muted)]'
+                    }`}>
+                      {p.source_team_name}{p.primary_role ? ` · ${p.primary_role.replace(/_/g, ' ')}` : ''}
+                    </p>
+                  </div>
+                  <span className={`font-mono text-[10px] ${
+                    activeIdx === i ? 'text-white/60' : 'text-[var(--text-dim)]'
+                  }`}>↵</span>
+                </button>
+              ))}
+            </>
+          )}
+
+          {/* No results */}
+          {lowerQ && filtered.length === 0 && (
+            <p className="px-5 py-6 text-center text-sm text-[var(--text-muted)]">No players found for "{query}"</p>
+          )}
+
+          {/* Shortcuts */}
+          <p className="px-5 py-1.5 font-mono text-[9px] tracking-[0.14em] uppercase text-[var(--text-dim)] select-none mt-1">Quick Links</p>
+          {SHORTCUTS.map((s, si) => {
+            const idx = filtered.length + si;
+            return (
+              <button
+                key={s.path}
+                role="option"
+                aria-selected={activeIdx === idx}
+                className={`w-full flex items-center gap-3 px-5 py-2.5 text-left transition-colors cursor-pointer ${
+                  activeIdx === idx ? 'bg-[var(--accent)] text-white' : 'hover:bg-[var(--surface2)] text-[var(--text)]'
+                }`}
+                onClick={() => handleSelect(idx)}
+                onMouseEnter={() => setActiveIdx(idx)}
+              >
+                <span className="text-sm">{s.icon}</span>
+                <span className="font-display font-bold text-sm">{s.label}</span>
+                <span className={`font-mono text-[10px] ml-auto ${
+                  activeIdx === idx ? 'text-white/60' : 'text-[var(--text-dim)]'
+                }`}>↵</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Footer hint */}
+        <div className="flex items-center justify-between gap-4 px-5 py-2.5 border-t border-[var(--border)] bg-[var(--surface2)]">
+          <div className="flex items-center gap-3 text-[10px] font-mono text-[var(--text-dim)]">
+            <span>↑↓ navigate</span>
+            <span>↵ select</span>
+            <span>esc close</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Layout({ children }: { children: React.ReactNode }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const { pathname } = useLocation();
 
   // Close menu when route changes
   useEffect(() => {
     setIsMenuOpen(false);
+    setPaletteOpen(false);
   }, [pathname]);
+
+  // Global Ctrl+K / Cmd+K listener
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setPaletteOpen(o => !o);
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, []);
 
   return (
     <div className="flex flex-col min-h-screen bg-[var(--bg)]">
@@ -102,6 +345,7 @@ function Layout({ children }: { children: React.ReactNode }) {
               </svg>
               <span className="hidden sm:inline">GitHub</span>
             </a>
+
           </div>
         </nav>
 
@@ -165,6 +409,9 @@ function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </footer>
+
+      {/* Command Palette (Ctrl+K) */}
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </div>
   );
 }

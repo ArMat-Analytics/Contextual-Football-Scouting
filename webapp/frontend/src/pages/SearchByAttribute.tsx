@@ -1,6 +1,7 @@
 import { useEffect, useId, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getFlagUrl } from '../utils';
+import { useDebounce } from '../hooks/useDebounce';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
@@ -400,9 +401,12 @@ export default function SearchByAttribute() {
 
   const clearFilters = () => setFilters({ macroRole: '', role: '', nation: '', ranges: DEFAULT_RANGES });
 
+  // Debounce filters so rapid typing in range inputs doesn't cause per-keystroke re-filtering
+  const debouncedFilters = useDebounce(filters, 300);
+
   // Client-side filtering (since we fetch all players at once, we can do it here)
   const filtered = allPlayers.filter(player => {
-    const f = filters;
+    const f = debouncedFilters;
     
     // Filter by macro role and primary role
     if (f.macroRole && player.macro_role !== f.macroRole) return false;

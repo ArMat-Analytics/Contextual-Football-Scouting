@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useDebounce } from '../hooks/useDebounce';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
@@ -34,6 +35,28 @@ export default function Filters({ filters, setFilters }: FiltersProps) {
   const panelRef                      = useRef<HTMLDivElement>(null);
   const btnRef                        = useRef<HTMLButtonElement>(null);
 
+  // Internal draft state for immediate input responsiveness
+  const [draft, setDraft] = useState<FilterState>(filters);
+  const debouncedDraft = useDebounce(draft, 300);
+
+  // Sync debounced draft → parent
+  const setFiltersRef = useRef(setFilters);
+  setFiltersRef.current = setFilters;
+  useEffect(() => {
+    setFiltersRef.current(debouncedDraft);
+  }, [debouncedDraft]);
+
+  // Sync parent → draft when parent resets filters (e.g. "Clear All")
+  const prevFiltersRef = useRef(filters);
+  useEffect(() => {
+    // Only sync if parent changed from outside (not from our own debounce)
+    if (JSON.stringify(filters) !== JSON.stringify(prevFiltersRef.current)) {
+      prevFiltersRef.current = filters;
+      setDraft(filters);
+    }
+  }, [filters]);
+  useEffect(() => { prevFiltersRef.current = debouncedDraft; }, [debouncedDraft]);
+
   useEffect(() => {
     fetch(`${API_BASE_URL}/roles/`)
       .then(r => r.json())
@@ -41,15 +64,15 @@ export default function Filters({ filters, setFilters }: FiltersProps) {
       .catch(() => {});
   }, []);
 
-  const availableRoles = filters.macroRole
-    ? allRoles.filter(role => ROLE_TO_MACRO[role] === filters.macroRole)
+  const availableRoles = draft.macroRole
+    ? allRoles.filter(role => ROLE_TO_MACRO[role] === draft.macroRole)
     : allRoles;
 
   useEffect(() => {
-    if (filters.role && !availableRoles.includes(filters.role)) {
-      setFilters({ ...filters, role: '' });
+    if (draft.role && !availableRoles.includes(draft.role)) {
+      setDraft(d => ({ ...d, role: '' }));
     }
-  }, [availableRoles, filters, setFilters]);
+  }, [availableRoles, draft.role]);
 
   // Close on outside click
   useEffect(() => {
@@ -72,11 +95,13 @@ export default function Filters({ filters, setFilters }: FiltersProps) {
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFilters({ ...filters, [e.target.name]: e.target.value });
+    setDraft(d => ({ ...d, [e.target.name]: e.target.value }));
   };
 
   const reset = () => {
-    setFilters({ ageMin:'', ageMax:'', macroRole:'', role:'', foot:'', vPreMin:'', vPreMax:'', vPostMin:'', vPostMax:'', vDiffMin:'', vDiffMax:'' });
+    const empty: FilterState = { ageMin:'', ageMax:'', macroRole:'', role:'', foot:'', vPreMin:'', vPreMax:'', vPostMin:'', vPostMax:'', vDiffMin:'', vDiffMax:'' };
+    setDraft(empty);
+    setFilters(empty);
   };
 
   const active = Object.values(filters).some(v => v !== '');
@@ -127,15 +152,15 @@ export default function Filters({ filters, setFilters }: FiltersProps) {
               <div className="grid grid-cols-2 gap-4 mt-2">
                 <div>
                   <label htmlFor="ageMin" className="block text-xs font-semibold mb-1 text-[var(--text-muted)]">Min Age</label>
-                  <input id="ageMin" type="number" name="ageMin" value={filters.ageMin} onChange={handleChange} placeholder="e.g. 18" className="input" min={15} max={50} />
+                  <input id="ageMin" type="number" name="ageMin" value={draft.ageMin} onChange={handleChange} placeholder="e.g. 18" className="input" min={15} max={50} />
                 </div>
                 <div>
                   <label htmlFor="ageMax" className="block text-xs font-semibold mb-1 text-[var(--text-muted)]">Max Age</label>
-                  <input id="ageMax" type="number" name="ageMax" value={filters.ageMax} onChange={handleChange} placeholder="e.g. 35" className="input" min={15} max={50} />
+                  <input id="ageMax" type="number" name="ageMax" value={draft.ageMax} onChange={handleChange} placeholder="e.g. 35" className="input" min={15} max={50} />
                 </div>
                 <div>
                   <label htmlFor="macroRole" className="block text-xs font-semibold mb-1 text-[var(--text-muted)]">Macro Role</label>
-                  <select id="macroRole" name="macroRole" value={filters.macroRole} onChange={handleChange} className="input">
+                  <select id="macroRole" name="macroRole" value={draft.macroRole} onChange={handleChange} className="input">
                     <option value="">All Macro Roles</option>
                     {MACRO_ROLES.map(r => (
                       <option key={r} value={r}>{r}</option>
@@ -144,7 +169,7 @@ export default function Filters({ filters, setFilters }: FiltersProps) {
                 </div>
                 <div>
                   <label htmlFor="role" className="block text-xs font-semibold mb-1 text-[var(--text-muted)]">Role</label>
-                  <select id="role" name="role" value={filters.role} onChange={handleChange} className="input">
+                  <select id="role" name="role" value={draft.role} onChange={handleChange} className="input">
                     <option value="">All Roles</option>
                     {availableRoles.map(r => (
                       <option key={r} value={r}>{r.replace(/_/g, ' ')}</option>
@@ -153,7 +178,7 @@ export default function Filters({ filters, setFilters }: FiltersProps) {
                 </div>
                 <div>
                   <label htmlFor="foot" className="block text-xs font-semibold mb-1 text-[var(--text-muted)]">Preferred Foot</label>
-                  <select id="foot" name="foot" value={filters.foot} onChange={handleChange} className="input">
+                  <select id="foot" name="foot" value={draft.foot} onChange={handleChange} className="input">
                     <option value="">Any Foot</option>
                     <option value="right">Right</option>
                     <option value="left">Left</option>
@@ -176,11 +201,11 @@ export default function Filters({ filters, setFilters }: FiltersProps) {
                   <div key={minKey} className="grid grid-cols-2 gap-4">
                     <div>
                       <label htmlFor={minKey} className="block text-[10px] font-semibold mb-1 text-[var(--text-muted)]">Min {label}</label>
-                      <input id={minKey} type="number" name={minKey} value={(filters as any)[minKey]} onChange={handleChange} placeholder="Min €" className="input" />
+                      <input id={minKey} type="number" name={minKey} value={(draft as any)[minKey]} onChange={handleChange} placeholder="Min €" className="input" />
                     </div>
                     <div>
                       <label htmlFor={maxKey} className="block text-[10px] font-semibold mb-1 text-[var(--text-muted)]">Max {label}</label>
-                      <input id={maxKey} type="number" name={maxKey} value={(filters as any)[maxKey]} onChange={handleChange} placeholder="Max €" className="input" />
+                      <input id={maxKey} type="number" name={maxKey} value={(draft as any)[maxKey]} onChange={handleChange} placeholder="Max €" className="input" />
                     </div>
                   </div>
                 ))}

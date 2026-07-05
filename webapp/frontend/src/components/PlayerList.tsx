@@ -2,6 +2,7 @@ import { useEffect, useState, useId } from 'react';
 import { Link } from 'react-router-dom';
 import type { FilterState } from './Filters';
 import { getFlagUrl } from '../utils';
+import { useDebounce } from '../hooks/useDebounce';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
@@ -99,12 +100,13 @@ export default function PlayerList({ searchTerm, selectedTeams, filters }: Playe
   const [sortCol, setSortCol] = useState<SortCol>('player_name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const captionId = useId();
+  const debouncedSearch = useDebounce(searchTerm, 300);
 
   useEffect(() => {
     setLoading(true);
     // val_diff sort is client-side only; send player_name to backend
     const backendSort = sortCol === 'val_diff' ? 'player_name' : sortCol;
-    const params = new URLSearchParams({ search: searchTerm, sort_by: backendSort, sort_order: sortOrder });
+    const params = new URLSearchParams({ search: debouncedSearch, sort_by: backendSort, sort_order: sortOrder });
     selectedTeams.forEach(t => params.append('teams', t));
     if (filters.ageMin)   params.append('age_min',     filters.ageMin);
     if (filters.ageMax)   params.append('age_max',     filters.ageMax);
@@ -135,7 +137,7 @@ export default function PlayerList({ searchTerm, selectedTeams, filters }: Playe
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [searchTerm, sortCol, sortOrder, selectedTeams, filters]);
+  }, [debouncedSearch, sortCol, sortOrder, selectedTeams, filters]);
 
   const handleSort = (col: SortCol) => {
     if (sortCol === col) setSortOrder(o => o === 'asc' ? 'desc' : 'asc');
