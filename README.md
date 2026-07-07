@@ -4,6 +4,19 @@
 
 # Contextual Football Scouting
 
+[![CI](https://img.shields.io/github/actions/workflow/status/ArMat-Analytics/Contextual-Football-Scouting/ci.yml?branch=main&label=CI&logo=github)](https://github.com/ArMat-Analytics/Contextual-Football-Scouting/actions/workflows/ci.yml)
+[![Codecov](https://img.shields.io/codecov/c/github/ArMat-Analytics/Contextual-Football-Scouting?logo=codecov&label=Coverage)](https://codecov.io/gh/ArMat-Analytics/Contextual-Football-Scouting)
+[![CodeFactor](https://www.codefactor.io/repository/github/armat-analytics/contextual-football-scouting/badge)](https://www.codefactor.io/repository/github/armat-analytics/contextual-football-scouting)
+[![Lighthouse](https://img.shields.io/badge/Lighthouse-audit-F44B21?logo=lighthouse&logoColor=white)](https://github.com/ArMat-Analytics/Contextual-Football-Scouting/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/github/license/ArMat-Analytics/Contextual-Football-Scouting?label=License)](LICENSE)
+[![Vercel](https://img.shields.io/badge/deploy-Vercel-black?logo=vercel)](https://contextual-football-scouting.vercel.app)
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev)
+[![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?logo=supabase&logoColor=white)](https://supabase.com)
+[![Last Commit](https://img.shields.io/github/last-commit/ArMat-Analytics/Contextual-Football-Scouting)](https://github.com/ArMat-Analytics/Contextual-Football-Scouting/commits/main)
+[![Repo Size](https://img.shields.io/github/repo-size/ArMat-Analytics/Contextual-Football-Scouting)](https://github.com/ArMat-Analytics/Contextual-Football-Scouting)
+
 **Ranking players by *what they do with the space around them*, not by how much they touch the ball.**
 
 *Matteo Vezzoli & Armando Mio — 2026*
