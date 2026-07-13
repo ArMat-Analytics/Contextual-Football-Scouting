@@ -30,14 +30,27 @@ jobs:
           echo "🔔 Pinging Supabase to prevent inactivity pause..."
 
           HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            "${SUPABASE_URL}/rest/v1/" \
-            -H "apikey: ${SUPABASE_ANON_KEY}" \
-            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
+            "${SUPABASE_URL}/auth/v1/health")
 
           echo "📡 HTTP Status: ${HTTP_STATUS}"
 
           if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
             echo "✅ Supabase is alive and responding."
+            exit 0
+          fi
+
+          echo "⚠️ Auth health endpoint returned ${HTTP_STATUS}, trying REST API fallback..."
+
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "${SUPABASE_URL}/rest/v1/" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            -H "Accept: application/json")
+
+          echo "📡 REST API fallback HTTP Status: ${HTTP_STATUS}"
+
+          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 400 ]; then
+            echo "✅ Supabase is alive (fallback succeeded)."
           else
             echo "❌ Unexpected status code: ${HTTP_STATUS}"
             exit 1
