@@ -20,18 +20,18 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          echo "🔔 Pinging Supabase directly via REST API..."
+          echo "🔔 Pinging a specific Supabase table to keep it active..."
           
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            -X GET "${SUPABASE_URL}/rest/v1/" \
+            -X GET "${SUPABASE_URL}/rest/v1/player_data?select=*" \
             -H "apikey: ${SUPABASE_ANON_KEY}" \
             -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
           
           echo "📡 HTTP Status: $STATUS"
           
-          if [ "$STATUS" -eq 200 ]; then
-            echo "✅ Supabase is awake!"
+          if [ "$STATUS" -eq 200 ] || [ "$STATUS" -eq 204 ]; then
+            echo "✅ Supabase received the query and is wide awake!"
           else
-            echo "❌ Failed with status: $STATUS."
+            echo "❌ Failed with status: $STATUS. Double check the table name or RLS policies."
             exit 1
           fi
