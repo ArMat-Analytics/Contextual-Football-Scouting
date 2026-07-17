@@ -2,7 +2,7 @@
 # Keep Supabase Alive – Prevent Free-Tier Pause Due to Inactivity
 # =============================================================================
 # Supabase pauses free-tier projects after 7 days of inactivity.
-# This workflow pings the database every 5 days to reset the counter.
+# This workflow pings the database every 4 days to reset the counter.
 # =============================================================================
 name: Keep Supabase Alive
 
@@ -20,10 +20,10 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          echo "🔔 Pinging a specific Supabase table to keep it active..."
+          echo "🔔 Pinging Supabase 'teams' table to keep it active..."
           
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            -X GET "${SUPABASE_URL}/rest/v1/player_data?select=*" \
+            -X GET "${SUPABASE_URL}/rest/v1/teams?select=*" \
             -H "apikey: ${SUPABASE_ANON_KEY}" \
             -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
           
@@ -32,6 +32,6 @@ jobs:
           if [ "$STATUS" -eq 200 ] || [ "$STATUS" -eq 204 ]; then
             echo "✅ Supabase received the query and is wide awake!"
           else
-            echo "❌ Failed with status: $STATUS. Double check the table name or RLS policies."
+            echo "❌ Failed with status: $STATUS. Please verify your Repository Secrets."
             exit 1
           fi
